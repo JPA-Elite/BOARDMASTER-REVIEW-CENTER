@@ -1,6 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
-import DeleteUserForm from '@/Pages/Profile/Partials/DeleteUserForm';
 import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from '@/Pages/Profile/Partials/UpdateProfileInformationForm';
 
@@ -22,9 +21,6 @@ export default function Settings({ mustVerifyEmail, status }) {
                     <UpdatePasswordForm className="max-w-xl" />
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                    <DeleteUserForm className="max-w-xl" />
-                </div>
             </div>
         </AdminLayout>
     );
