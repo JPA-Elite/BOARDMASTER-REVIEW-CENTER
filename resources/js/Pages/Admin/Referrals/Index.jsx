@@ -15,7 +15,7 @@ export default function Index({ referrals }) {
         <AdminLayout title="Referrals">
             <Head title="Admin Referrals" />
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-4 flex justify-end">
                     <Link
                         href={route('admin.referrals.create')}
@@ -101,3 +101,4 @@ export default function Index({ referrals }) {
         </AdminLayout>
     );
 }
+

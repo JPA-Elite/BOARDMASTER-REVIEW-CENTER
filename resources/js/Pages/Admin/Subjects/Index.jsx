@@ -15,7 +15,7 @@ export default function Index({ subjects }) {
         <AdminLayout title="Subjects">
             <Head title="Admin Subjects" />
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-4 flex justify-end">
                     <Link
                         href={route('admin.subjects.create')}
@@ -91,3 +91,4 @@ export default function Index({ subjects }) {
         </AdminLayout>
     );
 }
+

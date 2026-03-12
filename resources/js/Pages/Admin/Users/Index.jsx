@@ -27,7 +27,7 @@ export default function Index({ users, filters }) {
         <AdminLayout title="Users">
             <Head title="Admin Users" />
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <form onSubmit={submitSearch} className="flex gap-2">
                         <input
@@ -124,3 +124,4 @@ export default function Index({ users, filters }) {
         </AdminLayout>
     );
 }
+

@@ -6,7 +6,7 @@ export default function Show({ attempt }) {
         <AdminLayout title={`Quiz Attempt #${attempt.id}`}>
             <Head title={`Quiz Attempt #${attempt.id}`} />
 
-            <div className="space-y-4 rounded-xl bg-white p-5 shadow-sm">
+            <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                     <div>
                         <p className="text-sm text-slate-500">User</p>
@@ -99,3 +99,4 @@ export default function Show({ attempt }) {
         </AdminLayout>
     );
 }
+

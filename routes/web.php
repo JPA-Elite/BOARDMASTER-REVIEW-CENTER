@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuizAttemptController;
@@ -47,6 +49,8 @@ Route::middleware(['auth', 'verified', 'admin'])
     ->as('admin.')
     ->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/analytics', AdminAnalyticsController::class)->name('analytics');
+        Route::get('/settings', AdminSettingsController::class)->name('settings');
         Route::resource('users', UserController::class)->except('show');
         Route::resource('referrals', ReferralController::class)->except('show');
         Route::resource('plans', PlanController::class)->except('show');

@@ -51,7 +51,7 @@ export default function Form({ mode, plan }) {
         <AdminLayout title={mode === 'edit' ? 'Edit Plan' : 'Create Plan'}>
             <Head title={mode === 'edit' ? 'Edit Plan' : 'Create Plan'} />
 
-            <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
+            <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
                 <div>
                     <InputLabel htmlFor="name" value="Plan Name" />
                     <TextInput
@@ -143,3 +143,4 @@ export default function Form({ mode, plan }) {
         </AdminLayout>
     );
 }
+

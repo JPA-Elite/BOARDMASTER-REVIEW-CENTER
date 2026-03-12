@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\QuizAttempt;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -29,11 +30,38 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $admin = null;
+        $user = $request->user();
+
+        if ($user && $user->role === 'admin') {
+            $recentAttempts = QuizAttempt::query()
+                ->with(['user:id,name', 'subject:id,name'])
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(fn (QuizAttempt $attempt) => [
+                    'id' => $attempt->id,
+                    'title' => $attempt->subject?->name ?? 'Quiz Attempt',
+                    'message' => ($attempt->user?->name ?? 'User')
+                        .' scored '
+                        .$attempt->score
+                        .'/'
+                        .$attempt->total_questions,
+                    'time' => $attempt->created_at?->format('M d, Y h:i A'),
+                ]);
+
+            $admin = [
+                'notificationCount' => $recentAttempts->count(),
+                'notifications' => $recentAttempts,
+            ];
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
+            'admin' => $admin,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

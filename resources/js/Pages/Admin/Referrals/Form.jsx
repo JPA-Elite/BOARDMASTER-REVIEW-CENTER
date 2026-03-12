@@ -28,7 +28,7 @@ export default function Form({ mode, referral, users }) {
                 title={mode === 'edit' ? 'Edit Referral' : 'Create Referral'}
             />
 
-            <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
+            <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
                 <div>
                     <InputLabel htmlFor="inviter_id" value="Inviter" />
                     <select
@@ -91,3 +91,4 @@ export default function Form({ mode, referral, users }) {
         </AdminLayout>
     );
 }
+

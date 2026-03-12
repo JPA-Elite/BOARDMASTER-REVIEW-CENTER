@@ -1,10 +1,22 @@
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+
+function BoltIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-6"
+        >
+            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+        </svg>
+    );
+}
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -13,8 +25,8 @@ export default function Login({ status, canResetPassword }) {
         remember: false,
     });
 
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
 
         post(route('login'), {
             onFinish: () => reset('password'),
@@ -22,79 +34,138 @@ export default function Login({ status, canResetPassword }) {
     };
 
     return (
-        <GuestLayout>
+        <div className="bg-white flex min-h-screen items-center justify-center p-4">
             <Head title="Log in" />
 
-            {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
-
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData('remember', e.target.checked)
-                            }
-                        />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white py-6 shadow-sm">
+                <div className="space-y-1 px-6 text-center">
+                    <div className="mb-4 flex justify-center">
+                        <span className="inline-flex size-12 items-center justify-center rounded-xl bg-slate-900 text-white">
+                            <BoltIcon />
                         </span>
-                    </label>
+                    </div>
+                    <h1 className="text-2xl font-bold text-slate-900">
+                        Welcome back
+                    </h1>
+                    <p className="text-sm text-slate-500">
+                        Enter your credentials to access the dashboard
+                    </p>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Forgot your password?
-                        </Link>
+                <div className="mt-5 px-6">
+                    <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+                        <p className="font-medium text-slate-800">Demo Access</p>
+                        <p className="mt-1 text-slate-600">
+                            You can use seeded credentials:
+                            <span className="font-mono font-semibold">
+                                {' '}
+                                admin@example.com
+                            </span>
+                            {' / '}
+                            <span className="font-mono font-semibold">
+                                password
+                            </span>
+                            .
+                        </p>
+                    </div>
+
+                    {status && (
+                        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                            {status}
+                        </div>
                     )}
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
+                    <form method="POST" onSubmit={submit} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label
+                                htmlFor="email"
+                                className="text-sm font-medium text-slate-800"
+                            >
+                                Email
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                name="email"
+                                value={data.email}
+                                autoComplete="username"
+                                autoFocus
+                                onChange={(event) =>
+                                    setData('email', event.target.value)
+                                }
+                                className="block h-10 w-full rounded-md border border-slate-300 px-3 text-sm text-slate-900 outline-none ring-slate-200 transition focus:border-slate-500 focus:ring-2"
+                                placeholder="Enter your email"
+                            />
+                            <InputError message={errors.email} className="mt-2" />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label
+                                htmlFor="password"
+                                className="text-sm font-medium text-slate-800"
+                            >
+                                Password
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                value={data.password}
+                                autoComplete="current-password"
+                                onChange={(event) =>
+                                    setData('password', event.target.value)
+                                }
+                                className="block h-10 w-full rounded-md border border-slate-300 px-3 text-sm text-slate-900 outline-none ring-slate-200 transition focus:border-slate-500 focus:ring-2"
+                                placeholder="Enter your password"
+                            />
+                            <InputError
+                                message={errors.password}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                                <Checkbox
+                                    name="remember"
+                                    checked={data.remember}
+                                    onChange={(event) =>
+                                        setData('remember', event.target.checked)
+                                    }
+                                />
+                                Remember me
+                            </label>
+
+                            {canResetPassword && (
+                                <Link
+                                    href={route('password.request')}
+                                    className="text-sm text-slate-500 underline-offset-4 hover:underline"
+                                >
+                                    Forgot your password?
+                                </Link>
+                            )}
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Sign in
+                        </button>
+                    </form>
+
+                    <div className="mt-4 text-center text-sm text-slate-500">
+                        Don't have an account?{' '}
+                        <Link
+                            href={route('register')}
+                            className="font-medium text-slate-900 underline-offset-4 hover:underline"
+                        >
+                            Register
+                        </Link>
+                    </div>
                 </div>
-            </form>
-        </GuestLayout>
+            </div>
+        </div>
     );
 }

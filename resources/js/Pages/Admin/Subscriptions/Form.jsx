@@ -33,7 +33,7 @@ export default function Form({ mode, subscription, users, plans, statuses }) {
                 }
             />
 
-            <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
+            <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
                 <div>
                     <InputLabel htmlFor="user_id" value="User" />
                     <select
@@ -138,3 +138,4 @@ export default function Form({ mode, subscription, users, plans, statuses }) {
         </AdminLayout>
     );
 }
+

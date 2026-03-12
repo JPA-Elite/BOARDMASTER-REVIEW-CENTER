@@ -15,7 +15,7 @@ export default function Index({ attempts }) {
         <AdminLayout title="Quiz Attempts">
             <Head title="Admin Quiz Attempts" />
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
                         <thead className="text-slate-500">
@@ -95,3 +95,4 @@ export default function Index({ attempts }) {
         </AdminLayout>
     );
 }
+

@@ -15,7 +15,7 @@ export default function Index({ plans }) {
         <AdminLayout title="Plans">
             <Head title="Admin Plans" />
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-4 flex justify-end">
                     <Link
                         href={route('admin.plans.create')}
@@ -98,3 +98,4 @@ export default function Index({ plans }) {
         </AdminLayout>
     );
 }
+

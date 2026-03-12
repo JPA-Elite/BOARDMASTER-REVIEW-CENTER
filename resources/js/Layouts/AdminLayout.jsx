@@ -1,95 +1,391 @@
 import { Link, usePage } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 
-const navItems = [
-    { label: 'Dashboard', routeName: 'admin.dashboard' },
-    { label: 'Users', routeName: 'admin.users.index' },
-    { label: 'Referrals', routeName: 'admin.referrals.index' },
-    { label: 'Plans', routeName: 'admin.plans.index' },
-    { label: 'Subscriptions', routeName: 'admin.subscriptions.index' },
-    { label: 'Subjects', routeName: 'admin.subjects.index' },
-    { label: 'Questions', routeName: 'admin.questions.index' },
-    { label: 'Quiz Attempts', routeName: 'admin.quiz-attempts.index' },
+function Icon({ children, className = 'size-4' }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            {children}
+        </svg>
+    );
+}
+
+function DashboardIcon() {
+    return (
+        <Icon>
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+        </Icon>
+    );
+}
+
+function AnalyticsIcon() {
+    return (
+        <Icon>
+            <path d="M3 3v18h18" />
+            <path d="M8 14v-3" />
+            <path d="M12 14V8" />
+            <path d="M16 14v-6" />
+            <path d="M20 14V5" />
+        </Icon>
+    );
+}
+
+function UsersIcon() {
+    return (
+        <Icon>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </Icon>
+    );
+}
+
+function FolderIcon() {
+    return (
+        <Icon>
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </Icon>
+    );
+}
+
+function BellIcon() {
+    return (
+        <Icon>
+            <path d="M10.27 21a2 2 0 0 0 3.46 0" />
+            <path d="M18 8a6 6 0 1 0-12 0c0 4.5-1.41 5.96-2.73 7.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8z" />
+        </Icon>
+    );
+}
+
+function DatabaseIcon() {
+    return (
+        <Icon>
+            <ellipse cx="12" cy="5" rx="8" ry="3" />
+            <path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
+            <path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6" />
+        </Icon>
+    );
+}
+
+function SettingsIcon() {
+    return (
+        <Icon>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.21 7.2a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </Icon>
+    );
+}
+
+function BookIcon() {
+    return (
+        <Icon>
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </Icon>
+    );
+}
+
+function LogoIcon() {
+    return (
+        <Icon className="size-5">
+            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+        </Icon>
+    );
+}
+
+const navSections = [
+    {
+        label: 'Overview',
+        items: [
+            { label: 'Dashboard', routeName: 'admin.dashboard', icon: DashboardIcon },
+            { label: 'Analytics', routeName: 'admin.analytics', icon: AnalyticsIcon },
+        ],
+    },
+    {
+        label: 'Management',
+        items: [
+            { label: 'Users', routeName: 'admin.users.index', icon: UsersIcon },
+            { label: 'Referrals', routeName: 'admin.referrals.index', icon: UsersIcon },
+            { label: 'Plans', routeName: 'admin.plans.index', icon: FolderIcon },
+            { label: 'Subscriptions', routeName: 'admin.subscriptions.index', icon: FolderIcon },
+            { label: 'Subjects', routeName: 'admin.subjects.index', icon: FolderIcon },
+            { label: 'Questions', routeName: 'admin.questions.index', icon: FolderIcon },
+        ],
+    },
+    {
+        label: 'System',
+        items: [
+            { label: 'Admin Settings', routeName: 'admin.settings', icon: SettingsIcon },
+        ],
+    },
 ];
+
+function isActiveRoute(routeName) {
+    if (!routeName) {
+        return false;
+    }
+
+    return (
+        route().current(routeName) ||
+        route().current(`${routeName.replace('.index', '')}.*`)
+    );
+}
 
 export default function AdminLayout({ title, children }) {
     const { auth, flash } = usePage().props;
+    const notifications = usePage().props.admin?.notifications ?? [];
+    const notificationCount = usePage().props.admin?.notificationCount ?? 0;
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
+
+    const initials = useMemo(() => {
+        const name = auth.user?.name || 'Admin User';
+        return name
+            .split(' ')
+            .map((part) => part[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
+    }, [auth.user?.name]);
 
     return (
-        <div className="min-h-screen bg-slate-100">
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:px-8">
-                <aside className="w-full rounded-xl bg-slate-900 p-5 text-slate-100 lg:w-64">
-                    <div className="mb-6">
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                            Admin
-                        </p>
-                        <h1 className="mt-2 text-xl font-semibold">
-                            Review Center
-                        </h1>
-                    </div>
+        <div className="min-h-screen bg-[#f4f5f7] text-slate-900">
+            <div className="flex min-h-screen">
+                <aside
+                    className={`fixed inset-y-0 left-0 z-40 w-[290px] border-r border-slate-200 bg-[#f7f7f8] transition-transform lg:static lg:translate-x-0 ${
+                        mobileOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+                >
+                    <div className="flex h-full flex-col">
+                        <div className="border-b border-slate-200 px-6 py-6">
+                            <Link href={route('admin.dashboard')} className="flex items-start gap-3">
+                                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-[#111827] text-white">
+                                    <LogoIcon />
+                                </span>
+                                <span>
+                                    <span className="block text-lg font-semibold leading-6 tracking-tight">
+                                        SvelteForge
+                                    </span>
+                                    <span className="text-sm text-slate-600">
+                                        Admin Dashboard
+                                    </span>
+                                </span>
+                            </Link>
+                        </div>
 
-                    <nav className="space-y-1">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.routeName}
-                                href={route(item.routeName)}
-                                className={`block rounded-md px-3 py-2 text-sm transition ${
-                                    route().current(item.routeName) ||
-                                    route().current(
-                                        `${item.routeName.replace('.index', '')}.*`,
-                                    )
-                                        ? 'bg-slate-700 text-white'
-                                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                }`}
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
-                    </nav>
+                        <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
+                            {navSections.map((section) => (
+                                <div key={section.label}>
+                                    <p className="px-3 text-sm font-semibold text-[#4b5563]">
+                                        {section.label}
+                                    </p>
+                                    <div className="mt-2 space-y-1">
+                                        {section.items.map((item) => {
+                                            const ItemIcon = item.icon;
+                                            const active = isActiveRoute(item.routeName);
+                                            const href = item.routeName
+                                                ? route(item.routeName)
+                                                : item.href;
 
-                    <div className="mt-8 border-t border-slate-700 pt-4 text-sm text-slate-300">
-                        <p className="font-medium">{auth.user?.name}</p>
-                        <p className="text-xs">{auth.user?.email}</p>
-                        <div className="mt-4 space-y-2">
-                            <Link
-                                href={route('dashboard')}
-                                className="block text-sky-300 hover:text-sky-200"
-                            >
-                                User Dashboard
-                            </Link>
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
-                                className="text-red-300 hover:text-red-200"
-                            >
-                                Log Out
-                            </Link>
+                                            return (
+                                                <Link
+                                                    key={item.routeName + item.label}
+                                                    href={href}
+                                                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition ${
+                                                        active
+                                                            ? 'bg-slate-100 text-slate-950'
+                                                            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+                                                    }`}
+                                                >
+                                                    <span className="text-slate-500">
+                                                        <ItemIcon />
+                                                    </span>
+                                                    <span>{item.label}</span>
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </nav>
+
+                        <div className="border-t border-slate-200 p-4">
+                            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                <span className="inline-flex size-10 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
+                                    {initials}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold text-slate-900">
+                                        {auth.user?.name}
+                                    </p>
+                                    <p className="truncate text-xs text-slate-500">
+                                        {auth.user?.email}
+                                    </p>
+                                </div>
+                                <Link
+                                    href={route('logout')}
+                                    method="post"
+                                    as="button"
+                                    className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                                >
+                                    Log out
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </aside>
 
-                <main className="flex-1 space-y-4">
-                    <div className="rounded-xl bg-white px-6 py-5 shadow-sm">
-                        <h2 className="text-2xl font-semibold text-slate-900">
-                            {title}
-                        </h2>
-                    </div>
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <header className="sticky top-0 z-30 border-b border-slate-200 bg-[#f8f8f9]">
+                        <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+                            <button
+                                type="button"
+                                onClick={() => setMobileOpen((prev) => !prev)}
+                                className="inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 lg:hidden"
+                            >
+                                <span className="sr-only">Toggle sidebar</span>
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="size-5"
+                                >
+                                    <path d="M4 6h16" />
+                                    <path d="M4 12h16" />
+                                    <path d="M4 18h16" />
+                                </svg>
+                            </button>
 
-                    {flash?.success && (
-                        <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-700">
-                            {flash.success}
+                            <p className="text-sm font-medium text-slate-900">{title}</p>
+
+                            <div className="ml-auto flex items-center gap-2">
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setNotificationOpen(
+                                                (prev) => !prev,
+                                            )
+                                        }
+                                        className="relative inline-flex size-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                                    >
+                                        <BellIcon />
+                                        {notificationCount > 0 && (
+                                            <span className="absolute -right-1 -top-1 inline-flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
+                                                {notificationCount > 9
+                                                    ? '9+'
+                                                    : notificationCount}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {notificationOpen && (
+                                        <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                                            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                                                <p className="text-sm font-semibold text-slate-900">
+                                                    Notifications
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setNotificationOpen(
+                                                            false,
+                                                        )
+                                                    }
+                                                    className="text-xs text-slate-400 hover:text-slate-600"
+                                                >
+                                                    Close
+                                                </button>
+                                            </div>
+                                            <div className="max-h-72 overflow-y-auto">
+                                                {notifications.length === 0 && (
+                                                    <p className="px-4 py-6 text-center text-sm text-slate-500">
+                                                        No notifications yet.
+                                                    </p>
+                                                )}
+                                                {notifications.map(
+                                                    (notification) => (
+                                                        <div
+                                                            key={
+                                                                notification.id
+                                                            }
+                                                            className="border-b border-slate-100 px-4 py-3 last:border-b-0"
+                                                        >
+                                                            <p className="text-sm font-medium text-slate-900">
+                                                                {
+                                                                    notification.title
+                                                                }
+                                                            </p>
+                                                            <p className="mt-1 text-xs text-slate-500">
+                                                                {
+                                                                    notification.message
+                                                                }
+                                                            </p>
+                                                            <p className="mt-2 text-[11px] text-slate-400">
+                                                                {
+                                                                    notification.time
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <Link
+                                    href={route('admin.settings')}
+                                    className="inline-flex size-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                                >
+                                    <SettingsIcon />
+                                </Link>
+                            </div>
                         </div>
-                    )}
+                    </header>
 
-                    {flash?.error && (
-                        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-700">
-                            {flash.error}
+                    <main className="flex-1 px-4 py-5 md:px-6">
+                        <div className="space-y-4">
+                            {flash?.success && (
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                                    {flash.success}
+                                </div>
+                            )}
+
+                            {flash?.error && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {flash.error}
+                                </div>
+                            )}
+
+                            {children}
                         </div>
-                    )}
-
-                    {children}
-                </main>
+                    </main>
+                </div>
             </div>
+
+            {mobileOpen && (
+                <button
+                    type="button"
+                    onClick={() => setMobileOpen(false)}
+                    className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+                >
+                    <span className="sr-only">Close sidebar</span>
+                </button>
+            )}
         </div>
     );
 }

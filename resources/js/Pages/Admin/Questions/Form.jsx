@@ -101,7 +101,7 @@ export default function Form({ mode, question, subjects, admins }) {
         >
             <Head title={mode === 'edit' ? 'Edit Question' : 'Create Question'} />
 
-            <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
+            <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
                 <div>
                     <InputLabel htmlFor="subject_id" value="Subject" />
                     <select
@@ -261,3 +261,4 @@ export default function Form({ mode, question, subjects, admins }) {
         </AdminLayout>
     );
 }
+
