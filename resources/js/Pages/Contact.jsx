@@ -6,6 +6,7 @@ import {
     MessageSquareText,
     ShieldCheck,
 } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 
 const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
@@ -33,7 +34,7 @@ const contactOptions = [
     },
 ];
 
-const faqs = [
+const defaultFaqs = [
     {
         question: 'Does Board Masters focus on Nursing only?',
         answer: 'Nursing is a primary focus, but we also support other major Philippine licensure tracks.',
@@ -48,7 +49,10 @@ const faqs = [
     },
 ];
 
-export default function Contact() {
+export default function Contact({ faqs = defaultFaqs }) {
+    const faqItems = faqs?.data ?? faqs ?? defaultFaqs;
+    const faqLinks = faqs?.links ?? [];
+
     return (
         <MarketingLayout
             title="Contact | Board Masters Review Center"
@@ -164,9 +168,9 @@ export default function Contact() {
                         Frequently asked questions
                     </h2>
                     <div className="mt-6 grid gap-4 md:grid-cols-3">
-                        {faqs.map((faq) => (
+                        {faqItems.map((faq, index) => (
                             <article
-                                key={faq.question}
+                                key={`${faq.question}-${index}`}
                                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
                             >
                                 <h3 className="text-base font-bold text-slate-900" style={headingFont}>
@@ -176,6 +180,24 @@ export default function Contact() {
                             </article>
                         ))}
                     </div>
+
+                    {faqLinks.length > 0 && (
+                        <div className="mt-8 flex flex-wrap justify-center gap-2">
+                            {faqLinks.map((link, index) => (
+                                <Link
+                                    key={`${link.label}-${index}`}
+                                    href={link.url || '#'}
+                                    preserveScroll
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                        link.active
+                                            ? 'border-slate-900 bg-slate-900 text-white'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                                    } ${!link.url ? 'pointer-events-none opacity-60' : ''}`}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
         </MarketingLayout>

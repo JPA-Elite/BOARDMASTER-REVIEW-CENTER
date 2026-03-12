@@ -127,7 +127,7 @@ const testimonials = [
     },
 ];
 
-const faqs = [
+const defaultFaqs = [
     {
         question: 'Does Board Masters cover Nursing and other board exam tracks?',
         answer:
@@ -150,7 +150,9 @@ const faqs = [
     },
 ];
 
-export default function Welcome() {
+export default function Welcome({ faqs = defaultFaqs }) {
+    const faqItems = faqs?.data ?? faqs ?? defaultFaqs;
+
     return (
         <MarketingLayout
             title="Board Masters Review Center | Nursing and Board Exam Review"
@@ -445,8 +447,11 @@ export default function Welcome() {
                                 Quick answers before you start.
                             </h2>
                             <div className="mt-6 space-y-4">
-                                {faqs.map((faq) => (
-                                    <div key={faq.question} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                {faqItems.map((faq, index) => (
+                                    <div
+                                        key={`${faq.question}-${index}`}
+                                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                    >
                                         <p className="text-sm font-semibold text-slate-900">{faq.question}</p>
                                         <p className="mt-2 text-sm text-slate-600">{faq.answer}</p>
                                     </div>

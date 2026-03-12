@@ -152,6 +152,7 @@ const navSections = [
             { label: 'Subscriptions', routeName: 'admin.subscriptions.index', icon: CreditCardIcon },
             { label: 'Subjects', routeName: 'admin.subjects.index', icon: BookOpenIcon },
             { label: 'Questions', routeName: 'admin.questions.index', icon: HelpCircleIcon },
+            { label: 'FAQs', routeName: 'admin.faqs.index', icon: BookIcon },
         ],
     },
     {

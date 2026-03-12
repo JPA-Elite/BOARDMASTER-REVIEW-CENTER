@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminSettingsController;
+use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuizAttemptController;
@@ -11,11 +12,36 @@ use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserSubscriptionController;
+use App\Repositories\Contracts\FaqRepositoryInterface;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome');
+Route::get('/', function (FaqRepositoryInterface $faqsRepository) {
+    $faqs = $faqsRepository->listActive();
+
+    if ($faqs->isEmpty()) {
+        $faqs = collect([
+            [
+                'question' => 'Does Board Masters focus on Nursing only?',
+                'answer' =>
+                    'Nursing is a primary focus, but we also support other major Philippine licensure tracks.',
+            ],
+            [
+                'question' => 'Can review centers request demo access?',
+                'answer' =>
+                    'Yes. Contact us by email so we can discuss a pilot setup based on your student batch size.',
+            ],
+            [
+                'question' => 'Where should we report question issues?',
+                'answer' =>
+                    'Send the item details and screenshot to support@boardmasters.ph for content review.',
+            ],
+        ]);
+    }
+
+    return Inertia::render('Welcome', [
+        'faqs' => $faqs->shuffle()->take(3)->values()->all(),
+    ]);
 });
 
 Route::get('/partnership', function () {
@@ -30,8 +56,32 @@ Route::get('/privacy-policy', function () {
     return Inertia::render('PrivacyPolicy');
 });
 
-Route::get('/contact', function () {
-    return Inertia::render('Contact');
+Route::get('/contact', function (FaqRepositoryInterface $faqsRepository) {
+    $faqs = $faqsRepository->paginateActive(6);
+
+    if ($faqs->total() === 0) {
+        $faqs = [
+            [
+                'question' => 'Does Board Masters focus on Nursing only?',
+                'answer' =>
+                    'Nursing is a primary focus, but we also support other major Philippine licensure tracks.',
+            ],
+            [
+                'question' => 'Can review centers request demo access?',
+                'answer' =>
+                    'Yes. Contact us by email so we can discuss a pilot setup based on your student batch size.',
+            ],
+            [
+                'question' => 'Where should we report question issues?',
+                'answer' =>
+                    'Send the item details and screenshot to support@boardmasters.ph for content review.',
+            ],
+        ];
+    }
+
+    return Inertia::render('Contact', [
+        'faqs' => $faqs,
+    ]);
 });
 
 Route::get('/dashboard', function () {
@@ -63,6 +113,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('subscriptions', UserSubscriptionController::class)->except('show');
         Route::resource('subjects', SubjectController::class)->except('show');
         Route::resource('questions', QuestionController::class)->except('show');
+        Route::resource('faqs', FaqController::class)->except('show');
         Route::resource('quiz-attempts', QuizAttemptController::class)->only(['index', 'show', 'destroy']);
     });
 
