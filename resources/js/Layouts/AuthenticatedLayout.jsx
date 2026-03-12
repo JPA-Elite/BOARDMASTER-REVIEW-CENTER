@@ -3,6 +3,7 @@ import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
+import { toast } from 'react-toastify';
 import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
@@ -79,6 +80,11 @@ export default function AuthenticatedLayout({ header, children }) {
                                             href={route('logout')}
                                             method="post"
                                             as="button"
+                                            onSuccess={() =>
+                                                toast.success(
+                                                    'Logged out successfully.',
+                                                )
+                                            }
                                         >
                                             Log Out
                                         </Dropdown.Link>
@@ -171,6 +177,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                 method="post"
                                 href={route('logout')}
                                 as="button"
+                                onSuccess={() =>
+                                    toast.success('Logged out successfully.')
+                                }
                             >
                                 Log Out
                             </ResponsiveNavLink>

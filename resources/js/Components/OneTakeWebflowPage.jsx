@@ -228,11 +228,11 @@ export default function OneTakeWebflowPage({
                 <link
                     rel="shortcut icon"
                     type="image/x-icon"
-                    href="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/69363aabaddb13811d011553_3.png"
+                    href="/images/boardmaster.png"
                 />
                 <link
                     rel="apple-touch-icon"
-                    href="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/69363a91695f7f1080826a53_3.png"
+                    href="/images/boardmaster.png"
                 />
                 {inlinePageStyle ? <style>{inlinePageStyle}</style> : null}
                 {fontSmoothingStyle ? <style>{fontSmoothingStyle}</style> : null}

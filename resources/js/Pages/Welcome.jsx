@@ -4,14 +4,14 @@ import OneTakeWebflowPage from '../Components/OneTakeWebflowPage';
 export default function Welcome() {
     return (
         <OneTakeWebflowPage
-            title="The Best Philippine CPALE Reviewer App | OneTake"
-            description="10,000+ Philippine CPA board exam questions. Unlimited practice tests and mock board exams. DOWNLOAD APP FREE (iOS & Android)"
-            ogTitle="The Best Philippine CPALE Reviewer App | OneTake"
-            ogDescription="10,000+ Philippine CPA board exam questions. Unlimited practice tests and mock board exams. DOWNLOAD APP FREE (iOS & Android)"
+            title="Board Masters Review Center | Nursing and Board Exam Reviewer"
+            description="10,000+ board exam practice questions with answer rationales, including Nursing and other major Philippine licensure exams."
+            ogTitle="Board Masters Review Center | Nursing and Board Exam Reviewer"
+            ogDescription="10,000+ board exam practice questions with answer rationales, including Nursing and other major Philippine licensure exams."
             ogImage="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912d21b832905c56a978aea_Untitled%20design%20(2).png"
             ogType="website"
-            twitterTitle="The Best Philippine CPALE Reviewer App | OneTake"
-            twitterDescription="10,000+ Philippine CPA board exam questions. Unlimited practice tests and mock board exams. DOWNLOAD APP FREE (iOS & Android)"
+            twitterTitle="Board Masters Review Center | Nursing and Board Exam Reviewer"
+            twitterDescription="10,000+ board exam practice questions with answer rationales, including Nursing and other major Philippine licensure exams."
             twitterCard="summary_large_image"
             pageId="68c80be89141ce6abe633fa4"
             bodyHtml={homeBody}

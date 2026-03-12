@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
+import { toast } from 'react-toastify';
 
 function Icon({ children, className = 'size-4' }) {
     return (
@@ -59,6 +60,44 @@ function FolderIcon() {
     );
 }
 
+function ClipboardIcon() {
+    return (
+        <Icon>
+            <rect x="9" y="2" width="6" height="4" rx="1" />
+            <path d="M9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
+        </Icon>
+    );
+}
+
+function CreditCardIcon() {
+    return (
+        <Icon>
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <path d="M2 10h20" />
+            <path d="M6 15h4" />
+        </Icon>
+    );
+}
+
+function BookOpenIcon() {
+    return (
+        <Icon>
+            <path d="M12 7a4 4 0 0 1 4-4h4v16h-4a4 4 0 0 0-4 4" />
+            <path d="M12 7a4 4 0 0 0-4-4H4v16h4a4 4 0 0 1 4 4" />
+        </Icon>
+    );
+}
+
+function HelpCircleIcon() {
+    return (
+        <Icon>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
+            <path d="M12 17h.01" />
+        </Icon>
+    );
+}
+
 function BellIcon() {
     return (
         <Icon>
@@ -109,10 +148,10 @@ const navSections = [
         items: [
             { label: 'Users', routeName: 'admin.users.index', icon: UsersIcon },
             { label: 'Referrals', routeName: 'admin.referrals.index', icon: UsersIcon },
-            { label: 'Plans', routeName: 'admin.plans.index', icon: FolderIcon },
-            { label: 'Subscriptions', routeName: 'admin.subscriptions.index', icon: FolderIcon },
-            { label: 'Subjects', routeName: 'admin.subjects.index', icon: FolderIcon },
-            { label: 'Questions', routeName: 'admin.questions.index', icon: FolderIcon },
+            { label: 'Plans', routeName: 'admin.plans.index', icon: ClipboardIcon },
+            { label: 'Subscriptions', routeName: 'admin.subscriptions.index', icon: CreditCardIcon },
+            { label: 'Subjects', routeName: 'admin.subjects.index', icon: BookOpenIcon },
+            { label: 'Questions', routeName: 'admin.questions.index', icon: HelpCircleIcon },
         ],
     },
     {
@@ -241,6 +280,9 @@ export default function AdminLayout({ title, children }) {
                                     href={route('logout')}
                                     method="post"
                                     as="button"
+                                    onSuccess={() =>
+                                        toast.success('Logged out successfully.')
+                                    }
                                     className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
                                 >
                                     Log out

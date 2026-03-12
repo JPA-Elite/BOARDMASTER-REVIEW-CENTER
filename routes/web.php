@@ -35,7 +35,13 @@ Route::get('/contact', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    $user = auth()->user();
+
+    if ($user?->role === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
+    return redirect('/');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

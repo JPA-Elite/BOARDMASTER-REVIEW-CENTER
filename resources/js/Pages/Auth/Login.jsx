@@ -1,6 +1,7 @@
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { toast } from 'react-toastify';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -13,6 +14,7 @@ export default function Login({ status, canResetPassword }) {
         event.preventDefault();
 
         post(route('login'), {
+            onSuccess: () => toast.success('Logged in successfully.'),
             onFinish: () => reset('password'),
         });
     };
@@ -41,22 +43,6 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div className="mt-5 px-6">
-                    <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                        <p className="font-medium text-slate-800">Demo Access</p>
-                        <p className="mt-1 text-slate-600">
-                            You can use seeded credentials:
-                            <span className="font-mono font-semibold">
-                                {' '}
-                                admin@example.com
-                            </span>
-                            {' / '}
-                            <span className="font-mono font-semibold">
-                                password
-                            </span>
-                            .
-                        </p>
-                    </div>
-
                     {status && (
                         <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                             {status}
