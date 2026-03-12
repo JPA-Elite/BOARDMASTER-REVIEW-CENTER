@@ -1,65 +1,14 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
-
-function BarChart({ data, valueKeys, colors, height = 240 }) {
-    const maxValue = Math.max(
-        ...data.map((item) =>
-            valueKeys.reduce((sum, key) => sum + (item[key] || 0), 0),
-        ),
-        1,
-    );
-
-    return (
-        <div className="flex h-[260px] items-end gap-4 rounded-xl border border-slate-100 bg-slate-50/40 px-4 pb-4 pt-6">
-            {data.map((item) => {
-                const total = valueKeys.reduce(
-                    (sum, key) => sum + (item[key] || 0),
-                    0,
-                );
-                const totalHeight = (total / maxValue) * height;
-
-                return (
-                    <div
-                        key={item.month}
-                        className="flex flex-1 flex-col items-center gap-2"
-                    >
-                        <div className="flex w-full flex-col justify-end">
-                            {valueKeys.map((key, index) => {
-                                const barHeight =
-                                    ((item[key] || 0) / maxValue) * height;
-                                const color = colors[index] || '#4f46e5';
-
-                                return (
-                                    <div
-                                        key={key}
-                                        className="w-full border border-slate-700/80"
-                                        style={{
-                                            height: `${Math.max(
-                                                barHeight,
-                                                6,
-                                            )}px`,
-                                            backgroundColor: color,
-                                            borderTopLeftRadius:
-                                                index === 0 ? '6px' : '0',
-                                            borderTopRightRadius:
-                                                index === 0 ? '6px' : '0',
-                                        }}
-                                    />
-                                );
-                            })}
-                            {totalHeight <= 6 && (
-                                <div className="h-2 w-full rounded bg-slate-200" />
-                            )}
-                        </div>
-                        <span className="text-xs font-medium text-slate-500">
-                            {item.month}
-                        </span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 
 export default function Analytics({ signups, content }) {
     return (
@@ -84,12 +33,49 @@ export default function Analytics({ signups, content }) {
                         <p className="text-sm text-slate-500">
                             New user registrations by month
                         </p>
-                        <div className="mt-4">
-                            <BarChart
-                                data={signups}
-                                valueKeys={['count']}
-                                colors={['#6366f1']}
-                            />
+                        <div className="mt-4 h-[260px] rounded-xl border border-slate-100 bg-slate-50/40 p-3">
+                            {signups.length === 0 ? (
+                                <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                                    No signup data available.
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={signups}
+                                        margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                                    >
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke="#e2e8f0"
+                                            vertical={false}
+                                        />
+                                        <XAxis
+                                            dataKey="month"
+                                            tick={{ fontSize: 12, fill: '#64748b' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <YAxis
+                                            allowDecimals={false}
+                                            tick={{ fontSize: 12, fill: '#94a3b8' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <Tooltip
+                                            cursor={{ fill: '#e2e8f0' }}
+                                            contentStyle={{
+                                                borderRadius: '12px',
+                                                borderColor: '#e2e8f0',
+                                            }}
+                                        />
+                                        <Bar
+                                            dataKey="count"
+                                            fill="#6366f1"
+                                            radius={[6, 6, 0, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </div>
 
@@ -100,12 +86,56 @@ export default function Analytics({ signups, content }) {
                         <p className="text-sm text-slate-500">
                             Published vs draft pages
                         </p>
-                        <div className="mt-4">
-                            <BarChart
-                                data={content}
-                                valueKeys={['draft', 'published']}
-                                colors={['#22c55e', '#06b6d4']}
-                            />
+                        <div className="mt-4 h-[260px] rounded-xl border border-slate-100 bg-slate-50/40 p-3">
+                            {content.length === 0 ? (
+                                <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                                    No content data available.
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={content}
+                                        margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                                    >
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            stroke="#e2e8f0"
+                                            vertical={false}
+                                        />
+                                        <XAxis
+                                            dataKey="month"
+                                            tick={{ fontSize: 12, fill: '#64748b' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <YAxis
+                                            allowDecimals={false}
+                                            tick={{ fontSize: 12, fill: '#94a3b8' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <Tooltip
+                                            cursor={{ fill: '#e2e8f0' }}
+                                            contentStyle={{
+                                                borderRadius: '12px',
+                                                borderColor: '#e2e8f0',
+                                            }}
+                                        />
+                                        <Bar
+                                            dataKey="draft"
+                                            stackId="a"
+                                            fill="#06b6d4"
+                                            radius={[6, 6, 0, 0]}
+                                        />
+                                        <Bar
+                                            dataKey="published"
+                                            stackId="a"
+                                            fill="#22c55e"
+                                            radius={[6, 6, 0, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </div>
                 </div>
