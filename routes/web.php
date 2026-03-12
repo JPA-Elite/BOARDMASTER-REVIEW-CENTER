@@ -8,6 +8,22 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 });
 
+Route::get('/partnership', function () {
+    return Inertia::render('Partnership');
+});
+
+Route::get('/terms-of-use', function () {
+    return Inertia::render('TermsOfUse');
+});
+
+Route::get('/privacy-policy', function () {
+    return Inertia::render('PrivacyPolicy');
+});
+
+Route::get('/contact', function () {
+    return Inertia::render('Contact');
+});
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
