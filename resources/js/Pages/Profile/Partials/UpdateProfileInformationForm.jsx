@@ -3,6 +3,7 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
+import { useEffect, useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 
 export default function UpdateProfileInformation({
@@ -12,17 +13,32 @@ export default function UpdateProfileInformation({
 }) {
     const user = usePage().props.auth.user;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } =
+    const [avatarPreview, setAvatarPreview] = useState(null);
+
+    const { data, setData, post, errors, processing, recentlySuccessful } =
         useForm({
             name: user.name,
             email: user.email,
+            avatar: null,
         });
+
+    useEffect(() => {
+        return () => {
+            if (avatarPreview) {
+                URL.revokeObjectURL(avatarPreview);
+            }
+        };
+    }, [avatarPreview]);
 
     const submit = (e) => {
         e.preventDefault();
 
-        patch(route('profile.update'));
+        post(route('profile.update'), {
+            forceFormData: true,
+        });
     };
+
+    const currentAvatar = avatarPreview || user.avatar_url;
 
     return (
         <section className={className}>
@@ -37,6 +53,53 @@ export default function UpdateProfileInformation({
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
+                <div>
+                    <InputLabel htmlFor="avatar" value="Profile Photo" />
+
+                    <div className="mt-3 flex items-center gap-4">
+                        <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600">
+                            {currentAvatar ? (
+                                <img
+                                    src={currentAvatar}
+                                    alt={user.name}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                user.name
+                                    ?.split(' ')
+                                    .map((part) => part[0])
+                                    .join('')
+                                    .slice(0, 2)
+                                    .toUpperCase()
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <input
+                                id="avatar"
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => {
+                                    const file = event.target.files?.[0] || null;
+                                    setData('avatar', file);
+
+                                    if (avatarPreview) {
+                                        URL.revokeObjectURL(avatarPreview);
+                                    }
+
+                                    setAvatarPreview(
+                                        file ? URL.createObjectURL(file) : null,
+                                    );
+                                }}
+                                className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-gray-800"
+                            />
+                            <p className="mt-2 text-xs text-gray-500">
+                                Upload a square image (PNG, JPG, or GIF). Max 2MB.
+                            </p>
+                            <InputError className="mt-2" message={errors.avatar} />
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <InputLabel htmlFor="name" value="Name" />
 

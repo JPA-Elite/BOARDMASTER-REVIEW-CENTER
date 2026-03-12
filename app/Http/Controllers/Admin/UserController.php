@@ -3,42 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Referral;
 use App\Models\User;
+use App\Services\Admin\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly UserService $users)
+    {
+    }
+
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
-
-        $users = User::query()
-            ->with('referrer:id,name,email')
-            ->when($search, function ($query, string $term): void {
-                $query->where(function ($nested) use ($term): void {
-                    $nested->where('name', 'like', "%{$term}%")
-                        ->orWhere('email', 'like', "%{$term}%")
-                        ->orWhere('referral_code', 'like', "%{$term}%");
-                });
-            })
-            ->latest()
-            ->paginate(15)
-            ->withQueryString()
-            ->through(fn (User $user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'referral_code' => $user->referral_code,
-                'referred_by' => $user->referrer?->name,
-                'created_at' => $user->created_at?->format('M d, Y'),
-            ]);
+        $users = $this->users->paginate($search);
 
         return Inertia::render('Admin/Users/Index', [
             'filters' => [
@@ -53,10 +35,7 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Form', [
             'mode' => 'create',
             'roles' => ['admin', 'user'],
-            'referrers' => User::query()
-                ->select('id', 'name', 'email')
-                ->orderBy('name')
-                ->get(),
+            'referrers' => $this->users->listReferrers(),
             'user' => null,
         ]);
     }
@@ -72,16 +51,7 @@ class UserController extends Controller
             'referred_by' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'referral_code' => $validated['referral_code'] ?? null,
-            'referred_by' => $validated['referred_by'] ?? null,
-        ]);
-
-        $this->syncReferral($user, $validated['referred_by'] ?? null);
+        $this->users->create($validated);
 
         return redirect()
             ->route('admin.users.index')
@@ -93,11 +63,7 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Form', [
             'mode' => 'edit',
             'roles' => ['admin', 'user'],
-            'referrers' => User::query()
-                ->whereKeyNot($user->id)
-                ->select('id', 'name', 'email')
-                ->orderBy('name')
-                ->get(),
+            'referrers' => $this->users->listReferrers($user->id),
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -120,20 +86,7 @@ class UserController extends Controller
             'referred_by' => ['nullable', 'integer', 'exists:users,id', Rule::notIn([$user->id])],
         ]);
 
-        $payload = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'role' => $validated['role'],
-            'referral_code' => $validated['referral_code'] ?? null,
-            'referred_by' => $validated['referred_by'] ?? null,
-        ];
-
-        if (! empty($validated['password'])) {
-            $payload['password'] = Hash::make($validated['password']);
-        }
-
-        $user->update($payload);
-        $this->syncReferral($user, $validated['referred_by'] ?? null);
+        $this->users->update($user, $validated);
 
         return redirect()
             ->route('admin.users.index')
@@ -142,28 +95,12 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        if ($request->user()?->id === $user->id) {
+        if (! $this->users->delete($user, $request->user()?->id ?? 0)) {
             return back()->with('error', 'You cannot delete your own account from the admin panel.');
         }
-
-        $user->delete();
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
-    }
-
-    private function syncReferral(User $user, ?int $inviterId): void
-    {
-        if (! $inviterId) {
-            Referral::query()->where('invited_user_id', $user->id)->delete();
-
-            return;
-        }
-
-        Referral::query()->updateOrCreate(
-            ['invited_user_id' => $user->id],
-            ['inviter_id' => $inviterId]
-        );
     }
 }

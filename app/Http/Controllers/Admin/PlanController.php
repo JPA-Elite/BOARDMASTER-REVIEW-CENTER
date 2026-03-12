@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Services\Admin\PlanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,21 +13,13 @@ use Inertia\Response;
 
 class PlanController extends Controller
 {
+    public function __construct(private readonly PlanService $plans)
+    {
+    }
+
     public function index(): Response
     {
-        $plans = Plan::query()
-            ->with('features:id,plan_id,feature_name')
-            ->latest()
-            ->paginate(10)
-            ->through(fn (Plan $plan) => [
-                'id' => $plan->id,
-                'name' => $plan->name,
-                'price' => (float) $plan->price,
-                'description' => $plan->description,
-                'feature_count' => $plan->features->count(),
-                'features' => $plan->features->pluck('feature_name')->values(),
-                'created_at' => $plan->created_at?->format('M d, Y'),
-            ]);
+        $plans = $this->plans->paginate();
 
         return Inertia::render('Admin/Plans/Index', [
             'plans' => $plans,
@@ -51,13 +44,7 @@ class PlanController extends Controller
             'features.*' => ['required', 'string', 'max:255'],
         ]);
 
-        $plan = Plan::create([
-            'name' => $validated['name'],
-            'price' => $validated['price'],
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        $this->syncFeatures($plan, $validated['features'] ?? []);
+        $this->plans->create($validated);
 
         return redirect()
             ->route('admin.plans.index')
@@ -90,13 +77,7 @@ class PlanController extends Controller
             'features.*' => ['required', 'string', 'max:255'],
         ]);
 
-        $plan->update([
-            'name' => $validated['name'],
-            'price' => $validated['price'],
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        $this->syncFeatures($plan, $validated['features'] ?? []);
+        $this->plans->update($plan, $validated);
 
         return redirect()
             ->route('admin.plans.index')
@@ -105,22 +86,10 @@ class PlanController extends Controller
 
     public function destroy(Plan $plan): RedirectResponse
     {
-        $plan->delete();
+        $this->plans->delete($plan);
 
         return redirect()
             ->route('admin.plans.index')
             ->with('success', 'Plan deleted successfully.');
-    }
-
-    private function syncFeatures(Plan $plan, array $features): void
-    {
-        $cleanFeatures = collect($features)
-            ->filter(fn ($feature) => is_string($feature) && trim($feature) !== '')
-            ->map(fn ($feature) => ['feature_name' => trim($feature)])
-            ->values()
-            ->all();
-
-        $plan->features()->delete();
-        $plan->features()->createMany($cleanFeatures);
     }
 }

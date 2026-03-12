@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Subject;
+use App\Services\Admin\SubjectService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,19 +13,13 @@ use Inertia\Response;
 
 class SubjectController extends Controller
 {
+    public function __construct(private readonly SubjectService $subjects)
+    {
+    }
+
     public function index(): Response
     {
-        $subjects = Subject::query()
-            ->withCount(['questions', 'quizAttempts'])
-            ->latest()
-            ->paginate(15)
-            ->through(fn (Subject $subject) => [
-                'id' => $subject->id,
-                'name' => $subject->name,
-                'questions_count' => $subject->questions_count,
-                'quiz_attempts_count' => $subject->quiz_attempts_count,
-                'created_at' => $subject->created_at?->format('M d, Y'),
-            ]);
+        $subjects = $this->subjects->paginate();
 
         return Inertia::render('Admin/Subjects/Index', [
             'subjects' => $subjects,
@@ -45,7 +40,7 @@ class SubjectController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:subjects,name'],
         ]);
 
-        Subject::create($validated);
+        $this->subjects->create($validated);
 
         return redirect()
             ->route('admin.subjects.index')
@@ -69,7 +64,7 @@ class SubjectController extends Controller
             'name' => ['required', 'string', 'max:255', Rule::unique('subjects', 'name')->ignore($subject->id)],
         ]);
 
-        $subject->update($validated);
+        $this->subjects->update($subject, $validated);
 
         return redirect()
             ->route('admin.subjects.index')
@@ -78,7 +73,7 @@ class SubjectController extends Controller
 
     public function destroy(Subject $subject): RedirectResponse
     {
-        $subject->delete();
+        $this->subjects->delete($subject);
 
         return redirect()
             ->route('admin.subjects.index')

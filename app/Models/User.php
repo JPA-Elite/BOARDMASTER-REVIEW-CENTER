@@ -26,6 +26,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_path',
         'role',
         'referral_code',
         'referred_by',
@@ -39,6 +40,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $appends = [
+        'avatar_url',
     ];
 
     /**
@@ -74,6 +79,15 @@ class User extends Authenticatable
         } while (static::query()->where('referral_code', $code)->exists());
 
         return $code;
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        return '/storage/'.$this->avatar_path;
     }
 
     public function referrer(): BelongsTo

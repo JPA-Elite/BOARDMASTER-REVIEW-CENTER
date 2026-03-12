@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Referral;
-use App\Models\User;
+use App\Services\Admin\ReferralService;
+use App\Services\Admin\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,20 +14,15 @@ use Inertia\Response;
 
 class ReferralController extends Controller
 {
+    public function __construct(
+        private readonly ReferralService $referrals,
+        private readonly UserService $users,
+    ) {
+    }
+
     public function index(): Response
     {
-        $referrals = Referral::query()
-            ->with(['inviter:id,name,email', 'invitedUser:id,name,email'])
-            ->latest()
-            ->paginate(15)
-            ->through(fn (Referral $referral) => [
-                'id' => $referral->id,
-                'inviter' => $referral->inviter?->name,
-                'inviter_email' => $referral->inviter?->email,
-                'invited_user' => $referral->invitedUser?->name,
-                'invited_email' => $referral->invitedUser?->email,
-                'created_at' => $referral->created_at?->format('M d, Y'),
-            ]);
+        $referrals = $this->referrals->paginate();
 
         return Inertia::render('Admin/Referrals/Index', [
             'referrals' => $referrals,
@@ -38,7 +34,7 @@ class ReferralController extends Controller
         return Inertia::render('Admin/Referrals/Form', [
             'mode' => 'create',
             'referral' => null,
-            'users' => $this->usersList(),
+            'users' => $this->users->listReferrers(),
         ]);
     }
 
@@ -49,11 +45,7 @@ class ReferralController extends Controller
             'invited_user_id' => ['required', 'integer', 'exists:users,id', 'different:inviter_id', 'unique:referrals,invited_user_id'],
         ]);
 
-        $referral = Referral::create($validated);
-
-        User::query()
-            ->whereKey($referral->invited_user_id)
-            ->update(['referred_by' => $referral->inviter_id]);
+        $this->referrals->create($validated);
 
         return redirect()
             ->route('admin.referrals.index')
@@ -64,7 +56,7 @@ class ReferralController extends Controller
     {
         return Inertia::render('Admin/Referrals/Form', [
             'mode' => 'edit',
-            'users' => $this->usersList(),
+            'users' => $this->users->listReferrers(),
             'referral' => [
                 'id' => $referral->id,
                 'inviter_id' => $referral->inviter_id,
@@ -86,11 +78,7 @@ class ReferralController extends Controller
             ],
         ]);
 
-        $referral->update($validated);
-
-        User::query()
-            ->whereKey($referral->invited_user_id)
-            ->update(['referred_by' => $referral->inviter_id]);
+        $this->referrals->update($referral, $validated);
 
         return redirect()
             ->route('admin.referrals.index')
@@ -99,23 +87,10 @@ class ReferralController extends Controller
 
     public function destroy(Referral $referral): RedirectResponse
     {
-        User::query()
-            ->whereKey($referral->invited_user_id)
-            ->where('referred_by', $referral->inviter_id)
-            ->update(['referred_by' => null]);
-
-        $referral->delete();
+        $this->referrals->delete($referral);
 
         return redirect()
             ->route('admin.referrals.index')
             ->with('success', 'Referral deleted successfully.');
-    }
-
-    private function usersList()
-    {
-        return User::query()
-            ->select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get();
     }
 }

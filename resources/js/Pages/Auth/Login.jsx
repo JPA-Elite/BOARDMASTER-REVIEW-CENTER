@@ -2,22 +2,6 @@ import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-function BoltIcon() {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-6"
-        >
-            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
-        </svg>
-    );
-}
-
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
@@ -40,8 +24,12 @@ export default function Login({ status, canResetPassword }) {
             <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white py-6 shadow-sm">
                 <div className="space-y-1 px-6 text-center">
                     <div className="mb-4 flex justify-center">
-                        <span className="inline-flex size-12 items-center justify-center rounded-xl bg-slate-900 text-white">
-                            <BoltIcon />
+                        <span className="inline-flex size-14 items-center justify-center rounded-xl border border-slate-200 bg-white">
+                            <img
+                                src="/images/boardmaster.png"
+                                alt="Board Master Review Center"
+                                className="size-12 object-contain"
+                            />
                         </span>
                     </div>
                     <h1 className="text-2xl font-bold text-slate-900">

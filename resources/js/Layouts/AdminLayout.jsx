@@ -96,14 +96,6 @@ function BookIcon() {
     );
 }
 
-function LogoIcon() {
-    return (
-        <Icon className="size-5">
-            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
-        </Icon>
-    );
-}
-
 const navSections = [
     {
         label: 'Overview',
@@ -163,28 +155,32 @@ export default function AdminLayout({ title, children }) {
         <div className="min-h-screen bg-[#f4f5f7] text-slate-900">
             <div className="flex min-h-screen">
                 <aside
-                    className={`fixed inset-y-0 left-0 z-40 w-[290px] border-r border-slate-200 bg-[#f7f7f8] transition-transform lg:static lg:translate-x-0 ${
+                    className={`fixed inset-y-0 left-0 z-40 w-[290px] border-r border-slate-200 bg-[#f7f7f8] transition-transform ${
                         mobileOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
+                    } lg:translate-x-0`}
                 >
-                    <div className="flex h-full flex-col">
+                    <div className="flex h-full min-h-0 flex-col overflow-hidden">
                         <div className="border-b border-slate-200 px-6 py-6">
-                            <Link href={route('admin.dashboard')} className="flex items-start gap-3">
-                                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-[#111827] text-white">
-                                    <LogoIcon />
+                            <Link href={route('admin.dashboard')} className="flex items-center gap-3">
+                                <span className="inline-flex size-12 items-center justify-center rounded-xl border border-slate-200 bg-white">
+                                    <img
+                                        src="/images/boardmaster.png"
+                                        alt="Board Master Review Center"
+                                        className="size-10 object-contain"
+                                    />
                                 </span>
-                                <span>
-                                    <span className="block text-lg font-semibold leading-6 tracking-tight">
-                                        SvelteForge
+                                <span className="min-w-0">
+                                    <span className="block text-sm font-semibold uppercase tracking-wide text-slate-900">
+                                        BOARDMASTER REVIEW CENTER
                                     </span>
-                                    <span className="text-sm text-slate-600">
+                                    <span className="block text-xs text-slate-500">
                                         Admin Dashboard
                                     </span>
                                 </span>
                             </Link>
                         </div>
 
-                        <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
+                        <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5">
                             {navSections.map((section) => (
                                 <div key={section.label}>
                                     <p className="px-3 text-sm font-semibold text-[#4b5563]">
@@ -220,10 +216,18 @@ export default function AdminLayout({ title, children }) {
                             ))}
                         </nav>
 
-                        <div className="border-t border-slate-200 p-4">
+                        <div className="mt-auto shrink-0 border-t border-slate-200 p-4">
                             <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                                <span className="inline-flex size-10 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
-                                    {initials}
+                                <span className="inline-flex size-10 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
+                                    {auth.user?.avatar_url ? (
+                                        <img
+                                            src={auth.user.avatar_url}
+                                            alt={auth.user?.name ?? 'Admin'}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        initials
+                                    )}
                                 </span>
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold text-slate-900">
@@ -246,7 +250,7 @@ export default function AdminLayout({ title, children }) {
                     </div>
                 </aside>
 
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col lg:pl-[290px]">
                     <header className="sticky top-0 z-30 border-b border-slate-200 bg-[#f8f8f9]">
                         <div className="flex h-16 items-center gap-4 px-4 md:px-6">
                             <button

@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Plan;
-use App\Models\User;
 use App\Models\UserSubscription;
+use App\Services\Admin\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,22 +13,13 @@ use Inertia\Response;
 
 class UserSubscriptionController extends Controller
 {
+    public function __construct(private readonly SubscriptionService $subscriptions)
+    {
+    }
+
     public function index(): Response
     {
-        $subscriptions = UserSubscription::query()
-            ->with(['user:id,name,email', 'plan:id,name'])
-            ->latest()
-            ->paginate(15)
-            ->through(fn (UserSubscription $subscription) => [
-                'id' => $subscription->id,
-                'user' => $subscription->user?->name,
-                'user_email' => $subscription->user?->email,
-                'plan' => $subscription->plan?->name,
-                'start_date' => $subscription->start_date?->format('Y-m-d'),
-                'end_date' => $subscription->end_date?->format('Y-m-d'),
-                'status' => $subscription->status,
-                'created_at' => $subscription->created_at?->format('M d, Y'),
-            ]);
+        $subscriptions = $this->subscriptions->paginate();
 
         return Inertia::render('Admin/Subscriptions/Index', [
             'subscriptions' => $subscriptions,
@@ -41,8 +31,8 @@ class UserSubscriptionController extends Controller
         return Inertia::render('Admin/Subscriptions/Form', [
             'mode' => 'create',
             'subscription' => null,
-            'users' => $this->usersList(),
-            'plans' => $this->plansList(),
+            'users' => $this->subscriptions->listUsers(),
+            'plans' => $this->subscriptions->listPlans(),
             'statuses' => ['active', 'expired'],
         ]);
     }
@@ -57,7 +47,7 @@ class UserSubscriptionController extends Controller
             'status' => ['required', Rule::in(['active', 'expired'])],
         ]);
 
-        UserSubscription::create($validated);
+        $this->subscriptions->create($validated);
 
         return redirect()
             ->route('admin.subscriptions.index')
@@ -68,8 +58,8 @@ class UserSubscriptionController extends Controller
     {
         return Inertia::render('Admin/Subscriptions/Form', [
             'mode' => 'edit',
-            'users' => $this->usersList(),
-            'plans' => $this->plansList(),
+            'users' => $this->subscriptions->listUsers(),
+            'plans' => $this->subscriptions->listPlans(),
             'statuses' => ['active', 'expired'],
             'subscription' => [
                 'id' => $subscription->id,
@@ -92,7 +82,7 @@ class UserSubscriptionController extends Controller
             'status' => ['required', Rule::in(['active', 'expired'])],
         ]);
 
-        $subscription->update($validated);
+        $this->subscriptions->update($subscription, $validated);
 
         return redirect()
             ->route('admin.subscriptions.index')
@@ -101,26 +91,10 @@ class UserSubscriptionController extends Controller
 
     public function destroy(UserSubscription $subscription): RedirectResponse
     {
-        $subscription->delete();
+        $this->subscriptions->delete($subscription);
 
         return redirect()
             ->route('admin.subscriptions.index')
             ->with('success', 'Subscription deleted successfully.');
-    }
-
-    private function usersList()
-    {
-        return User::query()
-            ->select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get();
-    }
-
-    private function plansList()
-    {
-        return Plan::query()
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get();
     }
 }
