@@ -179,6 +179,7 @@ export default function AdminLayout({ title, children }) {
     const notificationCount = usePage().props.admin?.notificationCount ?? 0;
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
+    const [visibleNotifications, setVisibleNotifications] = useState(10);
 
     const initials = useMemo(() => {
         const name = auth.user?.name || 'Admin User';
@@ -327,7 +328,7 @@ export default function AdminLayout({ title, children }) {
                                                 (prev) => !prev,
                                             )
                                         }
-                                        className="relative inline-flex size-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                                        className="relative inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
                                     >
                                         <BellIcon />
                                         {notificationCount > 0 && (
@@ -363,7 +364,9 @@ export default function AdminLayout({ title, children }) {
                                                         No notifications yet.
                                                     </p>
                                                 )}
-                                                {notifications.map(
+                                                {notifications
+                                                    .slice(0, visibleNotifications)
+                                                    .map(
                                                     (notification) => (
                                                         <div
                                                             key={
@@ -389,13 +392,34 @@ export default function AdminLayout({ title, children }) {
                                                         </div>
                                                     ),
                                                 )}
+                                                {notifications.length >
+                                                    visibleNotifications && (
+                                                    <div className="border-t border-slate-100 px-4 py-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setVisibleNotifications(
+                                                                    (count) =>
+                                                                        Math.min(
+                                                                            count +
+                                                                                10,
+                                                                            notifications.length,
+                                                                        ),
+                                                                )
+                                                            }
+                                                            className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:bg-slate-50"
+                                                        >
+                                                            Show more
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
                                 </div>
                                 <Link
                                     href={route('admin.settings')}
-                                    className="inline-flex size-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                                    className="inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
                                 >
                                     <SettingsIcon />
                                 </Link>

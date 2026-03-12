@@ -37,7 +37,7 @@ class HandleInertiaRequests extends Middleware
             $recentAttempts = QuizAttempt::query()
                 ->with(['user:id,name', 'subject:id,name'])
                 ->latest()
-                ->limit(5)
+                ->limit(50)
                 ->get()
                 ->map(fn (QuizAttempt $attempt) => [
                     'id' => $attempt->id,
