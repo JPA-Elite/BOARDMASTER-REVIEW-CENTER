@@ -60,7 +60,7 @@ export default function Contact({ faqs = defaultFaqs }) {
             ogTitle="Contact | Board Masters Review Center"
             ogDescription="Get in touch with Board Masters for Nursing and licensure review support."
         >
-            <section className="px-4 pb-14 pt-12 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
                     <div>
                         <p className="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
@@ -104,7 +104,7 @@ export default function Contact({ faqs = defaultFaqs }) {
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-3">
                     {contactOptions.map((option) => {
                         const OptionIcon = option.icon;
@@ -127,7 +127,7 @@ export default function Contact({ faqs = defaultFaqs }) {
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:grid-cols-[1fr_1fr] lg:p-8">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
@@ -162,7 +162,7 @@ export default function Contact({ faqs = defaultFaqs }) {
                 </div>
             </section>
 
-            <section className="px-4 pb-16 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-16 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <h2 className="text-3xl font-bold text-slate-900" style={headingFont}>
                         Frequently asked questions

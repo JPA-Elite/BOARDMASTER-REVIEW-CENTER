@@ -76,7 +76,7 @@ export default function Partnership() {
             ogTitle="Partnership | Board Masters Review Center"
             ogDescription="Collaborate with Board Masters for school and review center board exam solutions."
         >
-            <section className="px-4 pb-14 pt-12 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
                     <div>
                         <p className="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
@@ -119,7 +119,7 @@ export default function Partnership() {
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <h2 className="text-3xl font-bold text-slate-900" style={headingFont}>
                         Why institutions partner with Board Masters
@@ -149,7 +149,7 @@ export default function Partnership() {
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:grid-cols-[1fr_1fr] lg:p-8">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
@@ -177,7 +177,7 @@ export default function Partnership() {
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <h2 className="text-3xl font-bold text-slate-900" style={headingFont}>
                         Partnership process
@@ -203,7 +203,7 @@ export default function Partnership() {
                 </div>
             </section>
 
-            <section className="px-4 pb-16 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-16 sm:px-6">
                 <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-[32px] bg-slate-900 px-6 py-8 text-white sm:px-8 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">

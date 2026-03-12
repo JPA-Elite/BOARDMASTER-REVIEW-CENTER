@@ -161,7 +161,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
             ogTitle="Board Masters Review Center | Nursing and Board Exam Review"
             ogDescription="Board Masters provides board exam practice questions with rationalized answers and structured study tracking."
         >
-            <section className="px-4 pb-14 pt-12 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
                     <div>
                         <p className="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
@@ -230,7 +230,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 py-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 py-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
@@ -268,7 +268,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:grid-cols-[1.1fr_0.9fr] lg:p-8">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
@@ -301,7 +301,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <h2 className="text-3xl font-bold text-slate-900" style={headingFont}>
                         A clear review process from day one to exam day.
@@ -327,7 +327,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
                     <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:p-8">
                         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
@@ -378,7 +378,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:p-8">
                         <div className="flex flex-wrap items-center justify-between gap-6">
@@ -412,7 +412,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 pb-14 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
                         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:p-8">
@@ -465,7 +465,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                 </div>
             </section>
 
-            <section className="px-4 pb-16 sm:px-6">
+            <section className="reveal-on-scroll px-4 pb-16 sm:px-6">
                 <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-[32px] bg-slate-900 px-6 py-8 text-white sm:px-8 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">

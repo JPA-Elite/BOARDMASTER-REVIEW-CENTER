@@ -34,6 +34,33 @@ export default function MarketingLayout({
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    useEffect(() => {
+        const elements = Array.from(
+            document.querySelectorAll('.reveal-on-scroll'),
+        );
+
+        if (!('IntersectionObserver' in window) || elements.length === 0) {
+            elements.forEach((el) => el.classList.add('is-revealed'));
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries, currentObserver) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-revealed');
+                        currentObserver.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.15, rootMargin: '0px 0px -10% 0px' },
+        );
+
+        elements.forEach((el) => observer.observe(el));
+
+        return () => observer.disconnect();
+    }, []);
+
     const isActive = (href) => {
         if (href === '/') {
             return url === '/';
@@ -44,7 +71,7 @@ export default function MarketingLayout({
 
     return (
         <div
-            className="min-h-screen bg-[#eef4f9] text-slate-900"
+            className="min-h-screen bg-[#eef4f9] text-slate-900 overflow-x-hidden"
             style={{ fontFamily: '"Manrope", "Segoe UI", sans-serif' }}
         >
             <Head title={title}>
@@ -186,9 +213,9 @@ export default function MarketingLayout({
                 )}
             </header>
 
-            <div className="relative overflow-x-hidden">
-                <div className="pointer-events-none absolute -left-20 -top-24 h-80 w-80 rounded-full bg-cyan-200/55 blur-3xl" />
-                <div className="pointer-events-none absolute right-0 top-32 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
+            <div className="relative overflow-hidden">
+                <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-cyan-200/55 blur-3xl" />
+                <div className="pointer-events-none absolute -right-24 top-28 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
 
                 <main>{children}</main>
             </div>
