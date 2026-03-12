@@ -110,14 +110,6 @@ export default function Login({ status, canResetPassword }) {
                                 Remember me
                             </label>
 
-                            {canResetPassword && (
-                                <Link
-                                    href={route('password.request')}
-                                    className="text-sm text-slate-500 underline-offset-4 hover:underline"
-                                >
-                                    Forgot your password?
-                                </Link>
-                            )}
                         </div>
 
                         <button
@@ -129,15 +121,6 @@ export default function Login({ status, canResetPassword }) {
                         </button>
                     </form>
 
-                    <div className="mt-4 text-center text-sm text-slate-500">
-                        Don't have an account?{' '}
-                        <Link
-                            href={route('register')}
-                            className="font-medium text-slate-900 underline-offset-4 hover:underline"
-                        >
-                            Register
-                        </Link>
-                    </div>
                 </div>
             </div>
         </div>
