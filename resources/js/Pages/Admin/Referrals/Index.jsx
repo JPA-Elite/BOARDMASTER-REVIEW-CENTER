@@ -1,14 +1,24 @@
 import Pagination from '@/Components/Admin/Pagination';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Index({ referrals }) {
-    const destroy = (id) => {
-        if (!window.confirm('Delete this referral?')) {
+    const [confirmingId, setConfirmingId] = useState(null);
+
+    const openConfirm = (id) => setConfirmingId(id);
+    const closeConfirm = () => setConfirmingId(null);
+
+    const confirmDelete = () => {
+        if (!confirmingId) {
             return;
         }
 
-        router.delete(route('admin.referrals.destroy', id));
+        router.delete(route('admin.referrals.destroy', confirmingId), {
+            onFinish: closeConfirm,
+        });
     };
 
     return (
@@ -63,18 +73,22 @@ export default function Index({ referrals }) {
                                                     'admin.referrals.edit',
                                                     referral.id,
                                                 )}
-                                                className="text-sky-700 hover:text-sky-900"
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sky-700 hover:bg-sky-50 hover:text-sky-900"
+                                                title="Edit"
+                                                aria-label="Edit"
                                             >
-                                                Edit
+                                                <Pencil className="size-4" />
                                             </Link>
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    destroy(referral.id)
+                                                    openConfirm(referral.id)
                                                 }
-                                                className="text-red-700 hover:text-red-900"
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50 hover:text-red-900"
+                                                title="Delete"
+                                                aria-label="Delete"
                                             >
-                                                Delete
+                                                <Trash2 className="size-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -98,6 +112,14 @@ export default function Index({ referrals }) {
                     <Pagination links={referrals.links} />
                 </div>
             </div>
+
+            <ConfirmationModal
+                show={confirmingId !== null}
+                title="Delete Referral"
+                message="Are you sure you want to delete this referral? This action cannot be undone."
+                onCancel={closeConfirm}
+                onConfirm={confirmDelete}
+            />
         </AdminLayout>
     );
 }

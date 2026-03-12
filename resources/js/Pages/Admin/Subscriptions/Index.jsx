@@ -1,14 +1,24 @@
 import Pagination from '@/Components/Admin/Pagination';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Index({ subscriptions }) {
-    const destroy = (id) => {
-        if (!window.confirm('Delete this subscription?')) {
+    const [confirmingId, setConfirmingId] = useState(null);
+
+    const openConfirm = (id) => setConfirmingId(id);
+    const closeConfirm = () => setConfirmingId(null);
+
+    const confirmDelete = () => {
+        if (!confirmingId) {
             return;
         }
 
-        router.delete(route('admin.subscriptions.destroy', id));
+        router.delete(route('admin.subscriptions.destroy', confirmingId), {
+            onFinish: closeConfirm,
+        });
     };
 
     return (
@@ -68,18 +78,22 @@ export default function Index({ subscriptions }) {
                                                     'admin.subscriptions.edit',
                                                     subscription.id,
                                                 )}
-                                                className="text-sky-700 hover:text-sky-900"
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sky-700 hover:bg-sky-50 hover:text-sky-900"
+                                                title="Edit"
+                                                aria-label="Edit"
                                             >
-                                                Edit
+                                                <Pencil className="size-4" />
                                             </Link>
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    destroy(subscription.id)
+                                                    openConfirm(subscription.id)
                                                 }
-                                                className="text-red-700 hover:text-red-900"
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50 hover:text-red-900"
+                                                title="Delete"
+                                                aria-label="Delete"
                                             >
-                                                Delete
+                                                <Trash2 className="size-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -103,6 +117,14 @@ export default function Index({ subscriptions }) {
                     <Pagination links={subscriptions.links} />
                 </div>
             </div>
+
+            <ConfirmationModal
+                show={confirmingId !== null}
+                title="Delete Subscription"
+                message="Are you sure you want to delete this subscription? This action cannot be undone."
+                onCancel={closeConfirm}
+                onConfirm={confirmDelete}
+            />
         </AdminLayout>
     );
 }
