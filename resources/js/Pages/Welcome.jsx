@@ -106,24 +106,24 @@ const outcomes = [
     },
 ];
 
-const testimonials = [
+const defaultReviews = [
     {
         quote:
             'Board Masters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
-        name: 'Patrick Bat-Og',
-        school: 'Asia Pacific College',
+        reviewer_name: 'Patrick Bat-Og',
+        reviewer_school: 'Asia Pacific College',
     },
     {
         quote:
             'The step-by-step explanations made the lessons stick. It finally clicked for me.',
-        name: 'Sophie Dizon',
-        school: 'Wesleyan University',
+        reviewer_name: 'Sophie Dizon',
+        reviewer_school: 'Wesleyan University',
     },
     {
         quote:
             'Everything is organized in one app. I can practice on the bus and still track my progress.',
-        name: 'Matt Singson',
-        school: 'Ateneo de Naga',
+        reviewer_name: 'Matt Singson',
+        reviewer_school: 'Ateneo de Naga',
     },
 ];
 
@@ -150,8 +150,9 @@ const defaultFaqs = [
     },
 ];
 
-export default function Welcome({ faqs = defaultFaqs }) {
+export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }) {
     const faqItems = faqs?.data ?? faqs ?? defaultFaqs;
+    const reviewItems = reviews?.data ?? reviews ?? defaultReviews;
 
     return (
         <MarketingLayout
@@ -394,14 +395,16 @@ export default function Welcome({ faqs = defaultFaqs }) {
                             </div>
                         </div>
                         <div className="mt-6 grid gap-4 md:grid-cols-3">
-                            {testimonials.map((item) => (
+                            {reviewItems.map((item, index) => (
                                 <div
-                                    key={item.name}
+                                    key={`${item.reviewer_name}-${index}`}
                                     className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
                                 >
                                     <p className="text-sm text-slate-700">"{item.quote}"</p>
-                                    <p className="mt-4 text-sm font-semibold text-slate-900">{item.name}</p>
-                                    <p className="text-xs text-slate-500">{item.school}</p>
+                                    <p className="mt-4 text-sm font-semibold text-slate-900">
+                                        {item.reviewer_name}
+                                    </p>
+                                    <p className="text-xs text-slate-500">{item.reviewer_school}</p>
                                 </div>
                             ))}
                         </div>

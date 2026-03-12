@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 function Icon({ children, className = 'size-4' }) {
@@ -153,6 +153,7 @@ const navSections = [
             { label: 'Subjects', routeName: 'admin.subjects.index', icon: BookOpenIcon },
             { label: 'Questions', routeName: 'admin.questions.index', icon: HelpCircleIcon },
             { label: 'FAQs', routeName: 'admin.faqs.index', icon: BookIcon },
+            { label: 'Reviews', routeName: 'admin.reviews.index', icon: BookOpenIcon },
         ],
     },
     {
@@ -181,6 +182,8 @@ export default function AdminLayout({ title, children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
     const [visibleNotifications, setVisibleNotifications] = useState(10);
+    const notificationButtonRef = useRef(null);
+    const notificationPanelRef = useRef(null);
 
     const initials = useMemo(() => {
         const name = auth.user?.name || 'Admin User';
@@ -191,6 +194,29 @@ export default function AdminLayout({ title, children }) {
             .slice(0, 2)
             .toUpperCase();
     }, [auth.user?.name]);
+
+    useEffect(() => {
+        if (!notificationOpen) {
+            return;
+        }
+
+        const handleClickOutside = (event) => {
+            if (
+                notificationPanelRef.current?.contains(event.target) ||
+                notificationButtonRef.current?.contains(event.target)
+            ) {
+                return;
+            }
+
+            setNotificationOpen(false);
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [notificationOpen]);
 
     return (
         <div className="min-h-screen bg-[#f4f5f7] text-slate-900">
@@ -329,6 +355,7 @@ export default function AdminLayout({ title, children }) {
                                                 (prev) => !prev,
                                             )
                                         }
+                                        ref={notificationButtonRef}
                                         className="relative inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
                                     >
                                         <BellIcon />
@@ -342,7 +369,10 @@ export default function AdminLayout({ title, children }) {
                                     </button>
 
                                     {notificationOpen && (
-                                        <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                                        <div
+                                            ref={notificationPanelRef}
+                                            className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+                                        >
                                             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                                                 <p className="text-sm font-semibold text-slate-900">
                                                     Notifications

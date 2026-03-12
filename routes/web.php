@@ -9,10 +9,12 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuizAttemptController;
 use App\Http\Controllers\Admin\ReferralController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserSubscriptionController;
 use App\Repositories\Contracts\FaqRepositoryInterface;
+use App\Repositories\Contracts\ReviewRepositoryInterface;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -39,8 +41,35 @@ Route::get('/', function (FaqRepositoryInterface $faqsRepository) {
         ]);
     }
 
+    $reviewsRepository = app(ReviewRepositoryInterface::class);
+    $reviews = $reviewsRepository->listActive(3);
+
+    if ($reviews->isEmpty()) {
+        $reviews = collect([
+            [
+                'reviewer_name' => 'Patrick Bat-Og',
+                'reviewer_school' => 'Asia Pacific College',
+                'quote' =>
+                    'Board Masters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
+            ],
+            [
+                'reviewer_name' => 'Sophie Dizon',
+                'reviewer_school' => 'Wesleyan University',
+                'quote' =>
+                    'The step-by-step explanations made the lessons stick. It finally clicked for me.',
+            ],
+            [
+                'reviewer_name' => 'Matt Singson',
+                'reviewer_school' => 'Ateneo de Naga',
+                'quote' =>
+                    'Everything is organized in one app. I can practice on the bus and still track my progress.',
+            ],
+        ]);
+    }
+
     return Inertia::render('Welcome', [
         'faqs' => $faqs->shuffle()->take(3)->values()->all(),
+        'reviews' => $reviews->shuffle()->take(3)->values()->all(),
     ]);
 });
 
@@ -114,6 +143,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('subjects', SubjectController::class)->except('show');
         Route::resource('questions', QuestionController::class)->except('show');
         Route::resource('faqs', FaqController::class)->except('show');
+        Route::resource('reviews', ReviewController::class)->only(['index', 'destroy']);
         Route::resource('quiz-attempts', QuizAttemptController::class)->only(['index', 'show', 'destroy']);
     });
 
