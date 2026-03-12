@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const navLinks = [
     { href: '/', label: 'Home' },
@@ -19,8 +19,20 @@ export default function MarketingLayout({
 }) {
     const { url } = usePage();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
 
     const currentYear = useMemo(() => new Date().getFullYear(), []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 8);
+        };
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const isActive = (href) => {
         if (href === '/') {
@@ -53,83 +65,130 @@ export default function MarketingLayout({
                 />
             </Head>
 
-            <div className="relative overflow-hidden">
-                <div className="pointer-events-none absolute -left-20 -top-24 h-80 w-80 rounded-full bg-cyan-200/55 blur-3xl" />
-                <div className="pointer-events-none absolute right-0 top-32 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
+            <header
+                className={`sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur transition-all duration-300 ${
+                    isScrolled ? 'shadow-sm shadow-slate-200/70' : 'shadow-none'
+                }`}
+            >
+                <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+                    <Link href="/" className="flex items-center gap-3">
+                        <img
+                            src="/images/boardmaster.png"
+                            alt="Boardmaster Review Center"
+                            className="h-11 w-11 rounded-full border border-slate-200 bg-white p-1"
+                        />
+                        <div className="leading-tight">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                                Board Masters
+                            </p>
+                            <p className="text-sm font-semibold text-slate-900" style={headingFont}>
+                                Review Center
+                            </p>
+                        </div>
+                    </Link>
 
-                <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-                    <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-                        <Link href="/" className="flex items-center gap-3">
-                            <img
-                                src="/images/boardmaster.png"
-                                alt="Boardmaster Review Center"
-                                className="h-11 w-11 rounded-full border border-slate-200 bg-white p-1"
-                            />
-                            <div className="leading-tight">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                                    Board Masters
-                                </p>
-                                <p className="text-sm font-semibold text-slate-900" style={headingFont}>
-                                    Review Center
-                                </p>
-                            </div>
-                        </Link>
+                    <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 md:flex">
+                        {navLinks.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={isActive(item.href) ? 'text-slate-900' : 'hover:text-slate-900'}
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+                        <div className="flex items-center gap-2">
+                            <a
+                                href="https://apps.apple.com/ph/app/onetake-ph/id6752534980"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                            >
+                                <img
+                                    src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2b_ee73b4d94460f8a2c07e5e266ffc8b3d_apple-white-icon-elements-brix-templates.svg"
+                                    alt="Apple icon"
+                                    className="h-4 w-4 invert"
+                                />
+                                iOS App
+                            </a>
+                            <a
+                                href="https://play.google.com/store/apps/details?id=ph.boardly"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                            >
+                                <img
+                                    src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2a_c1cd2666a020fc416efc02f9e22a61be_play-store-color-icon-elements-brix-templates.svg"
+                                    alt="Play Store icon"
+                                    className="h-4 w-4"
+                                />
+                                Android App
+                            </a>
+                        </div>
+                    </nav>
 
-                        <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 md:flex">
+                    <button
+                        type="button"
+                        onClick={() => setMobileOpen((prev) => !prev)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 md:hidden"
+                    >
+                        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
+                </div>
+
+                {mobileOpen && (
+                    <div className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
+                        <div className="space-y-2">
                             {navLinks.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className={isActive(item.href) ? 'text-slate-900' : 'hover:text-slate-900'}
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
+                                        isActive(item.href)
+                                            ? 'bg-slate-100 text-slate-900'
+                                            : 'text-slate-600'
+                                    }`}
                                 >
                                     {item.label}
                                 </Link>
                             ))}
-                            <Link
-                                href="/login"
-                                className="rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-white transition hover:bg-slate-800"
-                            >
-                                Admin Login
-                            </Link>
-                        </nav>
-
-                        <button
-                            type="button"
-                            onClick={() => setMobileOpen((prev) => !prev)}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 md:hidden"
-                        >
-                            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                        </button>
-                    </div>
-
-                    {mobileOpen && (
-                        <div className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
-                            <div className="space-y-2">
-                                {navLinks.map((item) => (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        onClick={() => setMobileOpen(false)}
-                                        className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
-                                            isActive(item.href)
-                                                ? 'bg-slate-100 text-slate-900'
-                                                : 'text-slate-600'
-                                        }`}
-                                    >
-                                        {item.label}
-                                    </Link>
-                                ))}
-                                <Link
-                                    href="/login"
-                                    onClick={() => setMobileOpen(false)}
-                                    className="mt-3 block rounded-lg bg-slate-900 px-3 py-2 text-center text-sm font-semibold text-white"
+                            <div className="mt-3 grid gap-2">
+                                <a
+                                    href="https://apps.apple.com/ph/app/onetake-ph/id6752534980"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
                                 >
-                                    Admin Login
-                                </Link>
+                                    <img
+                                        src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2b_ee73b4d94460f8a2c07e5e266ffc8b3d_apple-white-icon-elements-brix-templates.svg"
+                                        alt="Apple icon"
+                                        className="h-4 w-4 invert"
+                                    />
+                                    iOS App
+                                </a>
+                                <a
+                                    href="https://play.google.com/store/apps/details?id=ph.boardly"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+                                >
+                                    <img
+                                        src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2a_c1cd2666a020fc416efc02f9e22a61be_play-store-color-icon-elements-brix-templates.svg"
+                                        alt="Play Store icon"
+                                        className="h-4 w-4"
+                                    />
+                                    Android App
+                                </a>
                             </div>
                         </div>
-                    )}
-                </header>
+                    </div>
+                )}
+            </header>
+
+            <div className="relative overflow-x-hidden">
+                <div className="pointer-events-none absolute -left-20 -top-24 h-80 w-80 rounded-full bg-cyan-200/55 blur-3xl" />
+                <div className="pointer-events-none absolute right-0 top-32 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
 
                 <main>{children}</main>
             </div>
