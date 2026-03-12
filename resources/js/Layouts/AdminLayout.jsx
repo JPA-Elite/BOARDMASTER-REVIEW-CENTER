@@ -202,19 +202,19 @@ export default function AdminLayout({ title, children }) {
                     <div className="flex h-full min-h-0 flex-col overflow-hidden">
                         <div className="border-b border-slate-200 px-6 py-6">
                             <Link href={route('admin.dashboard')} className="flex items-center gap-3">
-                                <span className="inline-flex size-12 items-center justify-center rounded-xl border border-slate-200 bg-white">
+                                <span className="inline-flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white">
                                     <img
                                         src="/images/boardmaster.png"
                                         alt="Board Master Review Center"
-                                        className="size-10 object-contain"
+                                        className="size-10 rounded-full object-contain"
                                     />
                                 </span>
                                 <span className="min-w-0">
-                                    <span className="block text-sm font-semibold uppercase tracking-wide text-slate-900">
-                                        BOARDMASTER REVIEW CENTER
+                                    <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                                        Board Masters
                                     </span>
-                                    <span className="block text-xs text-slate-500">
-                                        Admin Dashboard
+                                    <span className="block text-lg font-semibold text-slate-900">
+                                        Review Center
                                     </span>
                                 </span>
                             </Link>

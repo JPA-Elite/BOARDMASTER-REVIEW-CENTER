@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.policy-content a {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.policy-content a:hover {
+    color: #1d4ed8;
+}
+
+.policy-content strong {
+    color: #0f172a;
+    font-weight: 700;
+}
