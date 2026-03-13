@@ -19,20 +19,7 @@ export default function MarketingLayout({
 }) {
     const { url } = usePage();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
-
     const currentYear = useMemo(() => new Date().getFullYear(), []);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 8);
-        };
-
-        handleScroll();
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     useEffect(() => {
         const elements = Array.from(
@@ -71,7 +58,7 @@ export default function MarketingLayout({
 
     return (
         <div
-            className="min-h-screen bg-[#eef4f9] text-slate-900 overflow-x-hidden"
+            className="min-h-screen bg-[#eef4f9] text-slate-900"
             style={{ fontFamily: '"Manrope", "Segoe UI", sans-serif' }}
         >
             <Head title={title}>
@@ -92,11 +79,7 @@ export default function MarketingLayout({
                 />
             </Head>
 
-            <header
-                className={`sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur transition-all duration-300 ${
-                    isScrolled ? 'shadow-sm shadow-slate-200/70' : 'shadow-none'
-                }`}
-            >
+            <header className="fixed top-0 left-0 right-0 z-30 border-b border-slate-200 bg-white">
                 <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
                     <Link href="/" className="flex items-center gap-3">
                         <img
@@ -213,7 +196,7 @@ export default function MarketingLayout({
                 )}
             </header>
 
-            <div className="relative overflow-hidden">
+            <div className="relative overflow-hidden pt-20">
                 <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-cyan-200/55 blur-3xl" />
                 <div className="pointer-events-none absolute -right-24 top-28 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
 
