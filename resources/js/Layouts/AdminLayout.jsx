@@ -321,7 +321,7 @@ export default function AdminLayout({ title, children }) {
                 </aside>
 
                 <div className="flex min-w-0 flex-1 flex-col lg:pl-[290px]">
-                    <header className="sticky top-0 z-30 border-b border-slate-200 bg-[#f8f8f9]">
+                    <header className="fixed top-0 left-0 right-0 z-30 border-b border-slate-200 bg-[#f8f8f9] lg:left-[290px]">
                         <div className="flex h-16 items-center gap-4 px-4 md:px-6">
                             <button
                                 type="button"
@@ -458,7 +458,7 @@ export default function AdminLayout({ title, children }) {
                         </div>
                     </header>
 
-                    <main className="flex-1 px-4 py-5 md:px-6">
+                    <main className="flex-1 px-4 pb-5 pt-20 md:px-6">
                         <div className="space-y-4">
                             {flash?.success && (
                                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
