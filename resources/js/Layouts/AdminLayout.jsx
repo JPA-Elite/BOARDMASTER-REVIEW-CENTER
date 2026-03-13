@@ -159,6 +159,7 @@ const navSections = [
     {
         label: 'System',
         items: [
+            { label: 'Payment Gateway', routeName: 'admin.payment-gateway', icon: CreditCardIcon },
             { label: 'Admin Settings', routeName: 'admin.settings', icon: SettingsIcon },
         ],
     },

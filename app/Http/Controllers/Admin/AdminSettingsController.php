@@ -10,7 +10,7 @@ use Inertia\Response;
 
 class AdminSettingsController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('Admin/Settings', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,

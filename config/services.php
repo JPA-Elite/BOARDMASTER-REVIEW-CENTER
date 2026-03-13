@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'paymongo' => [
+        'mode' => env('PAYMONGO_MODE', 'test'),
+        'base_url' => env('PAYMONGO_BASE_URL', 'https://api.paymongo.com/v1'),
+        'test_public_key' => env('PAYMONGO_TEST_PUBLIC_KEY'),
+        'test_secret_key' => env('PAYMONGO_TEST_SECRET_KEY'),
+        'test_webhook_secret' => env('PAYMONGO_TEST_WEBHOOK_SECRET'),
+        'live_public_key' => env('PAYMONGO_LIVE_PUBLIC_KEY'),
+        'live_secret_key' => env('PAYMONGO_LIVE_SECRET_KEY'),
+        'live_webhook_secret' => env('PAYMONGO_LIVE_WEBHOOK_SECRET'),
+        'success_url' => env('PAYMONGO_SUCCESS_URL', env('APP_URL').'/payments/success'),
+        'cancel_url' => env('PAYMONGO_CANCEL_URL', env('APP_URL').'/payments/cancel'),
+        'default_payment_methods' => env('PAYMONGO_DEFAULT_PAYMENT_METHODS', 'card,gcash'),
+        'timeout' => (int) env('PAYMONGO_TIMEOUT', 30),
+        'webhook_tolerance' => (int) env('PAYMONGO_WEBHOOK_TOLERANCE', 300),
+    ],
+
 ];

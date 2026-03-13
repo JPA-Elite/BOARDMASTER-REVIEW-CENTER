@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminPaymentGatewayController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\PlanController;
@@ -113,6 +114,15 @@ Route::get('/contact', function (FaqRepositoryInterface $faqsRepository) {
     ]);
 });
 
+Route::get('/payments/success', function () {
+    return Inertia::render('Payments/Success');
+})->name('payments.success');
+
+Route::get('/payments/cancel', function () {
+    return Inertia::render('Payments/Cancel');
+})->name('payments.cancel');
+
+
 Route::get('/dashboard', function () {
     $user = auth()->user();
 
@@ -135,7 +145,16 @@ Route::middleware(['auth', 'verified', 'admin'])
     ->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/analytics', AdminAnalyticsController::class)->name('analytics');
-        Route::get('/settings', AdminSettingsController::class)->name('settings');
+        Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
+        Route::get('/payment-gateway', [AdminPaymentGatewayController::class, 'index'])->name('payment-gateway');
+        Route::post('/payment-gateway/test-connection', [AdminPaymentGatewayController::class, 'testConnection'])
+            ->name('payment-gateway.test');
+        Route::post('/payment-gateway/checkout', [AdminPaymentGatewayController::class, 'createCheckout'])
+            ->name('payment-gateway.checkout');
+        Route::delete('/payment-gateway/webhooks', [AdminPaymentGatewayController::class, 'clearWebhooks'])
+            ->name('payment-gateway.webhooks.clear');
+        Route::delete('/payment-gateway/webhooks/{transaction}', [AdminPaymentGatewayController::class, 'deleteWebhook'])
+            ->name('payment-gateway.webhooks.delete');
         Route::resource('users', UserController::class)->except('show');
         Route::resource('referrals', ReferralController::class)->except('show');
         Route::resource('plans', PlanController::class)->except('show');
