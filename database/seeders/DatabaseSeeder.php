@@ -26,12 +26,12 @@ class DatabaseSeeder extends Seeder
         $admin = $this->createAdminUser();
         $users = User::factory(5)->create();
 
-        [$starterPlan, $proPlan] = $this->createPlans();
-
-        $this->seedSubscriptions($users, $starterPlan, $proPlan);
-        $this->seedReferral($users);
-
         [$math, $questions] = $this->seedQuestions($admin);
+        [$freePlan, $starterPlan, $proPlan] = $this->createPlans();
+        $this->seedPlanSubjectAccesses($freePlan, $starterPlan, $proPlan);
+
+        $this->seedSubscriptions($users, $freePlan, $proPlan);
+        $this->seedReferral($users);
         $this->seedQuizAttempt($users, $math, $questions);
 
         $this->createDefaultTestUser();
@@ -47,15 +47,29 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @return array{0: Plan, 1: Plan}
+     * @return array{0: Plan, 1: Plan, 2: Plan}
      */
     private function createPlans(): array
     {
+        $freePlan = Plan::query()->create([
+            'name' => 'Free Plan',
+            'price' => 0,
+            'billing_cycle' => Plan::BILLING_MONTHLY,
+            'description' => 'Default starter access.',
+            'is_default' => true,
+        ]);
+
+        $freePlan->features()->createMany([
+            ['feature_name' => 'Starter access'],
+            ['feature_name' => 'Limited subject availability'],
+        ]);
+
         $starterPlan = Plan::query()->create([
             'name' => 'Starter',
             'price' => 199,
             'billing_cycle' => Plan::BILLING_MONTHLY,
             'description' => 'Good for new reviewers.',
+            'is_default' => false,
         ]);
 
         $starterPlan->features()->createMany([
@@ -68,6 +82,7 @@ class DatabaseSeeder extends Seeder
             'price' => 499,
             'billing_cycle' => Plan::BILLING_YEARLY,
             'description' => 'Full access for serious learners.',
+            'is_default' => false,
         ]);
 
         $proPlan->features()->createMany([
@@ -76,13 +91,38 @@ class DatabaseSeeder extends Seeder
             ['feature_name' => 'Priority support'],
         ]);
 
-        return [$starterPlan, $proPlan];
+        return [$freePlan, $starterPlan, $proPlan];
     }
 
-    private function seedSubscriptions(Collection $users, Plan $starterPlan, Plan $proPlan): void
+    private function seedPlanSubjectAccesses(Plan $freePlan, Plan $starterPlan, Plan $proPlan): void
+    {
+        $subjectIds = Subject::query()
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($subjectIds->take(1) as $subjectId) {
+            $freePlan->subjectAccesses()->create([
+                'subject_id' => $subjectId,
+                'question_limit' => 30,
+            ]);
+        }
+
+        foreach ($subjectIds as $subjectId) {
+            $starterPlan->subjectAccesses()->create([
+                'subject_id' => $subjectId,
+                'question_limit' => 60,
+            ]);
+            $proPlan->subjectAccesses()->create([
+                'subject_id' => $subjectId,
+                'question_limit' => 100,
+            ]);
+        }
+    }
+
+    private function seedSubscriptions(Collection $users, Plan $freePlan, Plan $proPlan): void
     {
         foreach ($users as $index => $user) {
-            $assignedPlan = $index % 2 === 0 ? $starterPlan : $proPlan;
+            $assignedPlan = $index % 2 === 0 ? $freePlan : $proPlan;
             $billingCycle = $assignedPlan->billing_cycle;
             $startDate = now()->subDays(5 + $index);
             $endDate = $billingCycle === Plan::BILLING_YEARLY

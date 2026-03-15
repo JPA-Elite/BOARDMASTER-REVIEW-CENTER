@@ -16,7 +16,11 @@ class PlanRepository extends AbstractRepository implements PlanRepositoryInterfa
     public function paginateWithFeatures(int $perPage = 10): LengthAwarePaginator
     {
         return $this->query()
-            ->with('features:id,plan_id,feature_name')
+            ->with([
+                'features:id,plan_id,feature_name',
+                'subjectAccesses:id,plan_id,subject_id,question_limit',
+                'subjectAccesses.subject:id,name',
+            ])
             ->latest()
             ->paginate($perPage);
     }

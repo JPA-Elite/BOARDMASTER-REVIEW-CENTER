@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class MobileAuthController extends Controller
@@ -37,18 +39,7 @@ class MobileAuthController extends Controller
         return response()->json([
             'message' => 'Registered successfully.',
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'plan_tier' => $this->resolveTier($plan),
-                'plan' => $plan ? [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'tier' => $this->resolveTier($plan),
-                    'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
-                ] : null,
-            ],
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ], 201);
     }
 
@@ -81,18 +72,67 @@ class MobileAuthController extends Controller
         return response()->json([
             'message' => 'Login successful.',
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'plan_tier' => $this->resolveTier($plan),
-                'plan' => $plan ? [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'tier' => $this->resolveTier($plan),
-                    'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
-                ] : null,
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique(User::class)->ignore($user->id),
             ],
+            'school' => ['nullable', 'string', 'max:255'],
+            'birthdate' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
+            'place' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:25'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        if (array_key_exists('email', $validated)
+            && $validated['email'] !== $user->email) {
+            $user->email_verified_at = null;
+        }
+
+        if ($request->hasFile('avatar')) {
+            $previousAvatar = $user->avatar_path;
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar_path'] = $path;
+            if ($previousAvatar) {
+                Storage::disk('public')->delete($previousAvatar);
+            }
+        }
+
+        $user->fill($validated);
+        $user->save();
+
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        return response()->json([
+            'message' => 'Profile updated.',
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        return response()->json([
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ]);
     }
 
@@ -110,6 +150,7 @@ class MobileAuthController extends Controller
         }
 
         $defaultPlan = Plan::query()
+            ->orderByDesc('is_default')
             ->orderBy('price')
             ->orderBy('id')
             ->first();
@@ -143,7 +184,8 @@ class MobileAuthController extends Controller
         }
 
         $normalized = strtolower($plan->name);
-        if ((float) $plan->price <= 0
+        if ((bool) $plan->is_default
+            || (float) $plan->price <= 0
             || str_contains($normalized, 'free')) {
             return 'free';
         }
@@ -167,5 +209,44 @@ class MobileAuthController extends Controller
         return $billingCycle === Plan::BILLING_YEARLY
             ? $start->addYear()->toDateString()
             : $start->addMonth()->toDateString();
+    }
+
+    private function mobileUserPayload(
+        User $user,
+        ?Plan $plan,
+        ?UserSubscription $subscription = null,
+    ): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'school' => $user->school,
+            'birthdate' => $user->birthdate?->toDateString(),
+            'gender' => $user->gender,
+            'place' => $user->place,
+            'phone_number' => $user->phone_number,
+            'avatar_url' => $user->avatar_url,
+            'referral_code' => $user->referral_code,
+            'referred_by' => $user->referred_by,
+            'plan_tier' => $this->resolveTier($plan),
+            'subscription' => $subscription ? [
+                'id' => $subscription->id,
+                'plan_id' => $subscription->plan_id,
+                'billing_cycle' => $subscription->billing_cycle,
+                'start_date' => $subscription->start_date?->toDateString(),
+                'end_date' => $subscription->end_date?->toDateString(),
+                'status' => $subscription->status,
+            ] : null,
+            'end_date' => $subscription?->end_date?->toDateString(),
+            'plan' => $plan ? [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'tier' => $this->resolveTier($plan),
+                'billing_cycle' => $subscription
+                    ? $subscription->billing_cycle
+                    : $this->normalizeBillingCycle($plan->billing_cycle),
+            ] : null,
+        ];
     }
 }

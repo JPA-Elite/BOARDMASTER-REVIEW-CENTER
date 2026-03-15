@@ -23,4 +23,9 @@ class Subject extends Model
     {
         return $this->hasMany(QuizAttempt::class);
     }
+
+    public function planAccesses(): HasMany
+    {
+        return $this->hasMany(PlanSubjectAccess::class);
+    }
 }

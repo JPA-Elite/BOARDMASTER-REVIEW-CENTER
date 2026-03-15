@@ -43,6 +43,7 @@ export default function Index({ plans }) {
                                 <th className="px-3 py-2">Price</th>
                                 <th className="px-3 py-2">Billing</th>
                                 <th className="px-3 py-2">Features</th>
+                                <th className="px-3 py-2">Subject Access</th>
                                 <th className="px-3 py-2">Actions</th>
                             </tr>
                         </thead>
@@ -50,7 +51,14 @@ export default function Index({ plans }) {
                             {plans.data.map((plan) => (
                                 <tr key={plan.id} className="border-t border-slate-200">
                                     <td className="px-3 py-2">
-                                        <p className="font-medium">{plan.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium">{plan.name}</p>
+                                            {plan.is_default && (
+                                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                                    Default Free Plan
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-slate-500">
                                             {plan.description || 'No description'}
                                         </p>
@@ -70,6 +78,23 @@ export default function Index({ plans }) {
                                             <ul className="space-y-1">
                                                 {plan.features.map((feature) => (
                                                     <li key={feature}>- {feature}</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        {plan.subject_accesses.length === 0 ? (
+                                            <span className="text-slate-500">No subjects selected</span>
+                                        ) : (
+                                            <ul className="space-y-1">
+                                                {plan.subject_accesses.map((item) => (
+                                                    <li key={`${plan.id}-${item.subject_id}`}>
+                                                        - {item.subject_name} (
+                                                        {item.question_limit <= 0
+                                                            ? 'No limit'
+                                                            : `${item.question_limit} max`}
+                                                        )
+                                                    </li>
                                                 ))}
                                             </ul>
                                         )}
@@ -98,20 +123,30 @@ export default function Index({ plans }) {
                                                 onClick={() =>
                                                     openConfirm(plan.id)
                                                 }
-                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50 hover:text-red-900"
+                                                className={`inline-flex h-8 w-8 items-center justify-center rounded-md ${
+                                                    plan.is_default
+                                                        ? 'cursor-not-allowed text-slate-400'
+                                                        : 'text-red-700 hover:bg-red-50 hover:text-red-900'
+                                                }`}
                                                 title="Delete"
                                                 aria-label="Delete"
+                                                disabled={plan.is_default}
                                             >
                                                 <Trash2 className="size-4" />
                                             </button>
                                         </div>
+                                        {plan.is_default && (
+                                            <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                                                Default plan cannot be deleted.
+                                            </p>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
                             {plans.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="px-3 py-4 text-center text-slate-500"
                                     >
                                         No plans available.
