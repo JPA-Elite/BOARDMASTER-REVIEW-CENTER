@@ -20,6 +20,8 @@ class PlanService
             'id' => $plan->id,
             'name' => $plan->name,
             'price' => (float) $plan->price,
+            'billing_cycle' => $plan->billing_cycle,
+            'billing_label' => $plan->billingLabel(),
             'description' => $plan->description,
             'feature_count' => $plan->features->count(),
             'features' => $plan->features->pluck('feature_name')->values(),
@@ -34,6 +36,7 @@ class PlanService
         $plan = $this->plans->create([
             'name' => $data['name'],
             'price' => $data['price'],
+            'billing_cycle' => $data['billing_cycle'],
             'description' => $data['description'] ?? null,
         ]);
 
@@ -47,6 +50,7 @@ class PlanService
         $plan = $this->plans->update($plan, [
             'name' => $data['name'],
             'price' => $data['price'],
+            'billing_cycle' => $data['billing_cycle'],
             'description' => $data['description'] ?? null,
         ]);
 

@@ -85,6 +85,7 @@ class PaymongoWebhookController extends Controller
             $activationMessage = $this->activateSubscription(
                 $details['user_id'],
                 $details['plan_id'],
+                $details['billing_cycle'],
             );
         } catch (Throwable $exception) {
             report($exception);
@@ -113,7 +114,8 @@ class PaymongoWebhookController extends Controller
      *   payment_id: string|null,
      *   reference: string|null,
      *   user_id: int|null,
-     *   plan_id: int|null
+     *   plan_id: int|null,
+     *   billing_cycle: string|null
      * }
      */
     private function extractDetails(string $eventType, array $payload): array
@@ -158,6 +160,7 @@ class PaymongoWebhookController extends Controller
             'reference' => $reference,
             'user_id' => $this->extractInt($metadata, ['user_id', 'customer_id']),
             'plan_id' => $this->extractInt($metadata, ['plan_id']),
+            'billing_cycle' => $this->extractString($metadata, ['billing_cycle']),
         ];
     }
 
@@ -246,7 +249,7 @@ class PaymongoWebhookController extends Controller
         return null;
     }
 
-    private function activateSubscription(?int $userId, ?int $planId): string
+    private function activateSubscription(?int $userId, ?int $planId, ?string $billingCycle): string
     {
         if (! $userId || ! $planId) {
             return 'Missing user_id or plan_id metadata.';
@@ -269,8 +272,13 @@ class PaymongoWebhookController extends Controller
             return 'Subscription already active.';
         }
 
-        DB::transaction(function () use ($userId, $planId): void {
+        $resolvedBillingCycle = $this->resolveBillingCycle($plan, $billingCycle);
+
+        DB::transaction(function () use ($userId, $planId, $plan, $resolvedBillingCycle): void {
             $today = Carbon::today()->toDateString();
+            $endDate = $this->isFreePlan($plan)
+                ? null
+                : $this->calculateEndDate(Carbon::today(), $resolvedBillingCycle);
 
             UserSubscription::query()
                 ->where('user_id', $userId)
@@ -283,8 +291,9 @@ class PaymongoWebhookController extends Controller
             UserSubscription::query()->create([
                 'user_id' => $userId,
                 'plan_id' => $planId,
+                'billing_cycle' => $resolvedBillingCycle,
                 'start_date' => $today,
-                'end_date' => null,
+                'end_date' => $endDate,
                 'status' => 'active',
             ]);
         });
@@ -310,5 +319,29 @@ class PaymongoWebhookController extends Controller
         }
 
         return 'paid_unlinked';
+    }
+
+    private function resolveBillingCycle(Plan $plan, ?string $billingCycle): string
+    {
+        if (is_string($billingCycle) && in_array($billingCycle, Plan::billingCycles(), true)) {
+            return $billingCycle;
+        }
+
+        return in_array($plan->billing_cycle, Plan::billingCycles(), true)
+            ? $plan->billing_cycle
+            : Plan::BILLING_MONTHLY;
+    }
+
+    private function calculateEndDate(Carbon $startDate, string $billingCycle): string
+    {
+        return $billingCycle === Plan::BILLING_YEARLY
+            ? $startDate->copy()->addYear()->toDateString()
+            : $startDate->copy()->addMonth()->toDateString();
+    }
+
+    private function isFreePlan(Plan $plan): bool
+    {
+        return (float) $plan->price <= 0
+            || str_contains(strtolower($plan->name), 'free');
     }
 }

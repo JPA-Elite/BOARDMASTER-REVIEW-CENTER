@@ -2,11 +2,13 @@
 
 namespace App\Services\Admin;
 
+use App\Models\Plan;
 use App\Models\UserSubscription;
 use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class SubscriptionService
@@ -27,6 +29,8 @@ class SubscriptionService
             'user' => $subscription->user?->name,
             'user_email' => $subscription->user?->email,
             'plan' => $subscription->plan?->name,
+            'billing_cycle' => $subscription->billing_cycle,
+            'billing_label' => $subscription->billing_cycle === Plan::BILLING_YEARLY ? 'Per year' : 'Per month',
             'start_date' => $subscription->start_date?->format('Y-m-d'),
             'end_date' => $subscription->end_date?->format('Y-m-d'),
             'status' => $subscription->status,
@@ -44,23 +48,61 @@ class SubscriptionService
     public function listPlans(): Collection
     {
         return $this->plans->query()
-            ->select('id', 'name')
+            ->select('id', 'name', 'price', 'billing_cycle')
+            ->orderBy('price')
             ->orderBy('name')
             ->get();
     }
 
     public function create(array $data): UserSubscription
     {
-        return $this->subscriptions->create($data);
+        return $this->subscriptions->create($this->preparePayload($data));
     }
 
     public function update(UserSubscription $subscription, array $data): UserSubscription
     {
-        return $this->subscriptions->update($subscription, $data);
+        return $this->subscriptions->update($subscription, $this->preparePayload($data));
     }
 
     public function delete(UserSubscription $subscription): void
     {
         $this->subscriptions->delete($subscription);
+    }
+
+    private function preparePayload(array $data): array
+    {
+        $billingCycle = $this->resolveBillingCycle($data);
+        $startDate = Carbon::parse($data['start_date']);
+        $endDate = $data['end_date'] ?? null;
+
+        if (! $endDate) {
+            $endDate = $billingCycle === Plan::BILLING_YEARLY
+                ? $startDate->copy()->addYear()->toDateString()
+                : $startDate->copy()->addMonth()->toDateString();
+        }
+
+        return [
+            'user_id' => $data['user_id'],
+            'plan_id' => $data['plan_id'],
+            'billing_cycle' => $billingCycle,
+            'start_date' => $startDate->toDateString(),
+            'end_date' => $endDate,
+            'status' => $data['status'],
+        ];
+    }
+
+    private function resolveBillingCycle(array $data): string
+    {
+        $requestedCycle = $data['billing_cycle'] ?? null;
+        if (is_string($requestedCycle) && in_array($requestedCycle, Plan::billingCycles(), true)) {
+            return $requestedCycle;
+        }
+
+        $plan = $this->plans->find((int) $data['plan_id']);
+        if ($plan instanceof Plan && in_array($plan->billing_cycle, Plan::billingCycles(), true)) {
+            return $plan->billing_cycle;
+        }
+
+        return Plan::BILLING_MONTHLY;
     }
 }

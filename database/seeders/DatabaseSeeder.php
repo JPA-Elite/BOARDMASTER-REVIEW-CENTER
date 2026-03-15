@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserSubscription;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -22,17 +23,38 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::factory()->admin()->create([
+        $admin = $this->createAdminUser();
+        $users = User::factory(5)->create();
+
+        [$starterPlan, $proPlan] = $this->createPlans();
+
+        $this->seedSubscriptions($users, $starterPlan, $proPlan);
+        $this->seedReferral($users);
+
+        [$math, $questions] = $this->seedQuestions($admin);
+        $this->seedQuizAttempt($users, $math, $questions);
+
+        $this->createDefaultTestUser();
+    }
+
+    private function createAdminUser(): User
+    {
+        return User::factory()->admin()->create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => Hash::make('password'),
         ]);
+    }
 
-        $users = User::factory(5)->create();
-
+    /**
+     * @return array{0: Plan, 1: Plan}
+     */
+    private function createPlans(): array
+    {
         $starterPlan = Plan::query()->create([
             'name' => 'Starter',
             'price' => 199,
+            'billing_cycle' => Plan::BILLING_MONTHLY,
             'description' => 'Good for new reviewers.',
         ]);
 
@@ -44,6 +66,7 @@ class DatabaseSeeder extends Seeder
         $proPlan = Plan::query()->create([
             'name' => 'Pro',
             'price' => 499,
+            'billing_cycle' => Plan::BILLING_YEARLY,
             'description' => 'Full access for serious learners.',
         ]);
 
@@ -53,28 +76,52 @@ class DatabaseSeeder extends Seeder
             ['feature_name' => 'Priority support'],
         ]);
 
+        return [$starterPlan, $proPlan];
+    }
+
+    private function seedSubscriptions(Collection $users, Plan $starterPlan, Plan $proPlan): void
+    {
         foreach ($users as $index => $user) {
+            $assignedPlan = $index % 2 === 0 ? $starterPlan : $proPlan;
+            $billingCycle = $assignedPlan->billing_cycle;
+            $startDate = now()->subDays(5 + $index);
+            $endDate = $billingCycle === Plan::BILLING_YEARLY
+                ? $startDate->copy()->addYear()->toDateString()
+                : $startDate->copy()->addMonth()->toDateString();
+
             UserSubscription::query()->create([
                 'user_id' => $user->id,
-                'plan_id' => $index % 2 === 0 ? $starterPlan->id : $proPlan->id,
-                'start_date' => now()->subDays(5 + $index)->toDateString(),
-                'end_date' => now()->addMonths(1)->toDateString(),
+                'plan_id' => $assignedPlan->id,
+                'billing_cycle' => $billingCycle,
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate,
                 'status' => 'active',
             ]);
         }
+    }
 
+    private function seedReferral(Collection $users): void
+    {
         $referredUser = $users->first();
         $inviter = $users->skip(1)->first();
 
-        if ($referredUser && $inviter) {
-            $referredUser->update(['referred_by' => $inviter->id]);
-
-            Referral::query()->create([
-                'inviter_id' => $inviter->id,
-                'invited_user_id' => $referredUser->id,
-            ]);
+        if (! $referredUser || ! $inviter) {
+            return;
         }
 
+        $referredUser->update(['referred_by' => $inviter->id]);
+
+        Referral::query()->create([
+            'inviter_id' => $inviter->id,
+            'invited_user_id' => $referredUser->id,
+        ]);
+    }
+
+    /**
+     * @return array{0: Subject, 1: Collection<int, Question>}
+     */
+    private function seedQuestions(User $admin): array
+    {
         $math = Subject::query()->create(['name' => 'Mathematics']);
         $science = Subject::query()->create(['name' => 'Science']);
 
@@ -116,29 +163,39 @@ class DatabaseSeeder extends Seeder
             return $question->load('choices');
         });
 
+        return [$math, $questions];
+    }
+
+    private function seedQuizAttempt(Collection $users, Subject $math, Collection $questions): void
+    {
         $attemptUser = $users->last();
 
-        if ($attemptUser) {
-            $attempt = QuizAttempt::query()->create([
-                'user_id' => $attemptUser->id,
-                'subject_id' => $math->id,
-                'total_questions' => $questions->count(),
-                'score' => 1,
-            ]);
-
-            $questions->each(function (Question $question, int $index) use ($attempt): void {
-                $selectedChoice = $index === 0
-                    ? $question->choices->firstWhere('is_correct', true)
-                    : $question->choices->first();
-
-                $attempt->answers()->create([
-                    'question_id' => $question->id,
-                    'selected_choice_id' => $selectedChoice?->id,
-                    'is_correct' => (bool) $selectedChoice?->is_correct,
-                ]);
-            });
+        if (! $attemptUser) {
+            return;
         }
 
+        $attempt = QuizAttempt::query()->create([
+            'user_id' => $attemptUser->id,
+            'subject_id' => $math->id,
+            'total_questions' => $questions->count(),
+            'score' => 1,
+        ]);
+
+        $questions->each(function (Question $question, int $index) use ($attempt): void {
+            $selectedChoice = $index === 0
+                ? $question->choices->firstWhere('is_correct', true)
+                : $question->choices->first();
+
+            $attempt->answers()->create([
+                'question_id' => $question->id,
+                'selected_choice_id' => $selectedChoice?->id,
+                'is_correct' => (bool) $selectedChoice?->is_correct,
+            ]);
+        });
+    }
+
+    private function createDefaultTestUser(): void
+    {
         User::query()->firstOrCreate([
             'email' => 'test@example.com',
         ], [

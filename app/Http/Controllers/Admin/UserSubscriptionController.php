@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Models\UserSubscription;
 use App\Services\Admin\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
@@ -26,14 +27,26 @@ class UserSubscriptionController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $selectedPlanId = $request->integer('plan_id');
+        $selectedPlan = $selectedPlanId > 0
+            ? Plan::query()
+                ->select('id', 'billing_cycle')
+                ->find($selectedPlanId)
+            : null;
+
         return Inertia::render('Admin/Subscriptions/Form', [
             'mode' => 'create',
-            'subscription' => null,
+            'subscription' => [
+                'plan_id' => $selectedPlan?->id,
+                'billing_cycle' => $selectedPlan?->billing_cycle ?? Plan::BILLING_MONTHLY,
+                'start_date' => now()->toDateString(),
+            ],
             'users' => $this->subscriptions->listUsers(),
             'plans' => $this->subscriptions->listPlans(),
-            'statuses' => ['active', 'expired'],
+            'billingCycles' => Plan::billingCycles(),
+            'statuses' => ['active', 'inactive', 'expired'],
         ]);
     }
 
@@ -42,9 +55,10 @@ class UserSubscriptionController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
+            'billing_cycle' => ['required', 'string', Rule::in(Plan::billingCycles())],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', Rule::in(['active', 'expired'])],
+            'status' => ['required', Rule::in(['active', 'inactive', 'expired'])],
         ]);
 
         $this->subscriptions->create($validated);
@@ -60,11 +74,13 @@ class UserSubscriptionController extends Controller
             'mode' => 'edit',
             'users' => $this->subscriptions->listUsers(),
             'plans' => $this->subscriptions->listPlans(),
-            'statuses' => ['active', 'expired'],
+            'billingCycles' => Plan::billingCycles(),
+            'statuses' => ['active', 'inactive', 'expired'],
             'subscription' => [
                 'id' => $subscription->id,
                 'user_id' => $subscription->user_id,
                 'plan_id' => $subscription->plan_id,
+                'billing_cycle' => $subscription->billing_cycle,
                 'start_date' => $subscription->start_date?->format('Y-m-d'),
                 'end_date' => $subscription->end_date?->format('Y-m-d'),
                 'status' => $subscription->status,
@@ -77,9 +93,10 @@ class UserSubscriptionController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
+            'billing_cycle' => ['required', 'string', Rule::in(Plan::billingCycles())],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', Rule::in(['active', 'expired'])],
+            'status' => ['required', Rule::in(['active', 'inactive', 'expired'])],
         ]);
 
         $this->subscriptions->update($subscription, $validated);

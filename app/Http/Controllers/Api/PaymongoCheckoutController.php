@@ -39,6 +39,7 @@ class PaymongoCheckoutController extends Controller
                     'user_id' => $userId,
                     'plan_id' => $plan->id,
                     'plan_name' => $plan->name,
+                    'billing_cycle' => $plan->billing_cycle,
                     'reference' => $validated['reference'] ?? null,
                 ],
             );

@@ -4,10 +4,11 @@ import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function Form({ mode, plan }) {
+export default function Form({ mode, plan, billingCycles = ['monthly', 'yearly'] }) {
     const { data, setData, post, put, processing, errors } = useForm({
         name: plan?.name || '',
         price: plan?.price || '',
+        billing_cycle: plan?.billing_cycle || 'monthly',
         description: plan?.description || '',
         features:
             plan?.features?.length > 0
@@ -78,6 +79,23 @@ export default function Form({ mode, plan }) {
                 </div>
 
                 <div>
+                    <InputLabel htmlFor="billing_cycle" value="Subscription Billing" />
+                    <select
+                        id="billing_cycle"
+                        value={data.billing_cycle}
+                        onChange={(event) => setData('billing_cycle', event.target.value)}
+                        className="mt-1 block w-full rounded-md border-slate-300"
+                    >
+                        {billingCycles.map((cycle) => (
+                            <option key={cycle} value={cycle}>
+                                {cycle === 'yearly' ? 'Per Year' : 'Per Month'}
+                            </option>
+                        ))}
+                    </select>
+                    <InputError message={errors.billing_cycle} className="mt-2" />
+                </div>
+
+                <div>
                     <InputLabel htmlFor="description" value="Description" />
                     <textarea
                         id="description"
@@ -93,7 +111,7 @@ export default function Form({ mode, plan }) {
 
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                        <InputLabel value="Plan Features" />
+                        <InputLabel value="Included Features" />
                         <button
                             type="button"
                             onClick={addFeature}
@@ -110,7 +128,7 @@ export default function Form({ mode, plan }) {
                                     updateFeature(index, event.target.value)
                                 }
                                 className="block w-full"
-                                placeholder={`Feature ${index + 1}`}
+                                placeholder={`Feature ${index + 1} (e.g. Can post answers)`}
                             />
                             <button
                                 type="button"
@@ -143,4 +161,3 @@ export default function Form({ mode, plan }) {
         </AdminLayout>
     );
 }
-

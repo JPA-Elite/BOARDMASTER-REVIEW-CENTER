@@ -41,6 +41,7 @@ export default function Index({ subscriptions }) {
                             <tr>
                                 <th className="px-3 py-2">User</th>
                                 <th className="px-3 py-2">Plan</th>
+                                <th className="px-3 py-2">Billing</th>
                                 <th className="px-3 py-2">Start</th>
                                 <th className="px-3 py-2">End</th>
                                 <th className="px-3 py-2">Status</th>
@@ -61,6 +62,9 @@ export default function Index({ subscriptions }) {
                                     </td>
                                     <td className="px-3 py-2">
                                         {subscription.plan}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        {subscription.billing_label || '-'}
                                     </td>
                                     <td className="px-3 py-2">
                                         {subscription.start_date}
@@ -102,7 +106,7 @@ export default function Index({ subscriptions }) {
                             {subscriptions.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="px-3 py-4 text-center text-slate-500"
                                     >
                                         No subscriptions yet.
@@ -128,4 +132,3 @@ export default function Index({ subscriptions }) {
         </AdminLayout>
     );
 }
-

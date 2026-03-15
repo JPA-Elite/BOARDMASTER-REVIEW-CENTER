@@ -31,6 +31,7 @@ class PlanController extends Controller
         return Inertia::render('Admin/Plans/Form', [
             'mode' => 'create',
             'plan' => null,
+            'billingCycles' => Plan::billingCycles(),
         ]);
     }
 
@@ -39,6 +40,7 @@ class PlanController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:plans,name'],
             'price' => ['required', 'numeric', 'min:0'],
+            'billing_cycle' => ['required', 'string', Rule::in(Plan::billingCycles())],
             'description' => ['nullable', 'string'],
             'features' => ['nullable', 'array'],
             'features.*' => ['required', 'string', 'max:255'],
@@ -57,10 +59,12 @@ class PlanController extends Controller
 
         return Inertia::render('Admin/Plans/Form', [
             'mode' => 'edit',
+            'billingCycles' => Plan::billingCycles(),
             'plan' => [
                 'id' => $plan->id,
                 'name' => $plan->name,
                 'price' => (float) $plan->price,
+                'billing_cycle' => $plan->billing_cycle,
                 'description' => $plan->description,
                 'features' => $plan->features->pluck('feature_name')->values(),
             ],
@@ -72,6 +76,7 @@ class PlanController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('plans', 'name')->ignore($plan->id)],
             'price' => ['required', 'numeric', 'min:0'],
+            'billing_cycle' => ['required', 'string', Rule::in(Plan::billingCycles())],
             'description' => ['nullable', 'string'],
             'features' => ['nullable', 'array'],
             'features.*' => ['required', 'string', 'max:255'],

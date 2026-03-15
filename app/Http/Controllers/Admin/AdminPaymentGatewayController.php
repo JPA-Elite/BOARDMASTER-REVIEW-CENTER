@@ -21,13 +21,14 @@ class AdminPaymentGatewayController extends Controller
     {
         return Inertia::render('Admin/PaymentGateway', [
             'plans' => Plan::query()
-                ->select('id', 'name', 'price')
+                ->select('id', 'name', 'price', 'billing_cycle')
                 ->orderBy('name')
                 ->get()
                 ->map(fn (Plan $plan) => [
                     'id' => $plan->id,
                     'name' => $plan->name,
                     'price' => (float) $plan->price,
+                    'billing_cycle' => $plan->billing_cycle,
                 ]),
             'users' => User::query()
                 ->select('id', 'name', 'email')
@@ -136,6 +137,7 @@ class AdminPaymentGatewayController extends Controller
                     'user_id' => $validated['user_id'] ?? null,
                     'plan_id' => $plan?->id,
                     'plan_name' => $plan?->name,
+                    'billing_cycle' => $plan?->billing_cycle,
                     'reference' => $validated['reference'] ?? null,
                     'created_by' => (string) $request->user()->id,
                 ],

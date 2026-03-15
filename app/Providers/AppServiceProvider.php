@@ -20,6 +20,7 @@ use App\Repositories\Eloquent\ReferralRepository;
 use App\Repositories\Eloquent\SubjectRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserSubscriptionRepository;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -46,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Schema::defaultStringLength(191);
         Vite::prefetch(concurrency: 3);
     }
 }
