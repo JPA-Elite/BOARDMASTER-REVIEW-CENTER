@@ -178,6 +178,7 @@ function isActiveRoute(routeName) {
 
 export default function AdminLayout({ title, children }) {
     const { auth, flash } = usePage().props;
+    const hideFlash = route().current('admin.settings');
     const notifications = usePage().props.admin?.notifications ?? [];
     const notificationCount = usePage().props.admin?.notificationCount ?? 0;
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -461,13 +462,13 @@ export default function AdminLayout({ title, children }) {
 
                     <main className="flex-1 px-4 pb-5 pt-20 md:px-6">
                         <div className="space-y-4">
-                            {flash?.success && (
+                            {!hideFlash && flash?.success && (
                                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                                     {flash.success}
                                 </div>
                             )}
 
-                            {flash?.error && (
+                            {!hideFlash && flash?.error && (
                                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                     {flash.error}
                                 </div>

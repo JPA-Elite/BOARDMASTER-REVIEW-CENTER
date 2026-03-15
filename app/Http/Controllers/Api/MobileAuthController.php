@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserSubscription;
+use App\Services\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -76,9 +76,13 @@ class MobileAuthController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request): JsonResponse
+    public function updateProfile(
+        Request $request,
+        FileUploadService $uploads
+    ): JsonResponse
     {
         $user = $request->user();
+        $maxFileKb = $uploads->maxFileKilobytes();
 
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
@@ -95,7 +99,7 @@ class MobileAuthController extends Controller
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
             'place' => ['nullable', 'string', 'max:255'],
             'phone_number' => ['nullable', 'string', 'max:25'],
-            'avatar' => ['nullable', 'image', 'max:2048'],
+            'avatar' => ['nullable', 'image', "max:$maxFileKb"],
         ]);
 
         if (array_key_exists('email', $validated)
@@ -105,11 +109,11 @@ class MobileAuthController extends Controller
 
         if ($request->hasFile('avatar')) {
             $previousAvatar = $user->avatar_path;
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $validated['avatar_path'] = $path;
-            if ($previousAvatar) {
-                Storage::disk('public')->delete($previousAvatar);
-            }
+            $validated['avatar_path'] = $uploads->store(
+                $request->file('avatar'),
+                'avatars'
+            );
+            $uploads->delete($previousAvatar);
         }
 
         $user->fill($validated);

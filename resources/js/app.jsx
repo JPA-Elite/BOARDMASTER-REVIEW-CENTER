@@ -10,7 +10,12 @@ import 'react-toastify/dist/ReactToastify.css';
 const lastFlash = { success: null, error: null };
 let routerBound = false;
 
-const showFlash = (flash) => {
+const showFlash = (page) => {
+    if (!page || page.component === 'Admin/Settings') {
+        return;
+    }
+
+    const flash = page.props?.flash;
     if (!flash) {
         return;
     }
@@ -37,7 +42,7 @@ createInertiaApp({
         if (!routerBound) {
             routerBound = true;
             router.on('success', (event) => {
-                showFlash(event.detail.page?.props?.flash);
+                showFlash(event.detail.page);
             });
         }
 
@@ -60,7 +65,7 @@ createInertiaApp({
             </>,
         );
 
-        showFlash(props?.initialPage?.props?.flash);
+        showFlash(props?.initialPage);
     },
     progress: {
         color: '#4B5563',

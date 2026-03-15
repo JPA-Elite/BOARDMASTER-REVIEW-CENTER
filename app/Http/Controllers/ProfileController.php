@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\FileUploadService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,7 +28,10 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(
+        ProfileUpdateRequest $request,
+        FileUploadService $uploads
+    ): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -40,12 +43,11 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
             $previousAvatar = $request->user()->avatar_path;
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $request->user()->avatar_path = $path;
-
-            if ($previousAvatar) {
-                Storage::disk('public')->delete($previousAvatar);
-            }
+            $request->user()->avatar_path = $uploads->store(
+                $request->file('avatar'),
+                'avatars'
+            );
+            $uploads->delete($previousAvatar);
         }
 
         $request->user()->save();

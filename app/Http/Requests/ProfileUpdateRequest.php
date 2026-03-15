@@ -16,6 +16,8 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $maxFileKb = (int) config('uploads.max_file_kb', 10240);
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -26,7 +28,7 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            'avatar' => ['nullable', 'image', 'max:2048'],
+            'avatar' => ['nullable', 'image', "max:$maxFileKb"],
         ];
     }
 }

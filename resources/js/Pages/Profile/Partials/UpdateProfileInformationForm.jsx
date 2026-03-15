@@ -2,7 +2,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
+import { toast } from 'react-toastify';
 import { useEffect, useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 
@@ -15,7 +15,7 @@ export default function UpdateProfileInformation({
 
     const [avatarPreview, setAvatarPreview] = useState(null);
 
-    const { data, setData, post, errors, processing, recentlySuccessful } =
+    const { data, setData, post, errors, processing } =
         useForm({
             name: user.name,
             email: user.email,
@@ -30,11 +30,36 @@ export default function UpdateProfileInformation({
         };
     }, [avatarPreview]);
 
+    const getFirstError = (errors) => {
+        if (!errors) {
+            return null;
+        }
+
+        for (const value of Object.values(errors)) {
+            if (Array.isArray(value) && value.length > 0) {
+                return value[0];
+            }
+            if (typeof value === 'string' && value.trim().length > 0) {
+                return value;
+            }
+        }
+
+        return null;
+    };
+
     const submit = (e) => {
         e.preventDefault();
 
         post(route('profile.update'), {
             forceFormData: true,
+            onSuccess: () => {
+                toast.success('Profile updated successfully.');
+            },
+            onError: (errors) => {
+                const message =
+                    getFirstError(errors) || 'Unable to update profile.';
+                toast.error(message);
+            },
         });
     };
 
@@ -93,7 +118,7 @@ export default function UpdateProfileInformation({
                                 className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-gray-800"
                             />
                             <p className="mt-2 text-xs text-gray-500">
-                                Upload a square image (PNG, JPG, or GIF). Max 2MB.
+                                Upload a square image (PNG, JPG, GIF, or WEBP). Max 10MB.
                             </p>
                             <InputError className="mt-2" message={errors.avatar} />
                         </div>
@@ -157,18 +182,6 @@ export default function UpdateProfileInformation({
 
                 <div className="flex items-center gap-4">
                     <PrimaryButton disabled={processing}>Save</PrimaryButton>
-
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-gray-600">
-                            Saved.
-                        </p>
-                    </Transition>
                 </div>
             </form>
         </section>
