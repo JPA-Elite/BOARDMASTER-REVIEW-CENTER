@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -156,13 +156,6 @@ const navSections = [
             { label: 'Reviews', routeName: 'admin.reviews.index', icon: BookOpenIcon },
         ],
     },
-    {
-        label: 'System',
-        items: [
-            { label: 'Payment Gateway', routeName: 'admin.payment-gateway', icon: CreditCardIcon },
-            { label: 'Admin Settings', routeName: 'admin.settings', icon: SettingsIcon },
-        ],
-    },
 ];
 
 function isActiveRoute(routeName) {
@@ -181,6 +174,7 @@ export default function AdminLayout({ title, children }) {
     const hideFlash = route().current('admin.settings');
     const notifications = usePage().props.admin?.notifications ?? [];
     const notificationCount = usePage().props.admin?.notificationCount ?? 0;
+    const [unreadCount, setUnreadCount] = useState(notificationCount);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
     const [visibleNotifications, setVisibleNotifications] = useState(10);
@@ -196,6 +190,10 @@ export default function AdminLayout({ title, children }) {
             .slice(0, 2)
             .toUpperCase();
     }, [auth.user?.name]);
+
+    useEffect(() => {
+        setUnreadCount(notificationCount);
+    }, [notificationCount]);
 
     useEffect(() => {
         if (!notificationOpen) {
@@ -220,6 +218,22 @@ export default function AdminLayout({ title, children }) {
         };
     }, [notificationOpen]);
 
+    useEffect(() => {
+        if (!notificationOpen || unreadCount === 0) {
+            return;
+        }
+
+        setUnreadCount(0);
+        router.post(
+            route('admin.notifications.mark-read'),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    }, [notificationOpen, unreadCount]);
+
     return (
         <div className="min-h-screen bg-[#f4f5f7] text-slate-900">
             <div className="flex min-h-screen">
@@ -229,7 +243,7 @@ export default function AdminLayout({ title, children }) {
                     } lg:translate-x-0`}
                 >
                     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                        <div className="border-b border-slate-200 px-6 py-6">
+                        <div className="border-b border-slate-200 px-6 py-2">
                             <Link href={route('admin.dashboard')} className="flex items-center gap-3">
                                 <span className="inline-flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white">
                                     <img
@@ -361,11 +375,11 @@ export default function AdminLayout({ title, children }) {
                                         className="relative inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
                                     >
                                         <BellIcon />
-                                        {notificationCount > 0 && (
+                                        {unreadCount > 0 && (
                                             <span className="absolute -right-1 -top-1 inline-flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
-                                                {notificationCount > 9
+                                                {unreadCount > 9
                                                     ? '9+'
-                                                    : notificationCount}
+                                                    : unreadCount}
                                             </span>
                                         )}
                                     </button>

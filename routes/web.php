@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminPaymentGatewayController;
+use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\PlanController;
@@ -155,6 +156,8 @@ Route::middleware(['auth', 'verified', 'admin'])
             ->name('payment-gateway.webhooks.clear');
         Route::delete('/payment-gateway/webhooks/{transaction}', [AdminPaymentGatewayController::class, 'deleteWebhook'])
             ->name('payment-gateway.webhooks.delete');
+        Route::post('/notifications/mark-read', [AdminNotificationController::class, 'markRead'])
+            ->name('notifications.mark-read');
         Route::resource('users', UserController::class)->except('show');
         Route::resource('referrals', ReferralController::class)->except('show');
         Route::resource('plans', PlanController::class)->except('show');

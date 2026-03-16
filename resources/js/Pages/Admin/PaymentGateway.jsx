@@ -1,5 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import PaymongoGatewayForm from '@/Pages/Admin/Partials/PaymongoGatewayForm';
 import PaymongoWebhookLog from '@/Pages/Admin/Partials/PaymongoWebhookLog';
 import { useEffect, useState } from 'react';
@@ -33,6 +33,14 @@ export default function PaymentGateway({
             <Head title="Payment Gateway" />
 
             <div className="space-y-6">
+                <Link
+                    href={route('admin.settings')}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                >
+                    <span aria-hidden="true">←</span>
+                    Back to Admin Settings
+                </Link>
+
                 {paymongoRedirectUrl && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
                         {flash?.success ?? 'Redirecting to PayMongo checkout...'}

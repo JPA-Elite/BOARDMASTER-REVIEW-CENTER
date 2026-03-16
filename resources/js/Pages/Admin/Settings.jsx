@@ -13,8 +13,20 @@ export default function Settings({
 
             <div className="space-y-6">
                 <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <UpdateProfileInformationForm
+                        mustVerifyEmail={mustVerifyEmail}
+                        status={status}
+                        className="max-w-xl"
+                    />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <UpdatePasswordForm className="max-w-xl" />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6">
                     <h2 className="text-lg font-semibold text-slate-900">
-                        Payment Gateway
+                        Payment Gateway Test
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
                         Configure and test PayMongo checkout in a dedicated screen.
@@ -27,18 +39,6 @@ export default function Settings({
                             Open Payment Gateway
                         </Link>
                     </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                    <UpdateProfileInformationForm
-                        mustVerifyEmail={mustVerifyEmail}
-                        status={status}
-                        className="max-w-xl"
-                    />
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                    <UpdatePasswordForm className="max-w-xl" />
                 </div>
             </div>
         </AdminLayout>
