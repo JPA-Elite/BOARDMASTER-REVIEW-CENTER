@@ -1,4 +1,4 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -224,14 +224,26 @@ export default function AdminLayout({ title, children }) {
         }
 
         setUnreadCount(0);
-        router.post(
-            route('admin.notifications.mark-read'),
-            {},
-            {
-                preserveScroll: true,
-                preserveState: true,
-            },
-        );
+        const markRead = async () => {
+            try {
+                if (window.axios?.post) {
+                    await window.axios.post(
+                        route('admin.notifications.mark-read'),
+                    );
+                } else {
+                    await fetch(route('admin.notifications.mark-read'), {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+                }
+            } catch (_) {
+                // Ignore mark-read failures; UI already cleared the badge.
+            }
+        };
+
+        markRead();
     }, [notificationOpen, unreadCount]);
 
     return (
@@ -387,7 +399,7 @@ export default function AdminLayout({ title, children }) {
                                     {notificationOpen && (
                                         <div
                                             ref={notificationPanelRef}
-                                            className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+                                            className="fixed right-6 top-16 z-50 w-[320px] max-h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
                                         >
                                             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                                                 <p className="text-sm font-semibold text-slate-900">
