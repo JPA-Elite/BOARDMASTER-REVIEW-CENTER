@@ -48,6 +48,14 @@ class MobileAuthController extends Controller
                     'tier' => $this->resolveTier($plan),
                     'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
                 ] : null,
+                'subscription' => $subscription ? [
+                    'id' => $subscription->id,
+                    'plan_id' => $subscription->plan_id,
+                    'tier' => $this->resolveTier($plan),
+                    'billing_cycle' => $subscription->billing_cycle,
+                    'end_date' => $subscription->end_date?->toDateString(),
+                    'status' => $subscription->status,
+                ] : null,
             ],
         ], 201);
     }
@@ -91,6 +99,14 @@ class MobileAuthController extends Controller
                     'name' => $plan->name,
                     'tier' => $this->resolveTier($plan),
                     'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
+                ] : null,
+                'subscription' => $subscription ? [
+                    'id' => $subscription->id,
+                    'plan_id' => $subscription->plan_id,
+                    'tier' => $this->resolveTier($plan),
+                    'billing_cycle' => $subscription->billing_cycle,
+                    'end_date' => $subscription->end_date?->toDateString(),
+                    'status' => $subscription->status,
                 ] : null,
             ],
         ]);

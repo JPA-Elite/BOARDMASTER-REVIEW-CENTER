@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\User;
 use App\Models\UserSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class MobilePlanController extends Controller
 {
@@ -49,21 +51,11 @@ class MobilePlanController extends Controller
     public function select(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'plan_id' => ['nullable', 'integer', 'exists:plans,id'],
-            'tier' => ['nullable', 'string', 'in:free,premium,subscription'],
+            'plan_id' => ['required', 'integer', 'exists:plans,id'],
             'billing_cycle' => ['nullable', 'string', Rule::in(Plan::billingCycles())],
         ]);
 
-        $plan = null;
-        if (! empty($validated['plan_id'])) {
-            $plan = Plan::query()->find($validated['plan_id']);
-        }
-
-        if (! $plan && ! empty($validated['tier'])) {
-            $plan = $validated['tier'] === 'free'
-                ? Plan::query()->orderBy('price')->orderBy('id')->first()
-                : Plan::query()->where('price', '>', 0)->orderBy('price')->orderBy('id')->first();
-        }
+        $plan = Plan::query()->find($validated['plan_id']);
 
         if (! $plan) {
             return response()->json([
@@ -72,6 +64,17 @@ class MobilePlanController extends Controller
         }
 
         $user = $request->user();
+        if (! $user) {
+            $token = $request->bearerToken();
+            if ($token) {
+                $tokenModel = PersonalAccessToken::findToken($token);
+                $tokenUser = $tokenModel?->tokenable;
+                if ($tokenUser instanceof User) {
+                    $user = $tokenUser;
+                }
+            }
+        }
+
         if (! $user) {
             return response()->json([
                 'message' => 'Unauthorized.',
