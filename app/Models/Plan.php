@@ -18,12 +18,14 @@ class Plan extends Model
         'price',
         'billing_cycle',
         'description',
+        'is_default',
     ];
 
     protected function casts(): array
     {
         return [
             'price' => 'decimal:2',
+            'is_default' => 'boolean',
         ];
     }
 
@@ -35,6 +37,11 @@ class Plan extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(UserSubscription::class);
+    }
+
+    public function subjectAccesses(): HasMany
+    {
+        return $this->hasMany(PlanSubjectAccess::class);
     }
 
     public function paymentTransactions(): HasMany

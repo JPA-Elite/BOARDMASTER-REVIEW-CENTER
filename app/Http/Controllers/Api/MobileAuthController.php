@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserSubscription;
+use App\Services\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class MobileAuthController extends Controller
@@ -47,14 +49,6 @@ class MobileAuthController extends Controller
                     'name' => $plan->name,
                     'tier' => $this->resolveTier($plan),
                     'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
-                ] : null,
-                'subscription' => $subscription ? [
-                    'id' => $subscription->id,
-                    'plan_id' => $subscription->plan_id,
-                    'tier' => $this->resolveTier($plan),
-                    'billing_cycle' => $subscription->billing_cycle,
-                    'end_date' => $subscription->end_date?->toDateString(),
-                    'status' => $subscription->status,
                 ] : null,
             ],
         ], 201);
@@ -100,14 +94,6 @@ class MobileAuthController extends Controller
                     'tier' => $this->resolveTier($plan),
                     'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
                 ] : null,
-                'subscription' => $subscription ? [
-                    'id' => $subscription->id,
-                    'plan_id' => $subscription->plan_id,
-                    'tier' => $this->resolveTier($plan),
-                    'billing_cycle' => $subscription->billing_cycle,
-                    'end_date' => $subscription->end_date?->toDateString(),
-                    'status' => $subscription->status,
-                ] : null,
             ],
         ]);
     }
@@ -126,6 +112,7 @@ class MobileAuthController extends Controller
         }
 
         $defaultPlan = Plan::query()
+            ->orderByDesc('is_default')
             ->orderBy('price')
             ->orderBy('id')
             ->first();
@@ -159,7 +146,8 @@ class MobileAuthController extends Controller
         }
 
         $normalized = strtolower($plan->name);
-        if ((float) $plan->price <= 0
+        if ((bool) $plan->is_default
+            || (float) $plan->price <= 0
             || str_contains($normalized, 'free')) {
             return 'free';
         }
@@ -183,5 +171,44 @@ class MobileAuthController extends Controller
         return $billingCycle === Plan::BILLING_YEARLY
             ? $start->addYear()->toDateString()
             : $start->addMonth()->toDateString();
+    }
+
+    private function mobileUserPayload(
+        User $user,
+        ?Plan $plan,
+        ?UserSubscription $subscription = null,
+    ): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'school' => $user->school,
+            'birthdate' => $user->birthdate?->toDateString(),
+            'gender' => $user->gender,
+            'place' => $user->place,
+            'phone_number' => $user->phone_number,
+            'avatar_url' => $user->avatar_url,
+            'referral_code' => $user->referral_code,
+            'referred_by' => $user->referred_by,
+            'plan_tier' => $this->resolveTier($plan),
+            'subscription' => $subscription ? [
+                'id' => $subscription->id,
+                'plan_id' => $subscription->plan_id,
+                'billing_cycle' => $subscription->billing_cycle,
+                'start_date' => $subscription->start_date?->toDateString(),
+                'end_date' => $subscription->end_date?->toDateString(),
+                'status' => $subscription->status,
+            ] : null,
+            'end_date' => $subscription?->end_date?->toDateString(),
+            'plan' => $plan ? [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'tier' => $this->resolveTier($plan),
+                'billing_cycle' => $subscription
+                    ? $subscription->billing_cycle
+                    : $this->normalizeBillingCycle($plan->billing_cycle),
+            ] : null,
+        ];
     }
 }

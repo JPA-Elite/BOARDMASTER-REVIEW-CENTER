@@ -17,7 +17,8 @@ class MobilePlanController extends Controller
     public function index(): JsonResponse
     {
         $plans = Plan::query()
-            ->with('features')
+            ->with(['features', 'subjectAccesses'])
+            ->orderByDesc('is_default')
             ->orderBy('price')
             ->orderBy('id')
             ->get()
@@ -39,6 +40,8 @@ class MobilePlanController extends Controller
                     'billing_label' => $tier === 'free' ? 'Forever free' : $billingLabel,
                     'description' => $plan->description,
                     'features' => $plan->features->pluck('feature_name')->values()->all(),
+                    'is_default' => (bool) $plan->is_default,
+                    'subject_access_count' => $plan->subjectAccesses->count(),
                 ];
             })
             ->values();
@@ -55,11 +58,27 @@ class MobilePlanController extends Controller
             'billing_cycle' => ['nullable', 'string', Rule::in(Plan::billingCycles())],
         ]);
 
-        $plan = Plan::query()->find($validated['plan_id']);
+        $plan = null;
+        if (! empty($validated['plan_id'])) {
+            $plan = Plan::query()->find($validated['plan_id']);
+        }
+
+        if (! $plan && ! empty($validated['tier'])) {
+            $plan = $validated['tier'] === 'free'
+                ? Plan::query()->orderBy('price')->orderBy('id')->first()
+                : Plan::query()->where('price', '>', 0)->orderBy('price')->orderBy('id')->first();
+        }
 
         if (! $plan) {
             return response()->json([
                 'message' => 'No matching plan found.',
+            ], 422);
+        }
+
+        $tier = $this->resolveTier($plan);
+        if ($tier !== 'free' && (float) $plan->price > 0) {
+            return response()->json([
+                'message' => 'Paid plans require checkout payment first.',
             ], 422);
         }
 
@@ -89,7 +108,6 @@ class MobilePlanController extends Controller
             ]);
 
         $billingCycle = $validated['billing_cycle'] ?? $this->normalizeBillingCycle($plan->billing_cycle);
-        $tier = $this->resolveTier($plan);
         $endDate = $tier === 'free'
             ? null
             : $this->calculateEndDate(now(), $billingCycle);
@@ -119,7 +137,8 @@ class MobilePlanController extends Controller
     private function resolveTier(Plan $plan): string
     {
         $normalized = strtolower($plan->name);
-        if ((float) $plan->price <= 0
+        if ((bool) $plan->is_default
+            || (float) $plan->price <= 0
             || str_contains($normalized, 'free')) {
             return 'free';
         }
