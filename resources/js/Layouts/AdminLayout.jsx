@@ -135,6 +135,15 @@ function BookIcon() {
     );
 }
 
+function ArrowRightIcon() {
+    return (
+        <Icon className="size-4">
+            <path d="M5 12h14" />
+            <path d="m13 6 6 6-6 6" />
+        </Icon>
+    );
+}
+
 const navSections = [
     {
         label: 'Overview',
@@ -294,16 +303,27 @@ export default function AdminLayout({ title, children }) {
                                                 <Link
                                                     key={item.routeName + item.label}
                                                     href={href}
-                                                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition ${
+                                                    className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition ${
                                                         active
                                                             ? 'bg-slate-100 text-slate-950'
                                                             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
                                                     }`}
                                                 >
-                                                    <span className="text-slate-500">
-                                                        <ItemIcon />
+                                                    <span className="flex items-center gap-3">
+                                                        <span className="text-slate-500">
+                                                            <ItemIcon />
+                                                        </span>
+                                                        <span>{item.label}</span>
                                                     </span>
-                                                    <span>{item.label}</span>
+                                                    <span
+                                                        className={`ml-auto text-slate-400 opacity-0 transition ${
+                                                            active
+                                                                ? 'opacity-100 text-slate-600'
+                                                                : 'group-hover:translate-x-0.5 group-hover:opacity-100'
+                                                        }`}
+                                                    >
+                                                        <ArrowRightIcon />
+                                                    </span>
                                                 </Link>
                                             );
                                         })}
