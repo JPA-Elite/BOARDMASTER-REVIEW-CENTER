@@ -322,6 +322,141 @@ class MobilePracticeController extends Controller
         ]);
     }
 
+    public function attempts(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+        $attempts = QuizAttempt::query()
+            ->where('user_id', $user->id)
+            ->with('subject:id,name')
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        return response()->json([
+            'data' => collect($attempts->items())->map(fn (QuizAttempt $attempt) => [
+                'id' => $attempt->id,
+                'subject_id' => $attempt->subject_id,
+                'subject' => $attempt->subject?->name,
+                'subject_code' => $attempt->subject
+                    ? $this->subjectCode($attempt->subject->name)
+                    : 'SUBJ',
+                'score' => $attempt->score,
+                'total_questions' => $attempt->total_questions,
+                'created_at' => $attempt->created_at?->toDateTimeString(),
+            ])->values(),
+            'pagination' => [
+                'current_page' => $attempts->currentPage(),
+                'last_page' => $attempts->lastPage(),
+                'next_page_url' => $attempts->nextPageUrl(),
+                'has_more' => $attempts->hasMorePages(),
+            ],
+        ]);
+    }
+
+    public function attemptDetails(Request $request, QuizAttempt $quizAttempt): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+        if ((int) $quizAttempt->user_id !== (int) $user->id) {
+            return response()->json([
+                'message' => 'Attempt not found.',
+            ], 404);
+        }
+
+        $quizAttempt->load([
+            'subject:id,name',
+            'answers.question.choices' => fn ($query) => $query->orderBy('choice_label'),
+            'answers.selectedChoice',
+        ]);
+
+        $questions = [];
+        $answers = [];
+
+        foreach ($quizAttempt->answers as $answer) {
+            $question = $answer->question;
+            if (! $question) {
+                continue;
+            }
+
+            $choices = [];
+            $rationales = [];
+            $correctKey = null;
+
+            foreach ($question->choices as $choice) {
+                $label = strtoupper(trim((string) $choice->choice_label));
+                if ($label === '') {
+                    continue;
+                }
+
+                $choices[$label] = (string) $choice->choice_text;
+                $rationales[$label] = $choice->explanation
+                    ? (string) $choice->explanation
+                    : ($choice->is_correct
+                        ? 'This option is correct.'
+                        : 'This option does not satisfy this question.');
+
+                if ($choice->is_correct && ! $correctKey) {
+                    $correctKey = $label;
+                }
+            }
+
+            if (empty($choices)) {
+                continue;
+            }
+
+            if (! $correctKey) {
+                $correctKey = array_key_first($choices) ?: 'A';
+            }
+
+            $questions[] = [
+                'id' => $question->id,
+                'subject_id' => (string) $question->subject_id,
+                'question' => (string) $question->question,
+                'choices' => $choices,
+                'correct_key' => $correctKey,
+                'rationales' => $rationales,
+            ];
+
+            $selectedLabel = $answer->selectedChoice?->choice_label;
+            $answers[] = [
+                'question_id' => $question->id,
+                'selected_choice' => $selectedLabel
+                    ? strtoupper(trim((string) $selectedLabel))
+                    : null,
+            ];
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $quizAttempt->id,
+                'subject' => [
+                    'id' => $quizAttempt->subject_id,
+                    'code' => $quizAttempt->subject
+                        ? $this->subjectCode($quizAttempt->subject->name)
+                        : 'SUBJ',
+                    'title' => $quizAttempt->subject?->name ?? 'Unknown Subject',
+                ],
+                'score' => $quizAttempt->score,
+                'total_questions' => $quizAttempt->total_questions,
+                'created_at' => $quizAttempt->created_at?->toDateTimeString(),
+                'questions' => $questions,
+                'answers' => $answers,
+            ],
+        ]);
+    }
+
     private function resolveOrCreateSubscription(User $user): ?UserSubscription
     {
         $active = $user->subscriptions()

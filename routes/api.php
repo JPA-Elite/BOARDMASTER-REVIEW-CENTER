@@ -43,4 +43,8 @@ Route::prefix('mobile')->group(function () {
         ->middleware('auth:sanctum');
     Route::post('/quiz/submit', [MobilePracticeController::class, 'submit'])
         ->middleware('auth:sanctum');
+    Route::get('/quiz/attempts', [MobilePracticeController::class, 'attempts'])
+        ->middleware('auth:sanctum');
+    Route::get('/quiz/attempts/{quizAttempt}', [MobilePracticeController::class, 'attemptDetails'])
+        ->middleware('auth:sanctum');
 });
