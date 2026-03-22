@@ -215,6 +215,9 @@ export default function MarketingLayout({
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <Link href="/vision-mission" className="hover:text-slate-900">
+                            Vision & Mission
+                        </Link>
                         <Link href="/terms-of-use" className="hover:text-slate-900">
                             Terms
                         </Link>

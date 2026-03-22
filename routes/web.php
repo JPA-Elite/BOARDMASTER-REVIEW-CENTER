@@ -38,7 +38,7 @@ Route::get('/', function (FaqRepositoryInterface $faqsRepository) {
             [
                 'question' => 'Where should we report question issues?',
                 'answer' =>
-                    'Send the item details and screenshot to support@boardmasters.ph for content review.',
+                    'Send the item details and screenshot to boardmastersreviewcenter@gmail.com for content review.',
             ],
         ]);
     }
@@ -105,7 +105,7 @@ Route::get('/contact', function (FaqRepositoryInterface $faqsRepository) {
             [
                 'question' => 'Where should we report question issues?',
                 'answer' =>
-                    'Send the item details and screenshot to support@boardmasters.ph for content review.',
+                    'Send the item details and screenshot to boardmastersreviewcenter@gmail.com for content review.',
             ],
         ];
     }
@@ -113,6 +113,10 @@ Route::get('/contact', function (FaqRepositoryInterface $faqsRepository) {
     return Inertia::render('Contact', [
         'faqs' => $faqs,
     ]);
+});
+
+Route::get('/vision-mission', function () {
+    return Inertia::render('VisionMission');
 });
 
 Route::get('/payments/success', function () {

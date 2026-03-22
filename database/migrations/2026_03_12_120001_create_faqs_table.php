@@ -37,7 +37,7 @@ return new class extends Migration
             ],
             [
                 'question' => 'Where should we report question issues?',
-                'answer' => 'Send the item details and screenshot to support@boardmasters.ph for content review.',
+                'answer' => 'Send the item details and screenshot to boardmastersreviewcenter@gmail.com for content review.',
                 'is_active' => true,
                 'sort_order' => 3,
                 'created_at' => now(),

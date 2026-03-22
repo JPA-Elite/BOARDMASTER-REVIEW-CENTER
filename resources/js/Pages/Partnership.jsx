@@ -98,10 +98,10 @@ export default function Partnership() {
                                 <ArrowRight className="h-4 w-4" />
                             </Link>
                             <a
-                                href="mailto:support@boardmasters.ph"
+                                href="mailto:boardmastersreviewcenter@gmail.com"
                                 className="inline-flex items-center rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
                             >
-                                support@boardmasters.ph
+                                boardmastersreviewcenter@gmail.com
                             </a>
                         </div>
                     </div>
@@ -226,11 +226,11 @@ export default function Partnership() {
                             <ArrowRight className="h-4 w-4" />
                         </Link>
                         <a
-                            href="mailto:support@boardmasters.ph"
+                            href="mailto:boardmastersreviewcenter@gmail.com"
                             className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white"
                         >
                             <GraduationCap className="h-4 w-4" />
-                            support@boardmasters.ph
+                            boardmastersreviewcenter@gmail.com
                         </a>
                     </div>
                 </div>

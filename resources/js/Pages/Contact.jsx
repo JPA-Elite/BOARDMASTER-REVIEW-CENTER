@@ -45,7 +45,7 @@ const defaultFaqs = [
     },
     {
         question: 'Where should we report question issues?',
-        answer: 'Send the item details and screenshot to support@boardmasters.ph for content review.',
+        answer: 'Send the item details and screenshot to boardmastersreviewcenter@gmail.com for content review.',
     },
 ];
 
@@ -75,11 +75,11 @@ export default function Contact({ faqs = defaultFaqs }) {
                         </p>
                         <div className="mt-8 flex flex-wrap items-center gap-3">
                             <a
-                                href="mailto:support@boardmasters.ph"
+                                href="mailto:boardmastersreviewcenter@gmail.com"
                                 className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                             >
                                 <Mail className="h-4 w-4" />
-                                support@boardmasters.ph
+                                boardmastersreviewcenter@gmail.com
                             </a>
                             <a
                                 href="/partnership"
@@ -145,12 +145,12 @@ export default function Contact({ faqs = defaultFaqs }) {
                                 Official support email
                             </p>
                             <a
-                                href="mailto:support@boardmasters.ph"
+                                href="mailto:boardmastersreviewcenter@gmail.com"
                                 className="mt-2 inline-flex items-center gap-2 text-lg font-bold text-slate-900"
                                 style={headingFont}
                             >
                                 <Mail className="h-5 w-5" />
-                                support@boardmasters.ph
+                                boardmastersreviewcenter@gmail.com
                             </a>
                         </div>
                     </div>
