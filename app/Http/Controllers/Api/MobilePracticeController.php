@@ -9,13 +9,14 @@ use App\Models\QuizAttempt;
 use App\Models\Subject;
 use App\Models\User;
 use App\Models\UserSubscription;
+use App\Services\ReferralRewardsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class MobilePracticeController extends Controller
 {
-    public function subjects(Request $request): JsonResponse
+    public function subjects(Request $request, ReferralRewardsService $rewards): JsonResponse
     {
         $user = $request->user();
         if (! $user) {
@@ -32,31 +33,45 @@ class MobilePracticeController extends Controller
             ], 422);
         }
 
-        $plan->load([
-            'subjectAccesses' => fn ($query) => $query
-                ->with(['subject' => fn ($subjectQuery) => $subjectQuery->withCount('questions')])
-                ->orderBy('subject_id'),
-        ]);
-
-        $subjects = $plan->subjectAccesses
+        $planAccesses = $plan->subjectAccesses()
+            ->with(['subject' => fn ($subjectQuery) => $subjectQuery->withCount('questions')])
+            ->orderBy('subject_id')
+            ->get()
             ->filter(fn ($access) => $access->subject instanceof Subject)
+            ->keyBy('subject_id');
+
+        $rewardLimits = $rewards->rewardSubjectLimits($user);
+        $subjectIds = collect([
+            ...$planAccesses->keys()->all(),
+            ...array_keys($rewardLimits),
+        ])->unique()->values();
+
+        $subjects = Subject::query()
+            ->whereIn('id', $subjectIds)
+            ->withCount('questions')
+            ->get()
             ->values()
-            ->map(function ($access, int $index): array {
-                $subject = $access->subject;
+            ->map(function (Subject $subject, int $index) use ($planAccesses, $rewardLimits): array {
                 $totalQuestions = (int) ($subject->questions_count ?? 0);
-                $limitValue = (int) $access->question_limit;
-                if ($limitValue <= 0) {
-                    $limitValue = $totalQuestions;
-                } else {
-                    $limitValue = min($limitValue, $totalQuestions);
-                }
+                $planAccess = $planAccesses->get($subject->id);
+                $planLimit = $planAccess
+                    ? $this->normalizeLimit((int) $planAccess->question_limit, $totalQuestions)
+                    : null;
+                $rewardLimit = array_key_exists($subject->id, $rewardLimits)
+                    ? $this->normalizeLimit((int) $rewardLimits[$subject->id], $totalQuestions)
+                    : null;
+
+                $limits = collect([$planLimit, $rewardLimit])->filter();
+                $effectiveLimit = $limits->isNotEmpty()
+                    ? (int) $limits->max()
+                    : $totalQuestions;
 
                 return [
                     'id' => $subject->id,
                     'code' => $this->subjectCode($subject->name),
                     'title' => $subject->name,
                     'total_questions' => $totalQuestions,
-                    'question_limit' => $limitValue,
+                    'question_limit' => $effectiveLimit,
                     'color_hex' => $this->subjectColor($index),
                 ];
             });
@@ -71,7 +86,7 @@ class MobilePracticeController extends Controller
         ]);
     }
 
-    public function generate(Request $request): JsonResponse
+    public function generate(Request $request, ReferralRewardsService $rewards): JsonResponse
     {
         $validated = $request->validate([
             'subject_id' => ['required', 'integer', 'exists:subjects,id'],
@@ -96,8 +111,10 @@ class MobilePracticeController extends Controller
         $access = $plan->subjectAccesses()
             ->where('subject_id', $validated['subject_id'])
             ->first();
+        $rewardLimits = $rewards->rewardSubjectLimits($user);
+        $rewardLimit = $rewardLimits[$validated['subject_id']] ?? null;
 
-        if (! $access) {
+        if (! $access && $rewardLimit === null) {
             return response()->json([
                 'message' => 'This subject is not accessible in your current plan.',
             ], 403);
@@ -107,9 +124,19 @@ class MobilePracticeController extends Controller
         $availableCount = (int) Question::query()
             ->where('subject_id', $validated['subject_id'])
             ->count();
-        $rawLimit = (int) $access->question_limit;
-        $maxAllowedByPlan = $rawLimit <= 0 ? $availableCount : $rawLimit;
-        $effectiveCount = min($requestedCount, $maxAllowedByPlan, $availableCount);
+        $planLimit = $access
+            ? $this->normalizeLimit((int) $access->question_limit, $availableCount)
+            : null;
+        $rewardLimitNormalized = $rewardLimit !== null
+            ? $this->normalizeLimit((int) $rewardLimit, $availableCount)
+            : null;
+
+        $limits = collect([$planLimit, $rewardLimitNormalized])->filter();
+        $maxAllowed = $limits->isNotEmpty()
+            ? (int) $limits->max()
+            : $availableCount;
+
+        $effectiveCount = min($requestedCount, $maxAllowed, $availableCount);
 
         $questions = Question::query()
             ->where('subject_id', $validated['subject_id'])
@@ -166,13 +193,13 @@ class MobilePracticeController extends Controller
             'meta' => [
                 'served_questions' => $payload->count(),
                 'requested_questions' => $requestedCount,
-                'max_allowed_by_plan' => $maxAllowedByPlan,
+                'max_allowed_by_plan' => $maxAllowed,
                 'available_questions' => $availableCount,
             ],
         ]);
     }
 
-    public function submit(Request $request): JsonResponse
+    public function submit(Request $request, ReferralRewardsService $rewards): JsonResponse
     {
         $validated = $request->validate([
             'subject_id' => ['required', 'integer', 'exists:subjects,id'],
@@ -199,18 +226,28 @@ class MobilePracticeController extends Controller
         $access = $plan->subjectAccesses()
             ->where('subject_id', $validated['subject_id'])
             ->first();
+        $rewardLimits = $rewards->rewardSubjectLimits($user);
+        $rewardLimit = $rewardLimits[$validated['subject_id']] ?? null;
 
-        if (! $access) {
+        if (! $access && $rewardLimit === null) {
             return response()->json([
                 'message' => 'This subject is not accessible in your current plan.',
             ], 403);
         }
 
         $answers = collect($validated['answers']);
-        $rawLimit = (int) $access->question_limit;
-        $maxAllowedByPlan = $rawLimit <= 0 ? $answers->count() : $rawLimit;
+        $planLimit = $access
+            ? $this->normalizeLimit((int) $access->question_limit, $answers->count())
+            : null;
+        $rewardLimitNormalized = $rewardLimit !== null
+            ? $this->normalizeLimit((int) $rewardLimit, $answers->count())
+            : null;
+        $limits = collect([$planLimit, $rewardLimitNormalized])->filter();
+        $maxAllowed = $limits->isNotEmpty()
+            ? (int) $limits->max()
+            : $answers->count();
 
-        if ($rawLimit > 0 && $answers->count() > $maxAllowedByPlan) {
+        if ($answers->count() > $maxAllowed) {
             return response()->json([
                 'message' => 'Selected question count exceeds your plan limit.',
             ], 422);
@@ -398,5 +435,18 @@ class MobilePracticeController extends Controller
         ];
 
         return $colors[$index % count($colors)];
+    }
+
+    private function normalizeLimit(int $limit, int $totalQuestions): int
+    {
+        if ($totalQuestions <= 0) {
+            return 0;
+        }
+
+        if ($limit <= 0) {
+            return $totalQuestions;
+        }
+
+        return min($limit, $totalQuestions);
     }
 }

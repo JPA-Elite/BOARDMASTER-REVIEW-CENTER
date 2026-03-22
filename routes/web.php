@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuizAttemptController;
 use App\Http\Controllers\Admin\ReferralController;
+use App\Http\Controllers\Admin\ReferralOfferController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\UserController;
@@ -62,6 +63,9 @@ Route::middleware(['auth', 'verified', 'admin'])
             ->name('notifications.mark-read');
         Route::resource('users', UserController::class)->except('show');
         Route::resource('referrals', ReferralController::class)->except('show');
+        Route::patch('/referral-offers/settings', [ReferralOfferController::class, 'updateSettings'])
+            ->name('referral-offers.settings');
+        Route::resource('referral-offers', ReferralOfferController::class)->except('show');
         Route::resource('plans', PlanController::class)->except('show');
         Route::resource('subscriptions', UserSubscriptionController::class)->except('show');
         Route::resource('subjects', SubjectController::class)->except('show');

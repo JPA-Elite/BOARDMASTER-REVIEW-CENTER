@@ -33,6 +33,8 @@ Route::prefix('mobile')->group(function () {
         ->middleware('auth:sanctum');
     Route::post('/referrals/apply', [MobileReferralController::class, 'apply'])
         ->middleware('auth:sanctum');
+    Route::post('/referrals/redeem', [MobileReferralController::class, 'redeem'])
+        ->middleware('auth:sanctum');
     Route::get('/subscriptions/history', [MobileSubscriptionController::class, 'history'])
         ->middleware('auth:sanctum');
     Route::get('/subjects', [MobilePracticeController::class, 'subjects'])

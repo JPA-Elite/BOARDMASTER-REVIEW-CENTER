@@ -6,6 +6,7 @@ use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\QuestionRepositoryInterface;
 use App\Repositories\Contracts\QuizAttemptRepositoryInterface;
 use App\Repositories\Contracts\ReferralRepositoryInterface;
+use App\Repositories\Contracts\ReferralOfferRepositoryInterface;
 use App\Repositories\Contracts\SubjectRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
@@ -17,6 +18,7 @@ use App\Repositories\Eloquent\PlanRepository;
 use App\Repositories\Eloquent\QuestionRepository;
 use App\Repositories\Eloquent\QuizAttemptRepository;
 use App\Repositories\Eloquent\ReferralRepository;
+use App\Repositories\Eloquent\ReferralOfferRepository;
 use App\Repositories\Eloquent\SubjectRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserSubscriptionRepository;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(ReferralRepositoryInterface::class, ReferralRepository::class);
+        $this->app->bind(ReferralOfferRepositoryInterface::class, ReferralOfferRepository::class);
         $this->app->bind(PlanRepositoryInterface::class, PlanRepository::class);
         $this->app->bind(SubjectRepositoryInterface::class, SubjectRepository::class);
         $this->app->bind(QuestionRepositoryInterface::class, QuestionRepository::class);

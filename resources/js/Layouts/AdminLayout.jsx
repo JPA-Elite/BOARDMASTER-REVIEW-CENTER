@@ -148,6 +148,7 @@ const navSections = [
         items: [
             { label: 'Users', routeName: 'admin.users.index', icon: UsersIcon },
             { label: 'Referrals', routeName: 'admin.referrals.index', icon: UsersIcon },
+            { label: 'Referral Offers', routeName: 'admin.referral-offers.index', icon: CreditCardIcon },
             { label: 'Plans', routeName: 'admin.plans.index', icon: ClipboardIcon },
             { label: 'Subscriptions', routeName: 'admin.subscriptions.index', icon: CreditCardIcon },
             { label: 'Subjects', routeName: 'admin.subjects.index', icon: BookOpenIcon },
