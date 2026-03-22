@@ -41,14 +41,10 @@ class MobilePracticeController extends Controller
             ->keyBy('subject_id');
 
         $rewardLimits = $rewards->rewardSubjectLimits($user);
-        $subjectIds = collect([
-            ...$planAccesses->keys()->all(),
-            ...array_keys($rewardLimits),
-        ])->unique()->values();
 
         $subjects = Subject::query()
-            ->whereIn('id', $subjectIds)
             ->withCount('questions')
+            ->orderBy('id')
             ->get()
             ->values()
             ->map(function (Subject $subject, int $index) use ($planAccesses, $rewardLimits): array {
@@ -61,17 +57,23 @@ class MobilePracticeController extends Controller
                     ? $this->normalizeLimit((int) $rewardLimits[$subject->id], $totalQuestions)
                     : null;
 
+                $hasAccess = $planLimit !== null || $rewardLimit !== null;
                 $limits = collect([$planLimit, $rewardLimit])->filter();
                 $effectiveLimit = $limits->isNotEmpty()
                     ? (int) $limits->max()
-                    : $totalQuestions;
+                    : 0;
+
+                if ($hasAccess && $effectiveLimit <= 0) {
+                    $effectiveLimit = $totalQuestions;
+                }
 
                 return [
                     'id' => $subject->id,
                     'code' => $this->subjectCode($subject->name),
                     'title' => $subject->name,
                     'total_questions' => $totalQuestions,
-                    'question_limit' => $effectiveLimit,
+                    'question_limit' => $hasAccess ? $effectiveLimit : 0,
+                    'is_accessible' => $hasAccess,
                     'color_hex' => $this->subjectColor($index),
                 ];
             });
