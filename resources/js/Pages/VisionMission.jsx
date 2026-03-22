@@ -30,7 +30,7 @@ export default function VisionMission() {
             ogDescription="Board Masters Review Center vision, mission, philosophy, and tagline."
         >
             <section className="reveal-on-scroll px-4 pb-10 pt-12 sm:px-6">
-                <div className="mx-auto w-full max-w-5xl">
+                <div className="mx-auto w-full max-w-6xl">
                     <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
                         Board Masters Review Center
                     </p>
@@ -45,7 +45,7 @@ export default function VisionMission() {
             </section>
 
             <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
-                <div className="mx-auto w-full max-w-5xl">
+                <div className="mx-auto w-full max-w-6xl">
                     <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
                         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:p-8">
                             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
@@ -79,7 +79,7 @@ export default function VisionMission() {
             </section>
 
             <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
-                <div className="mx-auto w-full max-w-5xl">
+                <div className="mx-auto w-full max-w-6xl">
                     <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:p-8">
                         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
                             Philosophy
@@ -110,7 +110,7 @@ export default function VisionMission() {
             </section>
 
             <section className="reveal-on-scroll px-4 pb-16 sm:px-6">
-                <div className="mx-auto w-full max-w-5xl">
+                <div className="mx-auto w-full max-w-6xl">
                     <div className="rounded-[32px] bg-slate-900 px-6 py-10 text-white shadow-xl shadow-slate-200/60 sm:px-8">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                             Tagline
