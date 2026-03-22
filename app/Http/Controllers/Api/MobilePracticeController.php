@@ -457,6 +457,53 @@ class MobilePracticeController extends Controller
         ]);
     }
 
+    public function deleteAttempts(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'attempt_ids' => ['required', 'array', 'min:1'],
+            'attempt_ids.*' => ['integer'],
+        ]);
+
+        /** @var User|null $user */
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+        $ids = collect($validated['attempt_ids'])->unique()->values();
+        $deleted = QuizAttempt::query()
+            ->where('user_id', $user->id)
+            ->whereIn('id', $ids)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Attempts deleted successfully.',
+            'deleted' => $deleted,
+        ]);
+    }
+
+    public function clearAttempts(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+        $deleted = QuizAttempt::query()
+            ->where('user_id', $user->id)
+            ->delete();
+
+        return response()->json([
+            'message' => 'All attempts cleared successfully.',
+            'deleted' => $deleted,
+        ]);
+    }
+
     private function resolveOrCreateSubscription(User $user): ?UserSubscription
     {
         $active = $user->subscriptions()
