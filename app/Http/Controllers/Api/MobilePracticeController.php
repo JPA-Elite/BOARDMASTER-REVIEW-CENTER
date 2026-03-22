@@ -336,7 +336,7 @@ class MobilePracticeController extends Controller
             ->where('user_id', $user->id)
             ->with('subject:id,name')
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->paginate(5);
 
         return response()->json([
             'data' => collect($attempts->items())->map(fn (QuizAttempt $attempt) => [
