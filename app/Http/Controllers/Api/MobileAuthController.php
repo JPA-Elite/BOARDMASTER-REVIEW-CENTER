@@ -3,9 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
+use App\Models\User;
+use App\Models\UserSubscription;
+use App\Services\FileUploadService;
 use App\Services\Mobile\MobileAuthService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class MobileAuthController extends Controller
 {
@@ -222,7 +231,7 @@ class MobileAuthController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'school' => $user->school,
-            'birthdate' => $user->birthdate?->toDateString(),
+            'birthdate' => $this->formatDateValue($user->birthdate),
             'gender' => $user->gender,
             'place' => $user->place,
             'phone_number' => $user->phone_number,
@@ -234,11 +243,11 @@ class MobileAuthController extends Controller
                 'id' => $subscription->id,
                 'plan_id' => $subscription->plan_id,
                 'billing_cycle' => $subscription->billing_cycle,
-                'start_date' => $subscription->start_date?->toDateString(),
-                'end_date' => $subscription->end_date?->toDateString(),
+                'start_date' => $this->formatDateValue($subscription->start_date),
+                'end_date' => $this->formatDateValue($subscription->end_date),
                 'status' => $subscription->status,
             ] : null,
-            'end_date' => $subscription?->end_date?->toDateString(),
+            'end_date' => $this->formatDateValue($subscription?->end_date),
             'plan' => $plan ? [
                 'id' => $plan->id,
                 'name' => $plan->name,
@@ -248,5 +257,22 @@ class MobileAuthController extends Controller
                     : $this->normalizeBillingCycle($plan->billing_cycle),
             ] : null,
         ];
+    }
+
+    private function formatDateValue(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        try {
+            return Carbon::parse((string) $value)->format('Y-m-d');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
