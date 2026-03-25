@@ -2,7 +2,6 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useMemo } from 'react';
 
 export default function Form({
     mode,
@@ -10,32 +9,20 @@ export default function Form({
     users,
     plans,
     statuses,
-    billingCycles = ['monthly', 'yearly'],
 }) {
     const { data, setData, post, put, processing, errors } = useForm({
         user_id: subscription?.user_id || '',
         plan_id: subscription?.plan_id || '',
-        billing_cycle: subscription?.billing_cycle || billingCycles[0] || 'monthly',
         start_date: subscription?.start_date || '',
         end_date: subscription?.end_date || '',
         status: subscription?.status || statuses[0],
     });
 
-    const planLookup = useMemo(() => {
-        return plans.reduce((accumulator, plan) => {
-            accumulator[String(plan.id)] = plan;
-            return accumulator;
-        }, {});
-    }, [plans]);
-
     const handlePlanChange = (event) => {
         const selectedPlanId = event.target.value;
-        const selectedPlan = planLookup[selectedPlanId];
-
         setData((previous) => ({
             ...previous,
             plan_id: selectedPlanId,
-            billing_cycle: selectedPlan?.billing_cycle || previous.billing_cycle,
         }));
     };
 
@@ -96,25 +83,6 @@ export default function Form({
                         ))}
                     </select>
                     <InputError message={errors.plan_id} className="mt-2" />
-                </div>
-
-                <div>
-                    <InputLabel htmlFor="billing_cycle" value="Billing Cycle" />
-                    <select
-                        id="billing_cycle"
-                        value={data.billing_cycle}
-                        onChange={(event) =>
-                            setData('billing_cycle', event.target.value)
-                        }
-                        className="mt-1 block w-full rounded-md border-slate-300"
-                    >
-                        {billingCycles.map((cycle) => (
-                            <option key={cycle} value={cycle}>
-                                {cycle === 'yearly' ? 'Per Year' : 'Per Month'}
-                            </option>
-                        ))}
-                    </select>
-                    <InputError message={errors.billing_cycle} className="mt-2" />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">

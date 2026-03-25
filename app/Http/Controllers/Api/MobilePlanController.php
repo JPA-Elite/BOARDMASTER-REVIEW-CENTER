@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+<<<<<<< HEAD
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserSubscription;
@@ -11,48 +12,26 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Laravel\Sanctum\PersonalAccessToken;
+=======
+use App\Services\Mobile\MobilePlanService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+>>>>>>> 28865895a7c0afdec9935e1db7832274b9a2f54c
 
 class MobilePlanController extends Controller
 {
+    public function __construct(private readonly MobilePlanService $planService)
+    {
+    }
+
     public function index(): JsonResponse
     {
-        $plans = Plan::query()
-            ->with(['features', 'subjectAccesses'])
-            ->orderByDesc('is_default')
-            ->orderBy('price')
-            ->orderBy('id')
-            ->get()
-            ->map(function (Plan $plan): array {
-                $tier = $this->resolveTier($plan);
-                $billingCycle = $this->normalizeBillingCycle($plan->billing_cycle);
-                $billingLabel = $billingCycle === Plan::BILLING_YEARLY ? 'per year' : 'per month';
-
-                return [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'title' => $tier === 'free' ? 'Free Plan' : 'Subscription',
-                    'tier' => $tier,
-                    'price' => (float) $plan->price,
-                    'price_label' => $tier === 'free'
-                        ? 'PHP 0'
-                        : 'PHP '.$this->formatPrice((float) $plan->price),
-                    'billing_cycle' => $billingCycle,
-                    'billing_label' => $tier === 'free' ? 'Forever free' : $billingLabel,
-                    'description' => $plan->description,
-                    'features' => $plan->features->pluck('feature_name')->values()->all(),
-                    'is_default' => (bool) $plan->is_default,
-                    'subject_access_count' => $plan->subjectAccesses->count(),
-                ];
-            })
-            ->values();
-
-        return response()->json([
-            'data' => $plans,
-        ]);
+        return $this->planService->index();
     }
 
     public function select(Request $request): JsonResponse
     {
+<<<<<<< HEAD
         $validated = $request->validate([
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
             'billing_cycle' => ['nullable', 'string', Rule::in(Plan::billingCycles())],
@@ -171,5 +150,8 @@ class MobilePlanController extends Controller
         return $billingCycle === Plan::BILLING_YEARLY
             ? $start->addYear()->toDateString()
             : $start->addMonth()->toDateString();
+=======
+        return $this->planService->select($request);
+>>>>>>> 28865895a7c0afdec9935e1db7832274b9a2f54c
     }
 }

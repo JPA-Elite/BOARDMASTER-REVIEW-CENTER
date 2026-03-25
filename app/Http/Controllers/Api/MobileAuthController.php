@@ -3,20 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Plan;
-use App\Models\User;
-use App\Models\UserSubscription;
-use App\Services\FileUploadService;
+use App\Services\Mobile\MobileAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class MobileAuthController extends Controller
 {
+    public function __construct(private readonly MobileAuthService $authService)
+    {
+    }
+
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -39,18 +35,7 @@ class MobileAuthController extends Controller
         return response()->json([
             'message' => 'Registered successfully.',
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'plan_tier' => $this->resolveTier($plan),
-                'plan' => $plan ? [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'tier' => $this->resolveTier($plan),
-                    'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
-                ] : null,
-            ],
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ], 201);
     }
 
@@ -83,18 +68,71 @@ class MobileAuthController extends Controller
         return response()->json([
             'message' => 'Login successful.',
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'plan_tier' => $this->resolveTier($plan),
-                'plan' => $plan ? [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'tier' => $this->resolveTier($plan),
-                    'billing_cycle' => $this->normalizeBillingCycle($plan->billing_cycle),
-                ] : null,
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function updateProfile(
+        Request $request,
+        FileUploadService $uploads
+    ): JsonResponse
+    {
+        $user = $request->user();
+        $maxFileKb = $uploads->maxFileKilobytes();
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique(User::class)->ignore($user->id),
             ],
+            'school' => ['nullable', 'string', 'max:255'],
+            'birthdate' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
+            'place' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:25'],
+            'avatar' => ['nullable', 'image', "max:$maxFileKb"],
+        ]);
+
+        if (array_key_exists('email', $validated)
+            && $validated['email'] !== $user->email) {
+            $user->email_verified_at = null;
+        }
+
+        if ($request->hasFile('avatar')) {
+            $previousAvatar = $user->avatar_path;
+            $validated['avatar_path'] = $uploads->store(
+                $request->file('avatar'),
+                'avatars'
+            );
+            $uploads->delete($previousAvatar);
+        }
+
+        $user->fill($validated);
+        $user->save();
+
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        return response()->json([
+            'message' => 'Profile updated.',
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        return response()->json([
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ]);
     }
 

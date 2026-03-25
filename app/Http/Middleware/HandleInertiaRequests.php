@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Models\QuizAttempt;
+use App\Models\AdminNotification;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -34,25 +34,21 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         if ($user && $user->role === 'admin') {
-            $recentAttempts = QuizAttempt::query()
-                ->with(['user:id,name', 'subject:id,name'])
+            $notifications = AdminNotification::query()
                 ->latest()
                 ->limit(50)
                 ->get()
-                ->map(fn (QuizAttempt $attempt) => [
-                    'id' => $attempt->id,
-                    'title' => $attempt->subject?->name ?? 'Quiz Attempt',
-                    'message' => ($attempt->user?->name ?? 'User')
-                        .' scored '
-                        .$attempt->score
-                        .'/'
-                        .$attempt->total_questions,
-                    'time' => $attempt->created_at?->format('M d, Y h:i A'),
+                ->map(fn (AdminNotification $notification) => [
+                    'id' => $notification->id,
+                    'title' => $notification->title,
+                    'message' => $notification->message,
+                    'time' => $notification->created_at?->format('M d, Y h:i A'),
+                    'read_at' => $notification->read_at?->toDateTimeString(),
                 ]);
 
             $admin = [
-                'notificationCount' => $recentAttempts->count(),
-                'notifications' => $recentAttempts,
+                'notificationCount' => AdminNotification::query()->whereNull('read_at')->count(),
+                'notifications' => $notifications,
             ];
         }
 
