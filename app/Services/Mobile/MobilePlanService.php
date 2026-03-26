@@ -151,13 +151,7 @@ class MobilePlanService
                 $resumeEndDate = $resumeCandidate['end_date'];
                 $billingCycle = $resumeCandidate['billing_cycle'];
 
-                $this->subscriptions->query()
-                    ->where('user_id', $user->id)
-                    ->where('status', 'active')
-                    ->update([
-                        'status' => 'inactive',
-                        'end_date' => now()->toDateString(),
-                    ]);
+                $this->deactivateActiveSubscriptions($user, now()->toDateString());
 
                 /** @var UserSubscription $resumeSubscription */
                 $resumeSubscription = $resumeCandidate['subscription'];
@@ -190,13 +184,7 @@ class MobilePlanService
             }
         }
 
-        $this->subscriptions->query()
-            ->where('user_id', $user->id)
-            ->where('status', 'active')
-            ->update([
-                'status' => 'inactive',
-                'end_date' => now()->toDateString(),
-            ]);
+        $this->deactivateActiveSubscriptions($user, now()->toDateString());
 
         $billingCycle = $validated['billing_cycle'] ?? $this->normalizeBillingCycle($plan->billing_cycle);
         $durationDays = $plan->durationDays();
@@ -288,6 +276,21 @@ class MobilePlanService
             : Carbon::parse($startDate);
 
         return $start->addDays(max(1, $durationDays))->toDateString();
+    }
+
+    private function deactivateActiveSubscriptions(User $user, string $endDate): void
+    {
+        $activeSubscriptions = $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($activeSubscriptions as $subscription) {
+            $subscription->update([
+                'status' => 'inactive',
+                'end_date' => $endDate,
+            ]);
+        }
     }
 
     private function hasConsumedFreeTrial(User $user): bool
