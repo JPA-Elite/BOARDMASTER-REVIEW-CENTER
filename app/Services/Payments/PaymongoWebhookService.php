@@ -290,9 +290,7 @@ class PaymongoWebhookService
 
         DB::transaction(function () use ($userId, $planId, $plan, $resolvedBillingCycle): void {
             $today = Carbon::today()->toDateString();
-            $endDate = $this->isFreePlan($plan)
-                ? null
-                : $this->calculateEndDate(Carbon::today(), $resolvedBillingCycle);
+            $endDate = $this->calculateEndDate(Carbon::today(), $plan->durationDays());
 
             $this->subscriptions->query()
                 ->where('user_id', $userId)
@@ -348,14 +346,6 @@ class PaymongoWebhookService
 
     private function calculateEndDate(Carbon $startDate, string $billingCycle): string
     {
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? $startDate->copy()->addYear()->toDateString()
-            : $startDate->copy()->addMonth()->toDateString();
-    }
-
-    private function isFreePlan(Plan $plan): bool
-    {
-        return (float) $plan->price <= 0
-            || str_contains(strtolower($plan->name), 'free');
+        return $startDate->copy()->addDays(max(1, Plan::durationDaysForCycle($billingCycle)))->toDateString();
     }
 }

@@ -21,7 +21,8 @@ class PlanRepository extends AbstractRepository implements PlanRepositoryInterfa
                 'subjectAccesses:id,plan_id,subject_id,question_limit',
                 'subjectAccesses.subject:id,name',
             ])
-            ->latest()
+            ->orderBy('sort_order')
+            ->orderBy('id')
             ->paginate($perPage);
     }
 }

@@ -77,8 +77,17 @@ export default function Form({
                         <option value="">Select plan</option>
                         {plans.map((plan) => (
                             <option key={plan.id} value={plan.id}>
-                                {plan.name} - PHP {Number(plan.price).toFixed(2)} /{' '}
-                                {plan.billing_cycle === 'yearly' ? 'year' : 'month'}
+                                {(plan.sub_plan_label || plan.name)} - PHP {Number(plan.price).toFixed(2)} /{' '}
+                                {plan.billing_cycle === 'trial'
+                                    ? '3 days'
+                                    : plan.billing_cycle === 'quarterly'
+                                    ? '3 months'
+                                    : plan.billing_cycle === 'semi_annual'
+                                    ? '6 months'
+                                    : plan.billing_cycle === 'annual' ||
+                                      plan.billing_cycle === 'yearly'
+                                    ? '12 months'
+                                    : '1 month'}
                             </option>
                         ))}
                     </select>

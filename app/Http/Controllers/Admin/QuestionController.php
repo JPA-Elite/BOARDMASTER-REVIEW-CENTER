@@ -16,12 +16,18 @@ class QuestionController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $questions = $this->questions->paginate();
+        $filters = [
+            'search' => trim((string) $request->get('search', '')),
+            'subject_id' => $request->integer('subject_id') ?: null,
+        ];
+        $questions = $this->questions->paginate($filters);
 
         return Inertia::render('Admin/Questions/Index', [
             'questions' => $questions,
+            'subjects' => $this->questions->listSubjects(),
+            'filters' => $filters,
         ]);
     }
 

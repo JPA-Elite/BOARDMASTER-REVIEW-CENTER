@@ -44,7 +44,7 @@ class MobilePracticeService
         $plan = $subscription?->plan;
         if (! $plan) {
             return response()->json([
-                'message' => 'No plan is assigned to your account yet.',
+                'message' => $this->inactiveSubscriptionMessage(),
             ], 422);
         }
 
@@ -86,6 +86,8 @@ class MobilePracticeService
                     'id' => $subject->id,
                     'code' => $this->subjectCode($subject->name),
                     'title' => $subject->name,
+                    'group_key' => $this->subjectGroupKey($subject->name),
+                    'group_label' => $this->subjectGroupLabel($subject->name),
                     'total_questions' => $totalQuestions,
                     'question_limit' => $hasAccess ? $effectiveLimit : 0,
                     'is_accessible' => $hasAccess,
@@ -99,6 +101,9 @@ class MobilePracticeService
                 'plan_id' => $plan->id,
                 'plan_name' => $plan->name,
                 'tier' => $this->resolveTier($plan),
+                'plan_group' => $plan->groupKey(),
+                'group_label' => $plan->groupTitle(),
+                'sub_plan_label' => $plan->subPlanTitle(),
             ],
         ]);
     }
@@ -122,7 +127,7 @@ class MobilePracticeService
         $plan = $subscription?->plan;
         if (! $plan) {
             return response()->json([
-                'message' => 'No plan is assigned to your account yet.',
+                'message' => $this->inactiveSubscriptionMessage(),
             ], 422);
         }
 
@@ -238,7 +243,7 @@ class MobilePracticeService
         $plan = $subscription?->plan;
         if (! $plan) {
             return response()->json([
-                'message' => 'No plan is assigned to your account yet.',
+                'message' => $this->inactiveSubscriptionMessage(),
             ], 422);
         }
 
@@ -526,10 +531,25 @@ class MobilePracticeService
 
     private function resolveOrCreateSubscription(User $user): ?UserSubscription
     {
+        $today = now()->toDateString();
+        $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $today)
+            ->update([
+                'status' => 'expired',
+                'end_date' => $today,
+            ]);
+
         $active = $this->subscriptions->query()
             ->with('plan')
             ->where('user_id', $user->id)
             ->where('status', 'active')
+            ->where(function ($query) use ($today) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $today);
+            })
             ->orderByDesc('start_date')
             ->orderByDesc('id')
             ->first();
@@ -540,6 +560,7 @@ class MobilePracticeService
 
         $defaultPlan = $this->plans->query()
             ->orderByDesc('is_default')
+            ->orderBy('sort_order')
             ->orderBy('price')
             ->orderBy('id')
             ->first();
@@ -548,11 +569,12 @@ class MobilePracticeService
             return null;
         }
 
+        if ($defaultPlan->isFreeTrial() && $this->hasConsumedFreeTrial($user)) {
+            return null;
+        }
+
         $billingCycle = $this->normalizeBillingCycle($defaultPlan->billing_cycle);
-        $tier = $this->resolveTier($defaultPlan);
-        $endDate = $tier === 'free'
-            ? null
-            : $this->calculateEndDate(now(), $billingCycle);
+        $endDate = $this->calculateEndDate(now(), $defaultPlan->durationDays());
 
         /** @var UserSubscription $subscription */
         $subscription = $this->subscriptions->create([
@@ -573,9 +595,7 @@ class MobilePracticeService
             return 'free';
         }
 
-        if ((bool) $plan->is_default
-            || (float) $plan->price <= 0
-            || str_contains(strtolower($plan->name), 'free')) {
+        if ($plan->isFreeTrial()) {
             return 'free';
         }
 
@@ -584,20 +604,18 @@ class MobilePracticeService
 
     private function normalizeBillingCycle(?string $billingCycle): string
     {
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? Plan::BILLING_YEARLY
+        return in_array($billingCycle, Plan::billingCycles(), true)
+            ? (string) $billingCycle
             : Plan::BILLING_MONTHLY;
     }
 
-    private function calculateEndDate(Carbon|string $startDate, string $billingCycle): string
+    private function calculateEndDate(Carbon|string $startDate, int $durationDays): string
     {
         $start = $startDate instanceof Carbon
             ? $startDate->copy()
             : Carbon::parse($startDate);
 
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? $start->addYear()->toDateString()
-            : $start->addMonth()->toDateString();
+        return $start->addDays(max(1, $durationDays))->toDateString();
     }
 
     private function subjectCode(string $name): string
@@ -652,5 +670,49 @@ class MobilePracticeService
         }
 
         return min($limit, $totalQuestions);
+    }
+
+    private function subjectGroupKey(string $name): string
+    {
+        $normalized = strtolower(trim($name));
+        if (str_starts_with($normalized, 'nursing practice')) {
+            return 'mock_board_exam';
+        }
+
+        return 'nursing_concepts';
+    }
+
+    private function subjectGroupLabel(string $name): string
+    {
+        return $this->subjectGroupKey($name) === 'mock_board_exam'
+            ? 'Mock Board Exam'
+            : 'All Nursing Concepts';
+    }
+
+    private function inactiveSubscriptionMessage(): string
+    {
+        return 'No active subscription found. Your free trial may have ended. Please choose a paid plan.';
+    }
+
+    private function hasConsumedFreeTrial(User $user): bool
+    {
+        return $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->whereHas('plan', function ($query) {
+                $query->where('plan_group', 'free_trial')
+                    ->orWhere('billing_cycle', Plan::BILLING_TRIAL)
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('is_default', true)
+                            ->where('price', '<=', 0);
+                    })
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('price', '<=', 0)
+                            ->where(function ($nameQuery) {
+                                $nameQuery->whereRaw('LOWER(name) LIKE ?', ['%trial%'])
+                                    ->orWhereRaw('LOWER(name) LIKE ?', ['%free%']);
+                            });
+                    });
+            })
+            ->exists();
     }
 }

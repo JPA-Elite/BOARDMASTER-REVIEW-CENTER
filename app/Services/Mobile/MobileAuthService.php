@@ -158,10 +158,25 @@ class MobileAuthService
 
     private function resolveOrCreateSubscription(User $user): ?UserSubscription
     {
+        $today = now()->toDateString();
+        $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $today)
+            ->update([
+                'status' => 'expired',
+                'end_date' => $today,
+            ]);
+
         $active = $this->subscriptions->query()
             ->with('plan.features')
             ->where('user_id', $user->id)
             ->where('status', 'active')
+            ->where(function ($query) use ($today) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $today);
+            })
             ->orderByDesc('start_date')
             ->orderByDesc('id')
             ->first();
@@ -172,6 +187,7 @@ class MobileAuthService
 
         $defaultPlan = $this->plans->query()
             ->orderByDesc('is_default')
+            ->orderBy('sort_order')
             ->orderBy('price')
             ->orderBy('id')
             ->first();
@@ -180,11 +196,12 @@ class MobileAuthService
             return null;
         }
 
+        if ($defaultPlan->isFreeTrial() && $this->hasConsumedFreeTrial($user)) {
+            return null;
+        }
+
         $billingCycle = $this->normalizeBillingCycle($defaultPlan->billing_cycle);
-        $tier = $this->resolveTier($defaultPlan);
-        $endDate = $tier === 'free'
-            ? null
-            : $this->calculateEndDate(now(), $billingCycle);
+        $endDate = $this->calculateEndDate(now(), $defaultPlan->durationDays());
 
         /** @var UserSubscription $subscription */
         $subscription = $this->subscriptions->create([
@@ -205,10 +222,7 @@ class MobileAuthService
             return 'free';
         }
 
-        $normalized = strtolower($plan->name);
-        if ((bool) $plan->is_default
-            || (float) $plan->price <= 0
-            || str_contains($normalized, 'free')) {
+        if ($plan->isFreeTrial()) {
             return 'free';
         }
 
@@ -217,20 +231,18 @@ class MobileAuthService
 
     private function normalizeBillingCycle(?string $billingCycle): string
     {
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? Plan::BILLING_YEARLY
+        return in_array($billingCycle, Plan::billingCycles(), true)
+            ? (string) $billingCycle
             : Plan::BILLING_MONTHLY;
     }
 
-    private function calculateEndDate(Carbon|string $startDate, string $billingCycle): string
+    private function calculateEndDate(Carbon|string $startDate, int $durationDays): string
     {
         $start = $startDate instanceof Carbon
             ? $startDate->copy()
             : Carbon::parse($startDate);
 
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? $start->addYear()->toDateString()
-            : $start->addMonth()->toDateString();
+        return $start->addDays(max(1, $durationDays))->toDateString();
     }
 
     private function mobileUserPayload(
@@ -250,6 +262,7 @@ class MobileAuthService
             'avatar_url' => $user->avatar_url,
             'referral_code' => $user->referral_code,
             'referred_by' => $user->referred_by,
+            'trial_consumed' => $this->hasConsumedFreeTrial($user),
             'plan_tier' => $this->resolveTier($plan),
             'subscription' => $subscription ? [
                 'id' => $subscription->id,
@@ -264,10 +277,36 @@ class MobileAuthService
                 'id' => $plan->id,
                 'name' => $plan->name,
                 'tier' => $this->resolveTier($plan),
+                'plan_group' => $plan->groupKey(),
+                'group_label' => $plan->groupTitle(),
+                'sub_plan_label' => $plan->subPlanTitle(),
+                'duration_days' => $plan->durationDays(),
                 'billing_cycle' => $subscription
                     ? $subscription->billing_cycle
                     : $this->normalizeBillingCycle($plan->billing_cycle),
             ] : null,
         ];
+    }
+
+    private function hasConsumedFreeTrial(User $user): bool
+    {
+        return $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->whereHas('plan', function ($query) {
+                $query->where('plan_group', 'free_trial')
+                    ->orWhere('billing_cycle', Plan::BILLING_TRIAL)
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('is_default', true)
+                            ->where('price', '<=', 0);
+                    })
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('price', '<=', 0)
+                            ->where(function ($nameQuery) {
+                                $nameQuery->whereRaw('LOWER(name) LIKE ?', ['%trial%'])
+                                    ->orWhereRaw('LOWER(name) LIKE ?', ['%free%']);
+                            });
+                    });
+            })
+            ->exists();
     }
 }

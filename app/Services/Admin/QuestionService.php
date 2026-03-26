@@ -19,9 +19,36 @@ class QuestionService
     ) {
     }
 
-    public function paginate(): LengthAwarePaginator
+    /**
+     * @param array{search?: string, subject_id?: int|null} $filters
+     */
+    public function paginate(array $filters = []): LengthAwarePaginator
     {
-        $questions = $this->questions->paginateWithRelations();
+        $search = trim((string) ($filters['search'] ?? ''));
+        $subjectId = $filters['subject_id'] ?? null;
+
+        $query = $this->questions->query()
+            ->with(['subject:id,name', 'creator:id,name'])
+            ->withCount('choices')
+            ->latest();
+
+        if ($subjectId) {
+            $query->where('subject_id', $subjectId);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('question', 'like', "%{$search}%")
+                    ->orWhereHas('subject', function ($subjectQuery) use ($search) {
+                        $subjectQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $questions = $query->paginate(15)->appends([
+            'search' => $search,
+            'subject_id' => $subjectId,
+        ]);
 
         $questions->through(fn (Question $question) => [
             'id' => $question->id,

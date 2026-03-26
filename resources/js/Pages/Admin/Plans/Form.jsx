@@ -8,10 +8,22 @@ import { useEffect, useMemo } from 'react';
 export default function Form({
     mode,
     plan,
-    billingCycles = ['monthly', 'yearly'],
+    billingCycles = ['trial', 'quarterly', 'semi_annual', 'annual', 'monthly', 'yearly'],
+    planGroups = [],
     subjects = [],
+    initialPlanGroup = '',
+    initialGroupLabel = '',
 }) {
+    const createEmptySubPlan = () => ({
+        name: '',
+        sub_plan_label: '',
+        price: '',
+        billing_cycle: 'quarterly',
+        duration_days: '',
+        sort_order: 0,
+    });
     const isDefaultPlan = mode === 'edit' && Boolean(plan?.is_default);
+    const canManageSubPlans = mode === 'create';
     const initialSubjectAccesses =
         plan?.subject_accesses?.map((item) => {
             const parsedLimit = Number(item.question_limit);
@@ -20,17 +32,50 @@ export default function Form({
                 question_limit: Number.isFinite(parsedLimit) ? parsedLimit : 0,
             };
         }) || [];
+    const initialSubPlans =
+        mode === 'create'
+            ? [
+                  {
+                      ...createEmptySubPlan(),
+                  },
+              ]
+            : [];
+    const billingCycleLabel = (cycle) => {
+        if (cycle === 'trial') {
+            return 'Trial (3 days)';
+        }
+        if (cycle === 'quarterly') {
+            return 'Quarterly (3 months)';
+        }
+        if (cycle === 'semi_annual') {
+            return 'Semi-Annual (6 months)';
+        }
+        if (cycle === 'annual' || cycle === 'yearly') {
+            return 'Annual (12 months)';
+        }
+        return 'Monthly (1 month)';
+    };
 
     const { data, setData, post, put, processing, errors } = useForm({
         name: plan?.name || '',
+        plan_group:
+            plan?.plan_group ||
+            (initialPlanGroup?.trim() || 'plan_a'),
+        group_label:
+            plan?.group_label ||
+            (initialGroupLabel?.trim() || ''),
+        sub_plan_label: plan?.sub_plan_label || '',
         price: plan?.price ?? '',
         billing_cycle: plan?.billing_cycle || 'monthly',
+        duration_days: plan?.duration_days ?? '',
+        sort_order: plan?.sort_order ?? 0,
         description: plan?.description || '',
         features:
             plan?.features?.length > 0
                 ? plan.features
                 : ['', ''],
         subject_accesses: initialSubjectAccesses,
+        sub_plans: initialSubPlans,
     });
 
     const updateFeature = (index, value) => {
@@ -52,6 +97,38 @@ export default function Form({
             'features',
             data.features.filter((_, featureIndex) => featureIndex !== index),
         );
+    };
+
+    const updateSubPlan = (index, field, value) => {
+        const next = [...data.sub_plans];
+        next[index] = {
+            ...next[index],
+            [field]: value,
+        };
+        setData('sub_plans', next);
+    };
+
+    const addSubPlan = () => {
+        setData('sub_plans', [...data.sub_plans, createEmptySubPlan()]);
+    };
+
+    const removeSubPlan = (index) => {
+        if (mode === 'create' && data.sub_plans.length <= 1) {
+            return;
+        }
+
+        setData(
+            'sub_plans',
+            data.sub_plans.filter((_, itemIndex) => itemIndex !== index),
+        );
+    };
+
+    const defaultSubjectLimit = () => {
+        const currentPrice =
+            mode === 'create'
+                ? Number(data.sub_plans?.[0]?.price)
+                : Number(data.price);
+        return Number.isFinite(currentPrice) && currentPrice <= 0 ? 30 : 100;
     };
 
     const selectedAccessBySubjectId = useMemo(() => {
@@ -112,7 +189,7 @@ export default function Form({
         );
 
         if (checked && existingIndex === -1) {
-            const defaultLimit = Number(data.price) <= 0 ? 30 : 100;
+            const defaultLimit = defaultSubjectLimit();
             const subjectMax = subjectMaxById[String(subjectId)] || defaultLimit;
             next.push({
                 subject_id: numericSubjectId,
@@ -164,7 +241,7 @@ export default function Form({
     const setLimitMode = (subjectId) => {
         const numericSubjectId = Number(subjectId);
         const subjectMax = subjectMaxById[String(subjectId)] || 1;
-        const defaultLimit = Number(data.price) <= 0 ? 30 : 100;
+        const defaultLimit = defaultSubjectLimit();
         const fallback = Math.min(subjectMax, defaultLimit);
         const next = data.subject_accesses.map((item) => {
             if (Number(item.subject_id) !== numericSubjectId) {
@@ -191,6 +268,9 @@ export default function Form({
         return errors[`subject_accesses.${targetIndex}.question_limit`];
     };
 
+    const subPlanFieldError = (index, field) =>
+        errors[`sub_plans.${index}.${field}`];
+
     const submit = (event) => {
         event.preventDefault();
 
@@ -207,65 +287,373 @@ export default function Form({
             <Head title={mode === 'edit' ? 'Edit Plan' : 'Create Plan'} />
 
             <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
-                <div>
-                    <InputLabel htmlFor="name" value="Plan Name" />
-                    <TextInput
-                        id="name"
-                        value={data.name}
-                        onChange={(event) => setData('name', event.target.value)}
-                        className="mt-1 block w-full"
-                        disabled={isDefaultPlan}
-                    />
-                    <InputError message={errors.name} className="mt-2" />
-                    {isDefaultPlan && (
-                        <p className="mt-2 text-xs text-slate-500">
-                            Default Free Plan name is fixed.
-                        </p>
-                    )}
-                </div>
+                {mode === 'edit' && (
+                    <div>
+                        <InputLabel htmlFor="name" value="Plan Name" />
+                        <TextInput
+                            id="name"
+                            value={data.name}
+                            onChange={(event) => setData('name', event.target.value)}
+                            className="mt-1 block w-full"
+                            disabled={isDefaultPlan}
+                        />
+                        <InputError message={errors.name} className="mt-2" />
+                        {isDefaultPlan && (
+                            <p className="mt-2 text-xs text-slate-500">
+                                Default Free Trial name is fixed.
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 <div>
-                    <InputLabel htmlFor="price" value="Price" />
+                    <InputLabel htmlFor="plan_group" value="Plan Group" />
                     <TextInput
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={data.price}
-                        onChange={(event) => setData('price', event.target.value)}
+                        id="plan_group"
+                        value={data.plan_group}
+                        onChange={(event) =>
+                            setData(
+                                'plan_group',
+                                event.target.value
+                                    .toLowerCase()
+                                    .replace(/[^a-z0-9_]/g, '_'),
+                            )
+                        }
                         className="mt-1 block w-full"
                         disabled={isDefaultPlan}
+                        list="plan-group-options"
+                        placeholder="e.g. plan_a, plan_b, plan_c"
                     />
-                    <InputError message={errors.price} className="mt-2" />
-                    {isDefaultPlan && (
-                        <p className="mt-2 text-xs text-slate-500">
-                            Default Free Plan always has `PHP 0` pricing.
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <InputLabel htmlFor="billing_cycle" value="Subscription Billing" />
-                    <select
-                        id="billing_cycle"
-                        value={data.billing_cycle}
-                        onChange={(event) => setData('billing_cycle', event.target.value)}
-                        className="mt-1 block w-full rounded-md border-slate-300"
-                        disabled={isDefaultPlan}
-                    >
-                        {billingCycles.map((cycle) => (
-                            <option key={cycle} value={cycle}>
-                                {cycle === 'yearly' ? 'Per Year' : 'Per Month'}
+                    <datalist id="plan-group-options">
+                        {planGroups.map((group) => (
+                            <option key={group.value} value={group.value}>
+                                {group.label}
                             </option>
                         ))}
-                    </select>
-                    <InputError message={errors.billing_cycle} className="mt-2" />
-                    {isDefaultPlan && (
-                        <p className="mt-2 text-xs text-slate-500">
-                            Default Free Plan billing is fixed to monthly.
-                        </p>
-                    )}
+                    </datalist>
+                    <InputError message={errors.plan_group} className="mt-2" />
+                    <p className="mt-2 text-xs text-slate-500">
+                        You can add new groups anytime, like `plan_c` or `plan_d`.
+                    </p>
                 </div>
+
+                <div>
+                    <InputLabel htmlFor="group_label" value="Group Display Label" />
+                    <TextInput
+                        id="group_label"
+                        value={data.group_label}
+                        onChange={(event) => setData('group_label', event.target.value)}
+                        className="mt-1 block w-full"
+                        disabled={isDefaultPlan}
+                    />
+                    <InputError message={errors.group_label} className="mt-2" />
+                </div>
+
+                {canManageSubPlans && (
+                    <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <InputLabel
+                                    value={
+                                        mode === 'create'
+                                            ? 'Sub Plans in this Group'
+                                            : 'Add New Sub Plans to This Group'
+                                    }
+                                />
+                                <p className="mt-1 text-xs text-slate-500">
+                                    {mode === 'create'
+                                        ? 'Add one or more sub plans under the selected group.'
+                                        : 'Optionally add more sub plans while editing this group.'}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={addSubPlan}
+                                className="text-sm text-sky-700 hover:text-sky-900"
+                            >
+                                Add Sub Plan
+                            </button>
+                        </div>
+                        <InputError message={errors.sub_plans} className="mt-1" />
+                        {data.sub_plans.map((subPlan, index) => (
+                            <div
+                                key={index}
+                                className="rounded-lg border border-slate-200 p-3"
+                            >
+                                <div className="mb-3 flex items-center justify-between">
+                                    <p className="text-sm font-semibold text-slate-800">
+                                        Sub Plan {index + 1}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeSubPlan(index)}
+                                        className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-700"
+                                        disabled={
+                                            mode === 'create' &&
+                                            data.sub_plans.length <= 1
+                                        }
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <div>
+                                        <InputLabel
+                                            htmlFor={`sub-plan-name-${index}`}
+                                            value="Plan Name"
+                                        />
+                                        <TextInput
+                                            id={`sub-plan-name-${index}`}
+                                            value={subPlan.name}
+                                            onChange={(event) =>
+                                                updateSubPlan(
+                                                    index,
+                                                    'name',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="mt-1 block w-full"
+                                            placeholder="Plan C - Quarterly (3 months)"
+                                        />
+                                        <InputError
+                                            message={subPlanFieldError(index, 'name')}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel
+                                            htmlFor={`sub-plan-label-${index}`}
+                                            value="Sub Plan Label"
+                                        />
+                                        <TextInput
+                                            id={`sub-plan-label-${index}`}
+                                            value={subPlan.sub_plan_label}
+                                            onChange={(event) =>
+                                                updateSubPlan(
+                                                    index,
+                                                    'sub_plan_label',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="mt-1 block w-full"
+                                            placeholder="Quarterly (3 months)"
+                                        />
+                                        <InputError
+                                            message={subPlanFieldError(
+                                                index,
+                                                'sub_plan_label',
+                                            )}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel
+                                            htmlFor={`sub-plan-price-${index}`}
+                                            value="Price"
+                                        />
+                                        <TextInput
+                                            id={`sub-plan-price-${index}`}
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={subPlan.price}
+                                            onChange={(event) =>
+                                                updateSubPlan(
+                                                    index,
+                                                    'price',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="mt-1 block w-full"
+                                        />
+                                        <InputError
+                                            message={subPlanFieldError(index, 'price')}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel
+                                            htmlFor={`sub-plan-billing-${index}`}
+                                            value="Subscription Billing"
+                                        />
+                                        <select
+                                            id={`sub-plan-billing-${index}`}
+                                            value={subPlan.billing_cycle}
+                                            onChange={(event) =>
+                                                updateSubPlan(
+                                                    index,
+                                                    'billing_cycle',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="mt-1 block w-full rounded-md border-slate-300"
+                                        >
+                                            {billingCycles.map((cycle) => (
+                                                <option key={cycle} value={cycle}>
+                                                    {billingCycleLabel(cycle)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <InputError
+                                            message={subPlanFieldError(
+                                                index,
+                                                'billing_cycle',
+                                            )}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel
+                                            htmlFor={`sub-plan-duration-${index}`}
+                                            value="Duration (days)"
+                                        />
+                                        <TextInput
+                                            id={`sub-plan-duration-${index}`}
+                                            type="number"
+                                            min="1"
+                                            value={subPlan.duration_days}
+                                            onChange={(event) =>
+                                                updateSubPlan(
+                                                    index,
+                                                    'duration_days',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="mt-1 block w-full"
+                                        />
+                                        <InputError
+                                            message={subPlanFieldError(
+                                                index,
+                                                'duration_days',
+                                            )}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel
+                                            htmlFor={`sub-plan-sort-${index}`}
+                                            value="Sort Order"
+                                        />
+                                        <TextInput
+                                            id={`sub-plan-sort-${index}`}
+                                            type="number"
+                                            min="0"
+                                            value={subPlan.sort_order}
+                                            onChange={(event) =>
+                                                updateSubPlan(
+                                                    index,
+                                                    'sort_order',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="mt-1 block w-full"
+                                        />
+                                        <InputError
+                                            message={subPlanFieldError(
+                                                index,
+                                                'sort_order',
+                                            )}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {mode === 'edit' && (
+                    <>
+                        <div>
+                            <InputLabel htmlFor="sub_plan_label" value="Sub Plan Label" />
+                            <TextInput
+                                id="sub_plan_label"
+                                value={data.sub_plan_label}
+                                onChange={(event) =>
+                                    setData('sub_plan_label', event.target.value)
+                                }
+                                className="mt-1 block w-full"
+                                disabled={isDefaultPlan}
+                                placeholder="Quarterly (3 months)"
+                            />
+                            <InputError message={errors.sub_plan_label} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="price" value="Price" />
+                            <TextInput
+                                id="price"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.price}
+                                onChange={(event) => setData('price', event.target.value)}
+                                className="mt-1 block w-full"
+                                disabled={isDefaultPlan}
+                            />
+                            <InputError message={errors.price} className="mt-2" />
+                            {isDefaultPlan && (
+                                <p className="mt-2 text-xs text-slate-500">
+                                    Default Free Trial always has `PHP 0` pricing.
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="billing_cycle" value="Subscription Billing" />
+                            <select
+                                id="billing_cycle"
+                                value={data.billing_cycle}
+                                onChange={(event) => setData('billing_cycle', event.target.value)}
+                                className="mt-1 block w-full rounded-md border-slate-300"
+                                disabled={isDefaultPlan}
+                            >
+                                {billingCycles.map((cycle) => (
+                                    <option key={cycle} value={cycle}>
+                                        {billingCycleLabel(cycle)}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={errors.billing_cycle} className="mt-2" />
+                            {isDefaultPlan && (
+                                <p className="mt-2 text-xs text-slate-500">
+                                    Default Free Trial billing is fixed to 3 days.
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="duration_days" value="Duration (days)" />
+                            <TextInput
+                                id="duration_days"
+                                type="number"
+                                min="1"
+                                value={data.duration_days}
+                                onChange={(event) =>
+                                    setData('duration_days', event.target.value)
+                                }
+                                className="mt-1 block w-full"
+                                disabled={isDefaultPlan}
+                            />
+                            <InputError message={errors.duration_days} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="sort_order" value="Sort Order" />
+                            <TextInput
+                                id="sort_order"
+                                type="number"
+                                min="0"
+                                value={data.sort_order}
+                                onChange={(event) =>
+                                    setData('sort_order', event.target.value)
+                                }
+                                className="mt-1 block w-full"
+                            />
+                            <InputError message={errors.sort_order} className="mt-2" />
+                        </div>
+                    </>
+                )}
 
                 <div>
                     <InputLabel htmlFor="description" value="Description" />
@@ -444,7 +832,7 @@ export default function Form({
                         disabled={processing}
                         className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
                     >
-                        {mode === 'edit' ? 'Update Plan' : 'Create Plan'}
+                        {mode === 'edit' ? 'Update Plan' : 'Create Group Plans'}
                     </button>
                     <Link
                         href={route('admin.plans.index')}

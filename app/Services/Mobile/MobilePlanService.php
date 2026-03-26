@@ -24,36 +24,31 @@ class MobilePlanService
     {
         $plans = $this->plans->query()
             ->with(['features', 'subjectAccesses'])
-            ->orderByDesc('is_default')
-            ->orderBy('price')
+            ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->map(function (Plan $plan): array {
-                $tier = $this->resolveTier($plan);
-                $billingCycle = $this->normalizeBillingCycle($plan->billing_cycle);
-                $billingLabel = $billingCycle === Plan::BILLING_YEARLY ? 'per year' : 'per month';
+            ->map(fn (Plan $plan): array => $this->planPayload($plan))
+            ->values();
+
+        $groups = $plans
+            ->groupBy('plan_group')
+            ->map(function ($items, $groupKey): array {
+                $first = $items->first();
 
                 return [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'title' => $tier === 'free' ? 'Free Plan' : 'Subscription',
-                    'tier' => $tier,
-                    'price' => (float) $plan->price,
-                    'price_label' => $tier === 'free'
-                        ? 'PHP 0'
-                        : 'PHP '.$this->formatPrice((float) $plan->price),
-                    'billing_cycle' => $billingCycle,
-                    'billing_label' => $tier === 'free' ? 'Forever free' : $billingLabel,
-                    'description' => $plan->description,
-                    'features' => $plan->features->pluck('feature_name')->values()->all(),
-                    'is_default' => (bool) $plan->is_default,
-                    'subject_access_count' => $plan->subjectAccesses->count(),
+                    'group_key' => $groupKey,
+                    'group_label' => $first['group_label'] ?? 'Plans',
+                    'plans' => $items
+                        ->sortBy('sort_order')
+                        ->values()
+                        ->all(),
                 ];
             })
             ->values();
 
         return response()->json([
             'data' => $plans,
+            'groups' => $groups,
         ]);
     }
 
@@ -72,8 +67,18 @@ class MobilePlanService
 
         if (! $plan && ! empty($validated['tier'])) {
             $plan = $validated['tier'] === 'free'
-                ? $this->plans->query()->orderByDesc('is_default')->orderBy('price')->orderBy('id')->first()
-                : $this->plans->query()->where('price', '>', 0)->orderBy('price')->orderBy('id')->first();
+                ? $this->plans->query()
+                    ->orderByDesc('is_default')
+                    ->orderBy('sort_order')
+                    ->orderBy('price')
+                    ->orderBy('id')
+                    ->first()
+                : $this->plans->query()
+                    ->where('price', '>', 0)
+                    ->orderBy('sort_order')
+                    ->orderBy('price')
+                    ->orderBy('id')
+                    ->first();
         }
 
         if (! ($plan instanceof Plan)) {
@@ -97,6 +102,94 @@ class MobilePlanService
             ], 401);
         }
 
+        $today = now()->toDateString();
+        $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $today)
+            ->update([
+                'status' => 'expired',
+                'end_date' => $today,
+            ]);
+
+        $activeSubscription = $this->subscriptions->query()
+            ->with('plan')
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where(function ($query) use ($today) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $today);
+            })
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($plan->isFreeTrial()) {
+            if ($activeSubscription instanceof UserSubscription
+                && (int) $activeSubscription->plan_id === (int) $plan->id) {
+                $durationDays = $plan->durationDays();
+
+                return response()->json([
+                    'message' => 'Free trial is already active.',
+                    'data' => [
+                        'subscription_id' => $activeSubscription->id,
+                        'plan_id' => $plan->id,
+                        'tier' => $tier,
+                        'plan_name' => $plan->name,
+                        'plan_group' => $plan->groupKey(),
+                        'sub_plan_label' => $plan->subPlanTitle(),
+                        'billing_cycle' => $activeSubscription->billing_cycle,
+                        'duration_days' => $durationDays,
+                        'end_date' => $activeSubscription->end_date?->toDateString(),
+                    ],
+                ]);
+            }
+
+            $resumeCandidate = $this->findResumableFreeTrial($user, $plan);
+            if ($resumeCandidate !== null) {
+                $resumeEndDate = $resumeCandidate['end_date'];
+                $billingCycle = $resumeCandidate['billing_cycle'];
+
+                $this->subscriptions->query()
+                    ->where('user_id', $user->id)
+                    ->where('status', 'active')
+                    ->update([
+                        'status' => 'inactive',
+                        'end_date' => now()->toDateString(),
+                    ]);
+
+                /** @var UserSubscription $resumeSubscription */
+                $resumeSubscription = $resumeCandidate['subscription'];
+                $resumeSubscription->update([
+                    'status' => 'active',
+                    'billing_cycle' => $billingCycle,
+                    'end_date' => $resumeEndDate,
+                ]);
+
+                return response()->json([
+                    'message' => 'Free trial resumed.',
+                    'data' => [
+                        'subscription_id' => $resumeSubscription->id,
+                        'plan_id' => $plan->id,
+                        'tier' => $tier,
+                        'plan_name' => $plan->name,
+                        'plan_group' => $plan->groupKey(),
+                        'sub_plan_label' => $plan->subPlanTitle(),
+                        'billing_cycle' => $billingCycle,
+                        'duration_days' => $plan->durationDays(),
+                        'end_date' => $resumeEndDate,
+                    ],
+                ]);
+            }
+
+            if ($this->hasConsumedFreeTrial($user)) {
+                return response()->json([
+                    'message' => 'Free trial can only be activated once. Please choose a paid plan.',
+                ], 422);
+            }
+        }
+
         $this->subscriptions->query()
             ->where('user_id', $user->id)
             ->where('status', 'active')
@@ -106,9 +199,8 @@ class MobilePlanService
             ]);
 
         $billingCycle = $validated['billing_cycle'] ?? $this->normalizeBillingCycle($plan->billing_cycle);
-        $endDate = $tier === 'free'
-            ? null
-            : $this->calculateEndDate(now(), $billingCycle);
+        $durationDays = $plan->durationDays();
+        $endDate = $this->calculateEndDate(now(), $durationDays);
 
         /** @var UserSubscription $subscription */
         $subscription = $this->subscriptions->create([
@@ -127,22 +219,50 @@ class MobilePlanService
                 'plan_id' => $plan->id,
                 'tier' => $tier,
                 'plan_name' => $plan->name,
+                'plan_group' => $plan->groupKey(),
+                'sub_plan_label' => $plan->subPlanTitle(),
                 'billing_cycle' => $billingCycle,
+                'duration_days' => $durationDays,
                 'end_date' => $endDate,
             ],
         ]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function planPayload(Plan $plan): array
+    {
+        $tier = $this->resolveTier($plan);
+        $billingCycle = $this->normalizeBillingCycle($plan->billing_cycle);
+        $durationDays = $plan->durationDays();
+
+        return [
+            'id' => $plan->id,
+            'name' => $plan->name,
+            'title' => $plan->groupTitle(),
+            'tier' => $tier,
+            'price' => (float) $plan->price,
+            'price_label' => $tier === 'free'
+                ? 'PHP 0'
+                : 'PHP '.$this->formatPrice((float) $plan->price),
+            'billing_cycle' => $billingCycle,
+            'billing_label' => $plan->billingLabel(),
+            'duration_days' => $durationDays,
+            'description' => $plan->description,
+            'features' => $plan->features->pluck('feature_name')->values()->all(),
+            'is_default' => (bool) $plan->is_default,
+            'subject_access_count' => $plan->subjectAccesses->count(),
+            'plan_group' => $plan->groupKey(),
+            'group_label' => $plan->groupTitle(),
+            'sub_plan_label' => $plan->subPlanTitle(),
+            'sort_order' => (int) ($plan->sort_order ?? 0),
+        ];
+    }
+
     private function resolveTier(Plan $plan): string
     {
-        $normalized = strtolower($plan->name);
-        if ((bool) $plan->is_default
-            || (float) $plan->price <= 0
-            || str_contains($normalized, 'free')) {
-            return 'free';
-        }
-
-        return 'premium';
+        return $plan->isFreeTrial() ? 'free' : 'premium';
     }
 
     private function formatPrice(float $price): string
@@ -156,19 +276,99 @@ class MobilePlanService
 
     private function normalizeBillingCycle(?string $billingCycle): string
     {
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? Plan::BILLING_YEARLY
+        return in_array($billingCycle, Plan::billingCycles(), true)
+            ? (string) $billingCycle
             : Plan::BILLING_MONTHLY;
     }
 
-    private function calculateEndDate(Carbon|string $startDate, string $billingCycle): string
+    private function calculateEndDate(Carbon|string $startDate, int $durationDays): string
     {
         $start = $startDate instanceof Carbon
             ? $startDate->copy()
             : Carbon::parse($startDate);
 
-        return $billingCycle === Plan::BILLING_YEARLY
-            ? $start->addYear()->toDateString()
-            : $start->addMonth()->toDateString();
+        return $start->addDays(max(1, $durationDays))->toDateString();
+    }
+
+    private function hasConsumedFreeTrial(User $user): bool
+    {
+        return $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->whereHas('plan', function ($query) {
+                $query->where('plan_group', 'free_trial')
+                    ->orWhere('billing_cycle', Plan::BILLING_TRIAL)
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('is_default', true)
+                            ->where('price', '<=', 0);
+                    })
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('price', '<=', 0)
+                            ->where(function ($nameQuery) {
+                                $nameQuery->whereRaw('LOWER(name) LIKE ?', ['%trial%'])
+                                    ->orWhereRaw('LOWER(name) LIKE ?', ['%free%']);
+                            });
+                    });
+            })
+            ->exists();
+    }
+
+    /**
+     * @return array{subscription: UserSubscription, end_date: string, billing_cycle: string}|null
+     */
+    private function findResumableFreeTrial(User $user, Plan $plan): ?array
+    {
+        $subscription = $this->subscriptions->query()
+            ->where('user_id', $user->id)
+            ->whereHas('plan', function ($query) {
+                $query->where('plan_group', 'free_trial')
+                    ->orWhere('billing_cycle', Plan::BILLING_TRIAL)
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('is_default', true)
+                            ->where('price', '<=', 0);
+                    })
+                    ->orWhere(function ($legacyQuery) {
+                        $legacyQuery->where('price', '<=', 0)
+                            ->where(function ($nameQuery) {
+                                $nameQuery->whereRaw('LOWER(name) LIKE ?', ['%trial%'])
+                                    ->orWhereRaw('LOWER(name) LIKE ?', ['%free%']);
+                            });
+                    });
+            })
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $subscription instanceof UserSubscription) {
+            return null;
+        }
+
+        if ((int) $subscription->plan_id !== (int) $plan->id) {
+            return null;
+        }
+
+        if (! $subscription->start_date) {
+            return null;
+        }
+
+        $startDate = Carbon::parse($subscription->start_date);
+        $durationDays = max(1, $plan->durationDays());
+        $expectedEnd = $startDate->copy()->addDays($durationDays);
+
+        if ($subscription->end_date instanceof Carbon
+            && $subscription->end_date->greaterThan($expectedEnd)) {
+            $expectedEnd = $subscription->end_date->copy();
+        }
+
+        if (Carbon::today()->greaterThan($expectedEnd)) {
+            return null;
+        }
+
+        $billingCycle = $subscription->billing_cycle ?: $this->normalizeBillingCycle($plan->billing_cycle);
+
+        return [
+            'subscription' => $subscription,
+            'end_date' => $expectedEnd->toDateString(),
+            'billing_cycle' => $billingCycle,
+        ];
     }
 }

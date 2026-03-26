@@ -21,7 +21,7 @@ class MobileSubscriptionService
         $user = $request->user();
 
         $subscriptions = $this->subscriptions->query()
-            ->with('plan:id,name,price,billing_cycle')
+            ->with('plan:id,name,sub_plan_label,group_label,price,billing_cycle,duration_days')
             ->where('user_id', $user->id)
             ->whereHas('plan', function ($query) {
                 $query->where('price', '>', 0)
@@ -37,8 +37,11 @@ class MobileSubscriptionService
                     'id' => $subscription->id,
                     'plan_id' => $subscription->plan_id,
                     'plan_name' => $subscription->plan?->name,
+                    'plan_group_label' => $subscription->plan?->group_label,
+                    'sub_plan_label' => $subscription->plan?->sub_plan_label,
                     'price' => (float) ($subscription->plan?->price ?? 0),
                     'billing_cycle' => $subscription->billing_cycle,
+                    'duration_days' => (int) ($subscription->plan?->duration_days ?? 0),
                     'start_date' => $subscription->start_date?->toDateString(),
                     'end_date' => $subscription->end_date?->toDateString(),
                     'status' => $subscription->status,

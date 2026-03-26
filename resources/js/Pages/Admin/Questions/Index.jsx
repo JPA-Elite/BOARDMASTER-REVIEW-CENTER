@@ -5,8 +5,12 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-export default function Index({ questions }) {
+export default function Index({ questions, subjects = [], filters = {} }) {
     const [confirmingId, setConfirmingId] = useState(null);
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [subjectId, setSubjectId] = useState(
+        filters.subject_id ? String(filters.subject_id) : '',
+    );
 
     const openConfirm = (id) => setConfirmingId(id);
     const closeConfirm = () => setConfirmingId(null);
@@ -21,12 +25,85 @@ export default function Index({ questions }) {
         });
     };
 
+    const applyFilters = (next = {}) => {
+        const payload = {
+            search,
+            subject_id: subjectId || null,
+            ...next,
+        };
+
+        router.get(route('admin.questions.index'), payload, {
+            preserveState: true,
+            replace: true,
+            preserveScroll: true,
+        });
+    };
+
+    const submitSearch = (event) => {
+        event.preventDefault();
+        applyFilters();
+    };
+
+    const resetFilters = () => {
+        setSearch('');
+        setSubjectId('');
+        router.get(
+            route('admin.questions.index'),
+            {},
+            {
+                preserveState: true,
+                replace: true,
+                preserveScroll: true,
+            },
+        );
+    };
+
     return (
         <AdminLayout title="Questions">
             <Head title="Admin Questions" />
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="mb-4 flex justify-end">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <form
+                        onSubmit={submitSearch}
+                        className="flex flex-wrap items-center gap-2"
+                    >
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Search question or subject"
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64"
+                        />
+                        <select
+                            value={subjectId}
+                            onChange={(event) => {
+                                setSubjectId(event.target.value);
+                                applyFilters({ subject_id: event.target.value });
+                            }}
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-56"
+                        >
+                            <option value="">All subjects</option>
+                            {subjects.map((subject) => (
+                                <option key={subject.id} value={subject.id}>
+                                    {subject.name}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            type="submit"
+                            className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
+                        >
+                            Search
+                        </button>
+                        <button
+                            type="button"
+                            onClick={resetFilters}
+                            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                        >
+                            Clear
+                        </button>
+                    </form>
                     <Link
                         href={route('admin.questions.create')}
                         className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"

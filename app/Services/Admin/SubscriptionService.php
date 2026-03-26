@@ -30,7 +30,7 @@ class SubscriptionService
             'user_email' => $subscription->user?->email,
             'plan' => $subscription->plan?->name,
             'billing_cycle' => $subscription->billing_cycle,
-            'billing_label' => $subscription->billing_cycle === Plan::BILLING_YEARLY ? 'Per year' : 'Per month',
+            'billing_label' => $this->billingLabel((string) $subscription->billing_cycle),
             'start_date' => $subscription->start_date?->format('Y-m-d'),
             'end_date' => $subscription->end_date?->format('Y-m-d'),
             'status' => $subscription->status,
@@ -48,7 +48,8 @@ class SubscriptionService
     public function listPlans(): Collection
     {
         return $this->plans->query()
-            ->select('id', 'name', 'price', 'billing_cycle')
+            ->select('id', 'name', 'sub_plan_label', 'price', 'billing_cycle', 'sort_order')
+            ->orderBy('sort_order')
             ->orderBy('price')
             ->orderBy('name')
             ->get();
@@ -71,14 +72,16 @@ class SubscriptionService
 
     private function preparePayload(array $data): array
     {
+        $plan = $this->plans->find((int) $data['plan_id']);
         $billingCycle = $this->resolveBillingCycle($data);
         $startDate = Carbon::parse($data['start_date']);
         $endDate = $data['end_date'] ?? null;
 
         if (! $endDate) {
-            $endDate = $billingCycle === Plan::BILLING_YEARLY
-                ? $startDate->copy()->addYear()->toDateString()
-                : $startDate->copy()->addMonth()->toDateString();
+            $durationDays = $plan instanceof Plan
+                ? $plan->durationDays()
+                : Plan::durationDaysForCycle($billingCycle);
+            $endDate = $startDate->copy()->addDays(max(1, $durationDays))->toDateString();
         }
 
         return [
@@ -104,5 +107,17 @@ class SubscriptionService
         }
 
         return Plan::BILLING_MONTHLY;
+    }
+
+    private function billingLabel(string $billingCycle): string
+    {
+        return match ($billingCycle) {
+            Plan::BILLING_TRIAL => '3 days',
+            Plan::BILLING_QUARTERLY => '3 months',
+            Plan::BILLING_SEMI_ANNUAL => '6 months',
+            Plan::BILLING_ANNUAL, Plan::BILLING_YEARLY => '12 months',
+            Plan::BILLING_MONTHLY => '1 month',
+            default => 'Per cycle',
+        };
     }
 }
