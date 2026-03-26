@@ -5,7 +5,6 @@ use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminPaymentGatewayController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminSettingsController;
@@ -48,7 +47,6 @@ Route::middleware(['auth', 'verified', 'admin'])
     ->as('admin.')
     ->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
-        Route::get('/analytics', AdminAnalyticsController::class)->name('analytics');
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
         Route::get('/payment-gateway', [AdminPaymentGatewayController::class, 'index'])->name('payment-gateway');
         Route::post('/payment-gateway/test-connection', [AdminPaymentGatewayController::class, 'testConnection'])

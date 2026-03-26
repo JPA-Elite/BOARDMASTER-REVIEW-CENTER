@@ -29,17 +29,6 @@ function DashboardIcon() {
     );
 }
 
-function AnalyticsIcon() {
-    return (
-        <Icon>
-            <path d="M3 3v18h18" />
-            <path d="M8 14v-3" />
-            <path d="M12 14V8" />
-            <path d="M16 14v-6" />
-            <path d="M20 14V5" />
-        </Icon>
-    );
-}
 
 function UsersIcon() {
     return (
@@ -149,7 +138,6 @@ const navSections = [
         label: 'Overview',
         items: [
             { label: 'Dashboard', routeName: 'admin.dashboard', icon: DashboardIcon },
-            { label: 'Analytics', routeName: 'admin.analytics', icon: AnalyticsIcon },
         ],
     },
     {
