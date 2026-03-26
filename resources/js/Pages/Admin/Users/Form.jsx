@@ -3,9 +3,10 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function Form({ mode, user, roles, referrers }) {
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         name: user?.name || '',
         email: user?.email || '',
         password: '',
@@ -13,17 +14,32 @@ export default function Form({ mode, user, roles, referrers }) {
         role: user?.role || roles[0],
         referral_code: user?.referral_code || '',
         referred_by: user?.referred_by || '',
+        avatar: null,
     });
+    const [avatarPreview, setAvatarPreview] = useState(user?.avatar_url || '');
 
     const submit = (event) => {
         event.preventDefault();
 
         if (mode === 'edit') {
-            put(route('admin.users.update', user.id));
+            transform((payload) => ({ ...payload, _method: 'put' }));
+            post(route('admin.users.update', user.id), {
+                forceFormData: true,
+                onFinish: () => transform((payload) => payload),
+            });
             return;
         }
 
-        post(route('admin.users.store'));
+        post(route('admin.users.store'), { forceFormData: true });
+    };
+
+    const handleAvatarChange = (event) => {
+        const file = event.target.files?.[0] || null;
+        setData('avatar', file);
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setAvatarPreview(url);
+        }
     };
 
     return (
@@ -31,6 +47,33 @@ export default function Form({ mode, user, roles, referrers }) {
             <Head title={mode === 'edit' ? 'Edit User' : 'Create User'} />
 
             <form onSubmit={submit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                        {avatarPreview ? (
+                            <img
+                                src={avatarPreview}
+                                alt={data.name}
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
+                                No Photo
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="avatar" value="Profile Photo" />
+                        <input
+                            id="avatar"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                            className="mt-1 block text-sm text-slate-600"
+                        />
+                        <InputError message={errors.avatar} className="mt-2" />
+                    </div>
+                </div>
+
                 <div>
                     <InputLabel htmlFor="name" value="Name" />
                     <TextInput

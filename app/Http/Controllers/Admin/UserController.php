@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Admin\UserService;
+use App\Services\FileUploadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,8 +14,10 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserService $users)
-    {
+    public function __construct(
+        private readonly UserService $users,
+        private readonly FileUploadService $uploads,
+    ) {
     }
 
     public function index(Request $request): Response
@@ -42,6 +45,7 @@ class UserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $maxFileKb = $this->uploads->maxFileKilobytes();
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -49,7 +53,15 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['admin', 'user'])],
             'referral_code' => ['nullable', 'string', 'max:32', 'unique:users,referral_code'],
             'referred_by' => ['nullable', 'integer', 'exists:users,id'],
+            'avatar' => ['nullable', 'image', "max:$maxFileKb"],
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $validated['avatar_path'] = $this->uploads->store(
+                $request->file('avatar'),
+                'avatars'
+            );
+        }
 
         $this->users->create($validated);
 
@@ -69,6 +81,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
+                'avatar_url' => $user->avatar_url,
                 'referral_code' => $user->referral_code,
                 'referred_by' => $user->referred_by,
             ],
@@ -77,6 +90,7 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $maxFileKb = $this->uploads->maxFileKilobytes();
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
@@ -84,7 +98,17 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['admin', 'user'])],
             'referral_code' => ['nullable', 'string', 'max:32', Rule::unique('users', 'referral_code')->ignore($user->id)],
             'referred_by' => ['nullable', 'integer', 'exists:users,id', Rule::notIn([$user->id])],
+            'avatar' => ['nullable', 'image', "max:$maxFileKb"],
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $previousAvatar = $user->avatar_path;
+            $validated['avatar_path'] = $this->uploads->store(
+                $request->file('avatar'),
+                'avatars'
+            );
+            $this->uploads->delete($previousAvatar);
+        }
 
         $this->users->update($user, $validated);
 

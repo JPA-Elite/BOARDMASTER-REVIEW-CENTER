@@ -26,6 +26,7 @@ class UserService
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'avatar_url' => $user->avatar_url,
             'referral_code' => $user->referral_code,
             'referred_by' => $user->referrer?->name,
             'created_at' => $user->created_at?->format('M d, Y'),
@@ -46,6 +47,7 @@ class UserService
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
+            'avatar_path' => $data['avatar_path'] ?? null,
             'referral_code' => $data['referral_code'] ?? null,
             'referred_by' => $data['referred_by'] ?? null,
         ]);
@@ -64,6 +66,10 @@ class UserService
             'referral_code' => $data['referral_code'] ?? null,
             'referred_by' => $data['referred_by'] ?? null,
         ];
+
+        if (! empty($data['avatar_path'])) {
+            $payload['avatar_path'] = $data['avatar_path'];
+        }
 
         if (! empty($data['password'])) {
             $payload['password'] = Hash::make($data['password']);

@@ -1,5 +1,6 @@
 import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import Modal from '@/Components/Modal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { useState } from 'react';
 export default function Index({ users, filters }) {
     const [search, setSearch] = useState(filters.search || '');
     const [confirmingId, setConfirmingId] = useState(null);
+    const [previewUser, setPreviewUser] = useState(null);
 
     const submitSearch = (event) => {
         event.preventDefault();
@@ -20,6 +22,7 @@ export default function Index({ users, filters }) {
 
     const openConfirm = (id) => setConfirmingId(id);
     const closeConfirm = () => setConfirmingId(null);
+    const closePreview = () => setPreviewUser(null);
 
     const confirmDelete = () => {
         if (!confirmingId) {
@@ -78,7 +81,32 @@ export default function Index({ users, filters }) {
                                     key={user.id}
                                     className="border-t border-slate-200"
                                 >
-                                    <td className="px-3 py-2">{user.name}</td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewUser(user)}
+                                                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-600"
+                                                title="Preview photo"
+                                            >
+                                                {user.avatar_url ? (
+                                                    <img
+                                                        src={user.avatar_url}
+                                                        alt={user.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    user.name
+                                                        ?.split(' ')
+                                                        .map((part) => part[0])
+                                                        .join('')
+                                                        .slice(0, 2)
+                                                        .toUpperCase()
+                                                )}
+                                            </button>
+                                            <span>{user.name}</span>
+                                        </div>
+                                    </td>
                                     <td className="px-3 py-2">{user.email}</td>
                                     <td className="px-3 py-2 uppercase">
                                         {user.role}
@@ -143,6 +171,41 @@ export default function Index({ users, filters }) {
                 onCancel={closeConfirm}
                 onConfirm={confirmDelete}
             />
+
+            <Modal show={previewUser !== null} onClose={closePreview} maxWidth="lg">
+                <div className="p-6">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold text-slate-900">
+                                {previewUser?.name}
+                            </h2>
+                            <p className="text-sm text-slate-500">
+                                {previewUser?.email}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={closePreview}
+                            className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-600"
+                        >
+                            Close
+                        </button>
+                    </div>
+                    <div className="mt-4 flex items-center justify-center">
+                        {previewUser?.avatar_url ? (
+                            <img
+                                src={previewUser.avatar_url}
+                                alt={previewUser.name}
+                                className="max-h-[360px] w-full rounded-xl object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-48 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                                No profile photo uploaded.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </Modal>
         </AdminLayout>
     );
 }
