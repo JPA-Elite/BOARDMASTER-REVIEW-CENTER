@@ -28,9 +28,28 @@ class MobileAuthController extends Controller
         return $this->authService->updateProfile($request);
     }
 
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        return $this->authService->forgotPassword($request);
+    }
+
+    public function resendVerification(Request $request): JsonResponse
+    {
+        return $this->authService->resendVerification($request);
+    }
+
+    public function checkEmail(Request $request): JsonResponse
+    {
+        return $this->authService->checkEmail($request);
+    }
+
+    public function verifyEmail(Request $request, int $id, string $hash)
+    {
+        return $this->authService->verifyEmail($request, $id, $hash);
+    }
+
     public function me(Request $request): JsonResponse
     {
         return $this->authService->me($request);
     }
 }
-

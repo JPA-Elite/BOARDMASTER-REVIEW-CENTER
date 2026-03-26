@@ -9,13 +9,16 @@ use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
 use App\Services\FileUploadService;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class MobileAuthService
 {
@@ -32,7 +35,9 @@ class MobileAuthService
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'school' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:25'],
             'birthdate' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
         ]);
@@ -42,18 +47,19 @@ class MobileAuthService
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'school' => $validated['school'] ?? null,
+            'phone_number' => $validated['phone_number'] ?? null,
             'birthdate' => $validated['birthdate'] ?? null,
             'gender' => $validated['gender'] ?? null,
         ]);
 
+        $user->sendEmailVerificationNotification();
         $subscription = $this->resolveOrCreateSubscription($user);
         $plan = $subscription?->plan;
 
-        $token = $user->createToken('mobile-app')->plainTextToken;
-
         return response()->json([
-            'message' => 'Registered successfully.',
-            'token' => $token,
+            'message' => 'Registered successfully. Please verify your email before logging in.',
+            'requires_verification' => true,
             'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ], 201);
     }
@@ -81,6 +87,16 @@ class MobileAuthService
         $user = $this->users->query()
             ->where('email', $validated['email'])
             ->firstOrFail();
+
+        if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+
+            return response()->json([
+                'message' => 'Email is not verified yet. We sent a verification link.',
+                'requires_verification' => true,
+            ], 403);
+        }
+
         $subscription = $this->resolveOrCreateSubscription($user);
         $plan = $subscription?->plan;
 
@@ -118,8 +134,10 @@ class MobileAuthService
             'avatar' => ['nullable', 'image', "max:$maxFileKb"],
         ]);
 
-        if (array_key_exists('email', $validated)
-            && $validated['email'] !== $user->email) {
+        $emailChanged = array_key_exists('email', $validated)
+            && strcasecmp((string) $validated['email'], (string) $user->email) !== 0;
+
+        if ($emailChanged) {
             $user->email_verified_at = null;
         }
 
@@ -134,13 +152,137 @@ class MobileAuthService
 
         $user->fill($validated);
         $user->save();
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
 
         $subscription = $this->resolveOrCreateSubscription($user);
         $plan = $subscription?->plan;
 
         return response()->json([
-            'message' => 'Profile updated.',
+            'message' => $emailChanged
+                ? 'Profile updated. Please verify your new email address.'
+                : 'Profile updated.',
             'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email'],
+        ]);
+
+        $status = Password::broker()->sendResetLink([
+            'email' => $validated['email'],
+        ]);
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => __($status),
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => __($status),
+        ]);
+    }
+
+    public function resendVerification(Request $request): JsonResponse
+    {
+        /** @var User|null $authUser */
+        $authUser = $request->user();
+        $user = $authUser;
+
+        if (! $user) {
+            $validated = $request->validate([
+                'email' => ['required', 'string', 'email', 'exists:users,email'],
+            ]);
+
+            /** @var User|null $resolved */
+            $resolved = $this->users->query()
+                ->where('email', $validated['email'])
+                ->first();
+            $user = $resolved;
+        }
+
+        if (! $user instanceof User) {
+            return response()->json([
+                'message' => 'User not found.',
+            ], 404);
+        }
+
+        if ($user instanceof MustVerifyEmail && $user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Email is already verified.',
+            ]);
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'A verification link has been sent to your email.',
+        ]);
+    }
+
+    public function checkEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email'],
+            'ignore_email' => ['nullable', 'string', 'email'],
+        ]);
+
+        $email = strtolower(trim((string) $validated['email']));
+        $ignoreEmail = strtolower(trim((string) ($validated['ignore_email'] ?? '')));
+        if ($ignoreEmail !== '' && $email === $ignoreEmail) {
+            return response()->json([
+                'available' => true,
+                'message' => 'Email can be used.',
+            ]);
+        }
+
+        $exists = $this->users->query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->exists();
+
+        return response()->json([
+            'available' => ! $exists,
+            'message' => $exists
+                ? 'This email address is already registered.'
+                : 'Email can be used.',
+        ]);
+    }
+
+    public function verifyEmail(Request $request, int $id, string $hash)
+    {
+        /** @var User|null $user */
+        $user = $this->users->query()->find($id);
+        if (! $user) {
+            return response()->view('emails.mobile.verify-status', [
+                'status' => 'error',
+                'title' => 'Verification Failed',
+                'message' => 'This verification link is no longer valid.',
+            ], 404);
+        }
+
+        if (! hash_equals($hash, sha1($user->getEmailForVerification()))) {
+            return response()->view('emails.mobile.verify-status', [
+                'status' => 'error',
+                'title' => 'Verification Failed',
+                'message' => 'Invalid verification link.',
+            ], 403);
+        }
+
+        if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+            if ($user->markEmailAsVerified()) {
+                event(new Verified($user));
+            }
+        }
+
+        return response()->view('emails.mobile.verify-status', [
+            'status' => 'success',
+            'title' => 'Email Verified',
+            'message' => 'Your email has been verified. You can now login in the mobile app.',
         ]);
     }
 
@@ -254,6 +396,8 @@ class MobileAuthService
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'email_verified' => $user->hasVerifiedEmail(),
+            'email_verified_at' => $user->email_verified_at?->toDateTimeString(),
             'school' => $user->school,
             'birthdate' => $user->birthdate?->toDateString(),
             'gender' => $user->gender,

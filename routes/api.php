@@ -20,6 +20,13 @@ Route::post('/paymongo/checkout', [PaymongoCheckoutController::class, 'store'])
 Route::prefix('mobile')->group(function () {
     Route::post('/register', [MobileAuthController::class, 'register']);
     Route::post('/login', [MobileAuthController::class, 'login']);
+    Route::post('/password/forgot', [MobileAuthController::class, 'forgotPassword']);
+    Route::post('/email/check', [MobileAuthController::class, 'checkEmail']);
+    Route::post('/email/verification-notification', [MobileAuthController::class, 'resendVerification'])
+        ->middleware('throttle:6,1');
+    Route::get('/email/verify/{id}/{hash}', [MobileAuthController::class, 'verifyEmail'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('api.mobile.verification.verify');
     Route::get('/plans', [MobilePlanController::class, 'index']);
 
     Route::middleware('auth:sanctum')->group(function () {
