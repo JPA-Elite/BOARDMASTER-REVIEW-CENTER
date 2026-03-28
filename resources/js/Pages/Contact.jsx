@@ -1,4 +1,5 @@
 import MarketingLayout from '@/Layouts/MarketingLayout';
+import ImageWithSkeleton from '@/Components/Marketing/ImageWithSkeleton';
 import {
     ArrowRight,
     CircleHelp,
@@ -92,10 +93,12 @@ export default function Contact({ faqs = defaultFaqs }) {
                     <div className="relative">
                         <div className="absolute -left-6 -top-6 h-24 w-24 rounded-full bg-amber-300/60 blur-2xl" />
                         <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
-                            <img
+                            <ImageWithSkeleton
                                 src={contactHeroImage}
                                 alt="Boardmasters contact preview"
-                                className="mx-auto max-h-[620px] w-full rounded-3xl bg-slate-100 object-contain"
+                                wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
+                                className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
+                                skeletonClassName="rounded-3xl"
                             />
                         </div>
                     </div>

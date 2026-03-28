@@ -1,4 +1,5 @@
 import MarketingLayout from '@/Layouts/MarketingLayout';
+import ImageWithSkeleton from '@/Components/Marketing/ImageWithSkeleton';
 import { Link } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -109,10 +110,12 @@ export default function Partnership() {
                     <div className="relative">
                         <div className="absolute -left-6 -top-6 h-24 w-24 rounded-full bg-amber-300/60 blur-2xl" />
                         <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
-                            <img
+                            <ImageWithSkeleton
                                 src={partnershipHeroImage}
                                 alt="Boardmasters partnership analytics preview"
-                                className="mx-auto max-h-[620px] w-full rounded-3xl bg-slate-100 object-contain"
+                                wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
+                                className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
+                                skeletonClassName="rounded-3xl"
                             />
                         </div>
                     </div>
@@ -169,10 +172,12 @@ export default function Partnership() {
                             ))}
                         </div>
                     </div>
-                    <img
+                    <ImageWithSkeleton
                         src={partnershipSecondaryImage}
                         alt="Boardmasters collaboration model interface preview"
-                        className="mx-auto max-h-[620px] w-full rounded-3xl border border-slate-200 bg-slate-100 object-contain"
+                        wrapperClassName="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100"
+                        className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
+                        skeletonClassName="rounded-3xl"
                     />
                 </div>
             </section>

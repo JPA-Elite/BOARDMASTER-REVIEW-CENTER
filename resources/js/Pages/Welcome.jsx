@@ -1,4 +1,5 @@
 import MarketingLayout from '@/Layouts/MarketingLayout';
+import ImageWithSkeleton from '@/Components/Marketing/ImageWithSkeleton';
 import { Link } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -15,7 +16,7 @@ const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
 const heroImage = '/images/landing/mobile/home-board-exam-review-platform.webp';
 
-const programsCoveredImage = '/images/landing/mobile/programs-covered-phones.webp';
+const programsCoveredImage = '/images/landing/mobile/home-board-exam-review-platform2.jpg';
 const defaultReviewAvatar = '/images/boardmaster-square.png';
 
 const features = [
@@ -232,10 +233,13 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                     <div className="relative flex justify-center lg:justify-end">
                         <div className="absolute -left-6 -top-6 h-24 w-24 rounded-full bg-amber-300/60 blur-2xl" />
                         <div className="w-full max-w-[460px] rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
-                            <img
+                            <ImageWithSkeleton
                                 src={heroImage}
                                 alt="Boardmasters Review Center dashboard preview"
-                                className="w-full max-h-[520px] rounded-3xl bg-slate-100 object-contain object-center"
+                                wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
+                                className="w-full max-h-[520px] rounded-3xl object-contain object-center"
+                                skeletonClassName="rounded-3xl"
+                                loading="eager"
                             />
                         </div>
                     </div>
@@ -301,10 +305,12 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                         </div>
                     </div>
                     <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2">
-                        <img
+                        <ImageWithSkeleton
                             src={programsCoveredImage}
                             alt="Boardmasters programs covered mobile previews"
+                            wrapperClassName="w-full overflow-hidden rounded-2xl"
                             className="w-full max-h-[520px] rounded-2xl object-contain object-center"
+                            skeletonClassName="rounded-2xl"
                         />
                     </div>
                 </div>
@@ -447,10 +453,12 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                                         className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <img
+                                            <ImageWithSkeleton
                                                 src={item.avatar_url || defaultReviewAvatar}
                                                 alt={`${item.reviewer_name} profile`}
-                                                className="h-12 w-12 rounded-full border border-slate-200 bg-white object-cover"
+                                                wrapperClassName="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-white"
+                                                className="h-full w-full object-cover"
+                                                skeletonClassName="rounded-full"
                                             />
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-900">
@@ -558,10 +566,12 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900"
                         >
-                            <img
+                            <ImageWithSkeleton
                                 src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2b_ee73b4d94460f8a2c07e5e266ffc8b3d_apple-white-icon-elements-brix-templates.svg"
                                 alt="Apple icon"
+                                wrapperClassName="h-4 w-4 overflow-hidden rounded-full"
                                 className="h-4 w-4 invert"
+                                skeletonClassName="rounded-full"
                             />
                             iOS App
                         </a>
@@ -571,10 +581,12 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white"
                         >
-                            <img
+                            <ImageWithSkeleton
                                 src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2a_c1cd2666a020fc416efc02f9e22a61be_play-store-color-icon-elements-brix-templates.svg"
                                 alt="Play Store icon"
+                                wrapperClassName="h-4 w-4 overflow-hidden rounded-full"
                                 className="h-4 w-4"
+                                skeletonClassName="rounded-full"
                             />
                             Android App
                         </a>

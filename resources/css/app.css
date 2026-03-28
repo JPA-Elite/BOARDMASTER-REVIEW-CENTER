@@ -44,3 +44,31 @@ body,
     color: #0f172a;
     font-weight: 700;
 }
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position:
+            200% 0,
+            0 0,
+            0 0;
+    }
+    100% {
+        background-position:
+            -200% 0,
+            0 0,
+            0 0;
+    }
+}
+
+.skeleton-shimmer {
+    background-image:
+        linear-gradient(110deg, #e2e8f0 8%, #f8fafc 18%, #e2e8f0 33%),
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.45), transparent 55%),
+        radial-gradient(circle at 80% 35%, rgba(148, 163, 184, 0.35), transparent 60%);
+    background-size:
+        200% 100%,
+        120% 120%,
+        140% 140%;
+    animation: skeleton-shimmer 1.8s linear infinite;
+    border-radius: inherit;
+}
