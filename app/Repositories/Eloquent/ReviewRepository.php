@@ -36,7 +36,7 @@ class ReviewRepository extends AbstractRepository implements ReviewRepositoryInt
     public function listActive(?int $limit = null): Collection
     {
         $query = $this->query()
-            ->with('user:id,name,school')
+            ->with('user:id,name,school,avatar_path')
             ->where('is_active', true)
             ->whereNotNull('user_id')
             ->orderBy('sort_order')
@@ -46,12 +46,14 @@ class ReviewRepository extends AbstractRepository implements ReviewRepositoryInt
             $query->limit($limit);
         }
 
-        return $query->get(['id', 'user_id', 'quote'])->map(
+        return $query->get(['id', 'user_id', 'quote', 'rating'])->map(
             fn (Review $review) => [
                 'id' => $review->id,
                 'quote' => $review->quote,
                 'reviewer_name' => $review->user?->name ?? 'Reviewer',
                 'reviewer_school' => $review->user?->school,
+                'avatar_url' => $review->user?->avatar_url,
+                'rating' => $review->rating ?? 5,
             ],
         );
     }

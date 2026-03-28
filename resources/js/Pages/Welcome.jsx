@@ -8,13 +8,15 @@ import {
     Clock3,
     GraduationCap,
     ShieldCheck,
+    Star,
 } from 'lucide-react';
 
 const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
 const heroImage = '/images/landing/mobile/home-board-exam-review-platform.webp';
 
-const programsCoveredImage = '/images/landing/mobile/home-board-exam-review-platform2.jpg';
+const programsCoveredImage = '/images/landing/mobile/programs-covered-phones.webp';
+const defaultReviewAvatar = '/images/boardmaster-square.png';
 
 const features = [
     {
@@ -113,21 +115,27 @@ const missionPoints = [
 const defaultReviews = [
     {
         quote:
+            'Everything is organized in one app. I can practice on the bus and still track my progress.',
+        reviewer_name: "Mrs. Tierra O'Hara",
+        reviewer_school: '',
+        avatar_url: defaultReviewAvatar,
+        rating: 5,
+    },
+    {
+        quote:
             'Boardmasters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
-        reviewer_name: 'Patrick Bat-Og',
-        reviewer_school: 'Asia Pacific College',
+        reviewer_name: 'Greta Skiles',
+        reviewer_school: '',
+        avatar_url: defaultReviewAvatar,
+        rating: 5,
     },
     {
         quote:
             'The step-by-step explanations made the lessons stick. It finally clicked for me.',
-        reviewer_name: 'Sophie Dizon',
-        reviewer_school: 'Wesleyan University',
-    },
-    {
-        quote:
-            'Everything is organized in one app. I can practice on the bus and still track my progress.',
-        reviewer_name: 'Matt Singson',
-        reviewer_school: 'Ateneo de Naga',
+        reviewer_name: 'Judah Hagenes Jr.',
+        reviewer_school: 'Vallehermoso, Negros Oriental',
+        avatar_url: defaultReviewAvatar,
+        rating: 5,
     },
 ];
 
@@ -430,18 +438,48 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             </div>
                         </div>
                         <div className="mt-6 grid gap-4 md:grid-cols-3">
-                            {reviewItems.map((item, index) => (
-                                <div
-                                    key={`${item.reviewer_name}-${index}`}
-                                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
-                                >
-                                    <p className="text-sm text-slate-700">"{item.quote}"</p>
-                                    <p className="mt-4 text-sm font-semibold text-slate-900">
-                                        {item.reviewer_name}
-                                    </p>
-                                    <p className="text-xs text-slate-500">{item.reviewer_school}</p>
-                                </div>
-                            ))}
+                            {reviewItems.map((item, index) => {
+                                const rating = Math.max(1, Math.min(5, Number(item.rating ?? 5)));
+
+                                return (
+                                    <div
+                                        key={`${item.reviewer_name}-${index}`}
+                                        className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <img
+                                                src={item.avatar_url || defaultReviewAvatar}
+                                                alt={`${item.reviewer_name} profile`}
+                                                className="h-12 w-12 rounded-full border border-slate-200 bg-white object-cover"
+                                            />
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-900">
+                                                    {item.reviewer_name}
+                                                </p>
+                                                {item.reviewer_school ? (
+                                                    <p className="text-xs text-slate-500">{item.reviewer_school}</p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 flex items-center gap-1">
+                                            {Array.from({ length: 5 }).map((_, starIndex) => (
+                                                <Star
+                                                    key={`${item.reviewer_name}-star-${starIndex}`}
+                                                    className={`h-4 w-4 ${
+                                                        starIndex < rating
+                                                            ? 'text-amber-400 fill-amber-400'
+                                                            : 'text-slate-200'
+                                                    }`}
+                                                />
+                                            ))}
+                                            <span className="ml-2 text-xs font-semibold text-slate-500">
+                                                {rating}.0
+                                            </span>
+                                        </div>
+                                        <p className="mt-3 text-sm text-slate-700">"{item.quote}"</p>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

@@ -21,6 +21,7 @@ class ReviewService
             'reviewer_name' => $review->user?->name ?? 'Reviewer',
             'reviewer_school' => $review->user?->school,
             'quote' => $review->quote,
+            'rating' => $review->rating ?? 5,
             'is_active' => $review->is_active,
             'sort_order' => $review->sort_order,
             'created_at' => $review->created_at?->format('M d, Y'),
@@ -32,5 +33,10 @@ class ReviewService
     public function delete(Review $review): void
     {
         $this->reviews->delete($review);
+    }
+
+    public function setActive(Review $review, bool $isActive): void
+    {
+        $this->reviews->update($review, ['is_active' => $isActive]);
     }
 }

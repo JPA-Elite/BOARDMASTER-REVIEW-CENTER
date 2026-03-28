@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileDashboardController;
 use App\Http\Controllers\Api\MobilePlanController;
 use App\Http\Controllers\Api\MobilePracticeController;
+use App\Http\Controllers\Api\MobileReviewController;
 use App\Http\Controllers\Api\MobileReferralController;
 use App\Http\Controllers\Api\MobileSubscriptionController;
 use App\Http\Controllers\Webhooks\PaymongoWebhookController;
@@ -39,6 +40,7 @@ Route::prefix('mobile')->group(function () {
         Route::post('/referrals/redeem', [MobileReferralController::class, 'redeem']);
         Route::get('/subscriptions/history', [MobileSubscriptionController::class, 'history']);
         Route::get('/subjects', [MobilePracticeController::class, 'subjects']);
+        Route::post('/reviews', [MobileReviewController::class, 'store']);
         Route::post('/quiz/generate', [MobilePracticeController::class, 'generate']);
         Route::post('/quiz/submit', [MobilePracticeController::class, 'submit']);
         Route::get('/quiz/attempts', [MobilePracticeController::class, 'attempts']);

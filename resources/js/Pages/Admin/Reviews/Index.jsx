@@ -2,7 +2,7 @@ import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Index({ reviews }) {
@@ -21,6 +21,12 @@ export default function Index({ reviews }) {
         });
     };
 
+    const toggleReview = (review) => {
+        router.patch(route('admin.reviews.toggle', review.id), {
+            is_active: !review.is_active,
+        });
+    };
+
     return (
         <AdminLayout title="Reviews">
             <Head title="Admin Reviews" />
@@ -32,6 +38,7 @@ export default function Index({ reviews }) {
                             <tr>
                                 <th className="px-3 py-2">Reviewer</th>
                                 <th className="px-3 py-2">School</th>
+                                <th className="px-3 py-2">Rating</th>
                                 <th className="px-3 py-2">Quote</th>
                                 <th className="px-3 py-2">Status</th>
                                 <th className="px-3 py-2">Actions</th>
@@ -40,7 +47,7 @@ export default function Index({ reviews }) {
                         <tbody>
                             {reviews.data.map((review) => (
                                 <tr key={review.id} className="border-t border-slate-200">
-                                    <td className="px-3 py-2">
+                                    <td className="whitespace-nowrap px-3 py-2">
                                         <p className="font-medium text-slate-900">
                                             {review.reviewer_name}
                                         </p>
@@ -50,6 +57,20 @@ export default function Index({ reviews }) {
                                     </td>
                                     <td className="px-3 py-2">
                                         {review.reviewer_school || '—'}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex items-center gap-1 text-amber-500">
+                                            {Array.from({ length: 5 }).map((_, index) => (
+                                                <Star
+                                                    key={`rating-${review.id}-${index}`}
+                                                    className={`size-4 ${
+                                                        index < (review.rating ?? 5)
+                                                            ? 'fill-amber-400'
+                                                            : 'fill-transparent text-slate-300'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
                                     </td>
                                     <td className="px-3 py-2 text-slate-600">
                                         "{review.quote}"
@@ -66,22 +87,33 @@ export default function Index({ reviews }) {
                                         </span>
                                     </td>
                                     <td className="px-3 py-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => openConfirm(review.id)}
-                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50 hover:text-red-900"
-                                            title="Delete"
-                                            aria-label="Delete"
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </button>
+                                        <div className="flex items-center gap-3 whitespace-nowrap">
+                                            <label className="inline-flex cursor-pointer items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={review.is_active}
+                                                    onChange={() => toggleReview(review)}
+                                                    className="peer sr-only"
+                                                />
+                                                <span className="relative inline-flex h-6 w-12 flex-shrink-0 rounded-full bg-slate-200 transition-colors duration-200 peer-checked:bg-emerald-500 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 after:content-[''] peer-checked:after:translate-x-6" />
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => openConfirm(review.id)}
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50 hover:text-red-900"
+                                                title="Delete"
+                                                aria-label="Delete"
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                             {reviews.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="px-3 py-4 text-center text-slate-500"
                                     >
                                         No reviews available.

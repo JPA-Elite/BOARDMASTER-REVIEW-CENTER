@@ -69,6 +69,8 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('subjects', SubjectController::class)->except('show');
         Route::resource('questions', QuestionController::class)->except('show');
         Route::resource('faqs', FaqController::class)->except('show');
+        Route::patch('/reviews/{review}/toggle', [ReviewController::class, 'toggle'])
+            ->name('reviews.toggle');
         Route::resource('reviews', ReviewController::class)->only(['index', 'destroy']);
         Route::resource('quiz-attempts', QuizAttemptController::class)->only(['index', 'show', 'destroy']);
     });

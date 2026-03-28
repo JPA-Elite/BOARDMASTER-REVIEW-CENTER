@@ -33,13 +33,13 @@ class MarketingContentService
      */
     public function homeReviews(): array
     {
-        $reviews = $this->reviews->listActive(3);
+        $reviews = $this->reviews->listActive(6);
 
         if ($reviews->isEmpty()) {
             $reviews = collect($this->defaultReviews());
         }
 
-        return $reviews->shuffle()->take(3)->values()->all();
+        return $reviews->shuffle()->take(6)->values()->all();
     }
 
     /**
@@ -90,19 +90,22 @@ class MarketingContentService
                 'reviewer_name' => 'Patrick Bat-Og',
                 'reviewer_school' => 'Asia Pacific College',
                 'quote' =>
-                    'Board Masters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
+                    'Boardmasters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
+                'rating' => '5',
             ],
             [
                 'reviewer_name' => 'Sophie Dizon',
                 'reviewer_school' => 'Wesleyan University',
                 'quote' =>
                     'The step-by-step explanations made the lessons stick. It finally clicked for me.',
+                'rating' => '5',
             ],
             [
                 'reviewer_name' => 'Matt Singson',
                 'reviewer_school' => 'Ateneo de Naga',
                 'quote' =>
                     'Everything is organized in one app. I can practice on the bus and still track my progress.',
+                'rating' => '5',
             ],
         ];
     }
