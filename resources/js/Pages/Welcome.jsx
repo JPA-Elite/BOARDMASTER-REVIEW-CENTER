@@ -12,15 +12,9 @@ import {
 
 const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
-const heroImage =
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/691311bfb9ad0af2fcda9014_OneTake%20Banner%20(7).png';
+const heroImage = '/images/landing/mobile/home-board-exam-review-platform.webp';
 
-const collageImages = [
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912aab9280ef627c50c6f1d_Screenshot%202025-11-11%20at%2011.16.49%E2%80%AFam.png',
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912a7718f9f8d7fdd67a940_b3609a748d082a59c30c590e24706470_imansyah-muhamad-putera-KchIV_GDy6U-unsplash.jpg',
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/69131f3a230396bbbb7191b4_Screenshot%202025-11-11%20at%207.33.35%E2%80%AFpm.png',
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912ab0a70d8ddd44e546312_Screenshot%202025-11-11%20at%2011.18.19%E2%80%AFam.png',
-];
+const programsCoveredImage = '/images/landing/mobile/home-board-exam-review-platform2.jpg';
 
 const features = [
     {
@@ -119,7 +113,7 @@ const missionPoints = [
 const defaultReviews = [
     {
         quote:
-            'Board Masters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
+            'Boardmasters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
         reviewer_name: 'Patrick Bat-Og',
         reviewer_school: 'Asia Pacific College',
     },
@@ -139,7 +133,7 @@ const defaultReviews = [
 
 const defaultFaqs = [
     {
-        question: 'Does Board Masters cover Nursing and other board exam tracks?',
+        question: 'Does Boardmasters cover Nursing and other board exam tracks?',
         answer:
             'Yes. We support Nursing (PNLE), Teacher Education (LET), Criminology (CLE), Civil Engineering (CELE), Midwifery (MLE), and Radiologic Technology (RTLE).',
     },
@@ -149,12 +143,12 @@ const defaultFaqs = [
             'Our content team continuously reviews and updates questions and explanations to align with current coverage and guidelines.',
     },
     {
-        question: 'Can I use Board Masters offline?',
+        question: 'Can I use Boardmasters offline?',
         answer:
             'You need internet for login and syncing. Once content is loaded, many practice features can be accessed offline.',
     },
     {
-        question: 'What makes Board Masters different from printed reviewers?',
+        question: 'What makes Boardmasters different from printed reviewers?',
         answer:
             'We provide objective analytics, weak-topic tracking, and targeted practice so your time is spent on what matters most.',
     },
@@ -166,10 +160,10 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
 
     return (
         <MarketingLayout
-            title="Board Masters Review Center | Nursing and Board Exam Review"
+            title="Boardmasters Review Center | Nursing and Board Exam Review"
             description="Creative and professional board exam review website focused on Nursing and other Philippine licensure tracks."
-            ogTitle="Board Masters Review Center | Nursing and Board Exam Review"
-            ogDescription="Board Masters provides board exam practice questions with rationalized answers and structured study tracking."
+            ogTitle="Boardmasters Review Center | Nursing and Board Exam Review"
+            ogDescription="Boardmasters provides board exam practice questions with rationalized answers and structured study tracking."
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
@@ -181,7 +175,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             Build your board exam confidence with guided, answer-based review.
                         </h1>
                         <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                            Board Masters Review Center helps students prepare for Nursing and other licensure exams
+                            Boardmasters Review Center helps students prepare for Nursing and other licensure exams
                             through realistic question sets, clear rationales, and progress analytics.
                         </p>
                         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -227,13 +221,13 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                         </div>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative flex justify-center lg:justify-end">
                         <div className="absolute -left-6 -top-6 h-24 w-24 rounded-full bg-amber-300/60 blur-2xl" />
-                        <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
+                        <div className="w-full max-w-[460px] rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
                             <img
                                 src={heroImage}
-                                alt="Board Masters Review Center dashboard preview"
-                                className="h-full w-full rounded-3xl object-cover"
+                                alt="Boardmasters Review Center dashboard preview"
+                                className="w-full max-h-[520px] rounded-3xl bg-slate-100 object-contain object-center"
                             />
                         </div>
                     </div>
@@ -245,7 +239,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
-                                Why students choose Board Masters
+                                Why students choose Boardmasters
                             </p>
                             <h2 className="mt-3 text-3xl font-bold text-slate-900" style={headingFont}>
                                 Professional review tools built for real board exam preparation.
@@ -298,15 +292,12 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             ))}
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        {collageImages.map((image, index) => (
-                            <img
-                                key={image}
-                                src={image}
-                                alt={`Board Masters review preview ${index + 1}`}
-                                className="h-full min-h-[130px] w-full rounded-2xl border border-slate-200 object-cover"
-                            />
-                        ))}
+                    <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2">
+                        <img
+                            src={programsCoveredImage}
+                            alt="Boardmasters programs covered mobile previews"
+                            className="w-full max-h-[520px] rounded-2xl object-contain object-center"
+                        />
                     </div>
                 </div>
             </section>
@@ -381,7 +372,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             A smarter, data-driven review experience.
                         </h2>
                         <p className="mt-3 text-sm text-slate-600 sm:text-base">
-                            Board Masters combines structured content, performance insights, and daily habits to keep
+                            Boardmasters combines structured content, performance insights, and daily habits to keep
                             you on track from your first quiz up to exam day.
                         </p>
                         <div className="mt-6 space-y-4">
@@ -431,7 +422,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                                     Trusted by reviewees
                                 </p>
                                 <h2 className="mt-3 text-3xl font-bold text-slate-900" style={headingFont}>
-                                    Stories from students who prepared with Board Masters.
+                                    Stories from students who prepared with Boardmasters.
                                 </h2>
                             </div>
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
@@ -467,7 +458,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                                 Answers, accountability, and a clear roadmap.
                             </h2>
                             <p className="mt-3 text-sm text-slate-600 sm:text-base">
-                                Whether you are reviewing alone or with a group, Board Masters gives you a structured
+                                Whether you are reviewing alone or with a group, Boardmasters gives you a structured
                                 roadmap plus insights that show exactly what to work on next.
                             </p>
                             <div className="mt-6 space-y-4">
@@ -516,7 +507,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             Ready to start?
                         </p>
                         <h2 className="mt-2 text-3xl font-bold leading-tight" style={headingFont}>
-                            Prepare smarter with Board Masters Review Center.
+                            Prepare smarter with Boardmasters Review Center.
                         </h2>
                         <p className="mt-2 max-w-2xl text-sm text-slate-300">
                             Launch your review with structured practice, answer rationales, and clear progress tracking.

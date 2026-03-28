@@ -4,12 +4,13 @@ import PolicyPage from '../Components/PolicyPage';
 export default function PrivacyPolicy() {
     return (
         <PolicyPage
-            title="Privacy Policy | Board Masters Review Center"
+            title="Privacy Policy | Boardmasters Review Center"
             heading="Privacy Policy"
-            description="Read how Board Masters Review Center collects, uses, and safeguards your data."
-            ogTitle="Privacy Policy | Board Masters Review Center"
-            ogDescription="Read Board Masters Review Center's privacy policy and learn how we protect your data for board exam review services."
+            description="Read how Boardmasters Review Center collects, uses, and safeguards your data."
+            ogTitle="Privacy Policy | Boardmasters Review Center"
+            ogDescription="Read Boardmasters Review Center's privacy policy and learn how we protect your data for board exam review services."
             bodyHtml={bodyHtml}
         />
     );
 }
+

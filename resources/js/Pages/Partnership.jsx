@@ -12,10 +12,10 @@ import {
 const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
 const partnershipHeroImage =
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912d2d47baa3facb173ef63_Untitled%20design%20(3).png';
+    '/images/landing/mobile/mobile-auth-dashboard-mid.webp';
 
 const partnershipSecondaryImage =
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912d21b832905c56a978aea_Untitled%20design%20(2).png';
+    '/images/landing/mobile/mobile-auth-dashboard-bottom.webp';
 
 const partnershipBenefits = [
     {
@@ -71,10 +71,10 @@ const process = [
 export default function Partnership() {
     return (
         <MarketingLayout
-            title="Partnership | Board Masters Review Center"
-            description="Partner with Board Masters Review Center for Nursing and licensure-focused digital board exam preparation."
-            ogTitle="Partnership | Board Masters Review Center"
-            ogDescription="Collaborate with Board Masters for school and review center board exam solutions."
+            title="Partnership | Boardmasters Review Center"
+            description="Partner with Boardmasters Review Center for Nursing and licensure-focused digital board exam preparation."
+            ogTitle="Partnership | Boardmasters Review Center"
+            ogDescription="Collaborate with Boardmasters for school and review center board exam solutions."
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
@@ -86,7 +86,7 @@ export default function Partnership() {
                             Build stronger board exam outcomes with a smarter review partnership.
                         </h1>
                         <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                            Board Masters Review Center works with schools, departments, and review centers to deliver
+                            Boardmasters Review Center works with schools, departments, and review centers to deliver
                             structured digital board preparation, especially for Nursing and allied programs.
                         </p>
                         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -111,8 +111,8 @@ export default function Partnership() {
                         <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
                             <img
                                 src={partnershipHeroImage}
-                                alt="Board Masters partnership preview"
-                                className="h-full w-full rounded-3xl object-cover"
+                                alt="Boardmasters partnership analytics preview"
+                                className="mx-auto max-h-[620px] w-full rounded-3xl bg-slate-100 object-contain"
                             />
                         </div>
                     </div>
@@ -122,7 +122,7 @@ export default function Partnership() {
             <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <h2 className="text-3xl font-bold text-slate-900" style={headingFont}>
-                        Why institutions partner with Board Masters
+                        Why institutions partner with Boardmasters
                     </h2>
                     <div className="mt-6 grid gap-4 md:grid-cols-3">
                         {partnershipBenefits.map((benefit) => {
@@ -171,8 +171,8 @@ export default function Partnership() {
                     </div>
                     <img
                         src={partnershipSecondaryImage}
-                        alt="Board Masters learning interface"
-                        className="h-full w-full rounded-3xl border border-slate-200 object-cover"
+                        alt="Boardmasters collaboration model interface preview"
+                        className="mx-auto max-h-[620px] w-full rounded-3xl border border-slate-200 bg-slate-100 object-contain"
                     />
                 </div>
             </section>
@@ -238,3 +238,4 @@ export default function Partnership() {
         </MarketingLayout>
     );
 }
+

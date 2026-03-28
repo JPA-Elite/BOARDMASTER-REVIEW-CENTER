@@ -10,11 +10,9 @@ import { Link } from '@inertiajs/react';
 
 const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
-const contactHeroImage =
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/6912d21b832905c56a978aea_Untitled%20design%20(2).png';
+const contactHeroImage = '/images/landing/mobile/mobile-auth-profile.webp';
 
-const contactPreviewImage =
-    'https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/69131f3adfe009893d6711c3_Screenshot%202025-11-11%20at%207.34.00%E2%80%AFpm.png';
+const contactPreviewImage = '/images/landing/mobile/mobile-auth-reviews-2.webp';
 
 const contactOptions = [
     {
@@ -36,7 +34,7 @@ const contactOptions = [
 
 const defaultFaqs = [
     {
-        question: 'Does Board Masters focus on Nursing only?',
+        question: 'Does Boardmasters focus on Nursing only?',
         answer: 'Nursing is a primary focus, but we also support other major Philippine licensure tracks.',
     },
     {
@@ -55,16 +53,16 @@ export default function Contact({ faqs = defaultFaqs }) {
 
     return (
         <MarketingLayout
-            title="Contact | Board Masters Review Center"
-            description="Contact Board Masters Review Center for support, partnership inquiries, and board exam review assistance."
-            ogTitle="Contact | Board Masters Review Center"
-            ogDescription="Get in touch with Board Masters for Nursing and licensure review support."
+            title="Contact | Boardmasters Review Center"
+            description="Contact Boardmasters Review Center for support, partnership inquiries, and board exam review assistance."
+            ogTitle="Contact | Boardmasters Review Center"
+            ogDescription="Get in touch with Boardmasters for Nursing and licensure review support."
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
                     <div>
                         <p className="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
-                            Contact Board Masters
+                            Contact Boardmasters
                         </p>
                         <h1 className="mt-5 text-4xl font-bold leading-tight text-slate-900 sm:text-5xl" style={headingFont}>
                             Let us support your board review journey.
@@ -96,8 +94,8 @@ export default function Contact({ faqs = defaultFaqs }) {
                         <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
                             <img
                                 src={contactHeroImage}
-                                alt="Board Masters contact preview"
-                                className="h-full w-full rounded-3xl object-cover"
+                                alt="Boardmasters contact preview"
+                                className="mx-auto max-h-[620px] w-full rounded-3xl bg-slate-100 object-contain"
                             />
                         </div>
                     </div>
@@ -124,41 +122,6 @@ export default function Contact({ faqs = defaultFaqs }) {
                             </article>
                         );
                     })}
-                </div>
-            </section>
-
-            <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
-                <div className="mx-auto grid w-full max-w-6xl gap-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 lg:grid-cols-[1fr_1fr] lg:p-8">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
-                            Support Channel
-                        </p>
-                        <h2 className="mt-3 text-3xl font-bold text-slate-900" style={headingFont}>
-                            Email is our official support line.
-                        </h2>
-                        <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                            Please include your full name, exam track, and concern details so we can route your request
-                            to the right team immediately.
-                        </p>
-                        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                                Official support email
-                            </p>
-                            <a
-                                href="mailto:boardmastersreviewcenter@gmail.com"
-                                className="mt-2 inline-flex items-center gap-2 text-lg font-bold text-slate-900"
-                                style={headingFont}
-                            >
-                                <Mail className="h-5 w-5" />
-                                boardmastersreviewcenter@gmail.com
-                            </a>
-                        </div>
-                    </div>
-                    <img
-                        src={contactPreviewImage}
-                        alt="Board Masters application preview"
-                        className="h-full w-full rounded-3xl border border-slate-200 object-cover"
-                    />
                 </div>
             </section>
 
@@ -200,6 +163,8 @@ export default function Contact({ faqs = defaultFaqs }) {
                     )}
                 </div>
             </section>
+
         </MarketingLayout>
     );
 }
+

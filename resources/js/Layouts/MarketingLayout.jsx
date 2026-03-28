@@ -89,7 +89,7 @@ export default function MarketingLayout({
                         />
                         <div className="leading-tight">
                             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                                Board Masters
+                                Boardmasters
                             </p>
                             <p className="text-sm font-semibold text-slate-900" style={headingFont}>
                                 Review Center
@@ -207,7 +207,7 @@ export default function MarketingLayout({
                 <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 text-sm text-slate-600 sm:px-6 md:flex-row md:items-center md:justify-between">
                     <div>
                         <p className="text-sm font-semibold text-slate-900" style={headingFont}>
-                            Board Masters Review Center
+                            Boardmasters Review Center
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
                             Digital board review focused on Nursing and allied programs.
@@ -230,7 +230,7 @@ export default function MarketingLayout({
                     </div>
 
                     <p className="text-xs text-slate-500">
-                        Copyright {currentYear} Board Masters Review Center
+                        Copyright {currentYear} Boardmasters Review Center
                     </p>
                 </div>
             </footer>

@@ -24,15 +24,15 @@ const tagline = 'We Shape Board Exam Masters';
 export default function VisionMission() {
     return (
         <MarketingLayout
-            title="Vision & Mission | Board Masters Review Center"
-            description="Learn about the vision, mission, philosophy, and tagline of Board Masters Review Center."
-            ogTitle="Vision & Mission | Board Masters Review Center"
-            ogDescription="Board Masters Review Center vision, mission, philosophy, and tagline."
+            title="Vision & Mission | Boardmasters Review Center"
+            description="Learn about the vision, mission, philosophy, and tagline of Boardmasters Review Center."
+            ogTitle="Vision & Mission | Boardmasters Review Center"
+            ogDescription="Boardmasters Review Center vision, mission, philosophy, and tagline."
         >
             <section className="reveal-on-scroll px-4 pb-10 pt-12 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-700">
-                        Board Masters Review Center
+                        Boardmasters Review Center
                     </p>
                     <h1 className="mt-3 text-4xl font-bold text-slate-900 sm:text-5xl" style={headingFont}>
                         Vision, mission, and philosophy that guide every reviewee.
@@ -127,3 +127,4 @@ export default function VisionMission() {
         </MarketingLayout>
     );
 }
+
