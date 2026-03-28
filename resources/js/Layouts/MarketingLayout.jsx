@@ -115,7 +115,7 @@ export default function MarketingLayout({
                                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
                             >
                                 <img
-                                    src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2b_ee73b4d94460f8a2c07e5e266ffc8b3d_apple-white-icon-elements-brix-templates.svg"
+                                    src="/images/store-icons/apple-white-icon.svg"
                                     alt="Apple icon"
                                     className="h-4 w-4 invert"
                                 />
@@ -128,7 +128,7 @@ export default function MarketingLayout({
                                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
                             >
                                 <img
-                                    src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2a_c1cd2666a020fc416efc02f9e22a61be_play-store-color-icon-elements-brix-templates.svg"
+                                    src="/images/store-icons/play-store-color-icon.svg"
                                     alt="Play Store icon"
                                     className="h-4 w-4"
                                 />
@@ -171,7 +171,7 @@ export default function MarketingLayout({
                                     className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
                                 >
                                     <img
-                                        src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2b_ee73b4d94460f8a2c07e5e266ffc8b3d_apple-white-icon-elements-brix-templates.svg"
+                                        src="/images/store-icons/apple-white-icon.svg"
                                         alt="Apple icon"
                                         className="h-4 w-4 invert"
                                     />
@@ -184,7 +184,7 @@ export default function MarketingLayout({
                                     className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
                                 >
                                     <img
-                                        src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2a_c1cd2666a020fc416efc02f9e22a61be_play-store-color-icon-elements-brix-templates.svg"
+                                        src="/images/store-icons/play-store-color-icon.svg"
                                         alt="Play Store icon"
                                         className="h-4 w-4"
                                     />

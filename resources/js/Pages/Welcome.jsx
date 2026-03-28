@@ -567,7 +567,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900"
                         >
                             <ImageWithSkeleton
-                                src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2b_ee73b4d94460f8a2c07e5e266ffc8b3d_apple-white-icon-elements-brix-templates.svg"
+                                src="/images/store-icons/apple-white-icon.svg"
                                 alt="Apple icon"
                                 wrapperClassName="h-4 w-4 overflow-hidden rounded-full"
                                 className="h-4 w-4 invert"
@@ -582,7 +582,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white"
                         >
                             <ImageWithSkeleton
-                                src="https://cdn.prod.website-files.com/68c80be79141ce6abe633f58/68edddcd5c07668c00987d2a_c1cd2666a020fc416efc02f9e22a61be_play-store-color-icon-elements-brix-templates.svg"
+                                src="/images/store-icons/play-store-color-icon.svg"
                                 alt="Play Store icon"
                                 wrapperClassName="h-4 w-4 overflow-hidden rounded-full"
                                 className="h-4 w-4"
