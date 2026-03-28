@@ -12,6 +12,8 @@ use Throwable;
 
 class FileUploadService
 {
+    public const STORED_PATH_SEPARATOR = ':';
+
     private ImageManager $imageManager;
 
     public function __construct()
@@ -59,7 +61,7 @@ class FileUploadService
                     ['visibility' => 'public']
                 );
 
-                return $path;
+                return $this->formatStoredPath($disk, $path);
             } catch (Throwable) {
                 // Fallback to original file if compression fails.
             }
@@ -72,7 +74,7 @@ class FileUploadService
             ['visibility' => 'public']
         );
 
-        return $path;
+        return $this->formatStoredPath($disk, $path);
     }
 
     public function delete(?string $path): void
@@ -81,15 +83,8 @@ class FileUploadService
             return;
         }
 
-        $disks = [
-            $this->resolveDisk(),
-        ];
-
-        if (! app()->environment('local')) {
-            $disks[] = (string) config('uploads.local_disk', 'public');
-        }
-
-        $disks = array_unique($disks);
+        [$storedDisk, $storedPath] = $this->splitStoredPath($path);
+        $disks = $this->candidateDisks($storedDisk);
 
         foreach ($disks as $disk) {
             if (! config("filesystems.disks.$disk")) {
@@ -97,8 +92,8 @@ class FileUploadService
             }
 
             try {
-                if (Storage::disk($disk)->exists($path)) {
-                    Storage::disk($disk)->delete($path);
+                if (Storage::disk($disk)->exists($storedPath)) {
+                    Storage::disk($disk)->delete($storedPath);
                 }
             } catch (Throwable) {
                 // Ignore delete failures on unavailable disks (ex: missing S3 creds in local).
@@ -116,5 +111,48 @@ class FileUploadService
     {
         $mime = $file->getMimeType();
         return is_string($mime) && str_starts_with($mime, 'image/');
+    }
+
+    /**
+     * @return array{0:string|null,1:string}
+     */
+    public function splitStoredPath(string $value): array
+    {
+        $separator = self::STORED_PATH_SEPARATOR;
+        if (! str_contains($value, $separator)) {
+            return [null, ltrim($value, '/')];
+        }
+
+        [$disk, $path] = explode($separator, $value, 2);
+        $disk = trim($disk);
+        $path = ltrim(trim($path), '/');
+
+        if ($disk === '' || $path === '') {
+            return [null, ltrim($value, '/')];
+        }
+
+        return [$disk, $path];
+    }
+
+    public function formatStoredPath(string $disk, string $path): string
+    {
+        return $disk.self::STORED_PATH_SEPARATOR.ltrim($path, '/');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function candidateDisks(?string $primaryDisk = null): array
+    {
+        $disks = [];
+        if ($primaryDisk) {
+            $disks[] = $primaryDisk;
+        }
+
+        $disks[] = $this->resolveDisk();
+        $disks[] = (string) config('uploads.local_disk', 'public');
+        $disks[] = (string) config('uploads.remote_disk', 's3');
+
+        return array_values(array_unique(array_filter($disks)));
     }
 }

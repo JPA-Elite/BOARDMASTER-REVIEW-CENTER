@@ -13,9 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
+use Throwable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -98,16 +100,42 @@ class User extends Authenticatable implements MustVerifyEmail
             return null;
         }
 
-        if (app()->environment('local')) {
-            return '/storage/'.$this->avatar_path;
+        if (filter_var($this->avatar_path, FILTER_VALIDATE_URL)) {
+            return $this->avatar_path;
         }
 
-        $remoteDisk = (string) config('uploads.remote_disk', 's3');
-        if (config("filesystems.disks.$remoteDisk")) {
-            return Storage::disk($remoteDisk)->url($this->avatar_path);
+        [$storedDisk, $storedPath] = $this->splitAvatarPath($this->avatar_path);
+        if ($storedPath === '') {
+            return null;
         }
 
-        return '/storage/'.$this->avatar_path;
+        $candidateDisks = [];
+        if ($storedDisk) {
+            $candidateDisks[] = $storedDisk;
+        }
+        $candidateDisks[] = (string) config('uploads.local_disk', 'public');
+        $candidateDisks[] = (string) config('uploads.remote_disk', 's3');
+        $candidateDisks = array_values(array_unique(array_filter($candidateDisks)));
+
+        foreach ($candidateDisks as $disk) {
+            if (! config("filesystems.disks.$disk")) {
+                continue;
+            }
+
+            try {
+                if ($storedDisk === $disk || Storage::disk($disk)->exists($storedPath)) {
+                    return Storage::disk($disk)->url($storedPath);
+                }
+            } catch (Throwable) {
+                // Ignore temporary disk connectivity issues and continue fallback chain.
+            }
+        }
+
+        if (App::environment('local')) {
+            return '/storage/'.$storedPath;
+        }
+
+        return null;
     }
 
     public function sendEmailVerificationNotification(): void
@@ -158,5 +186,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function paymentTransactions(): HasMany
     {
         return $this->hasMany(PaymentTransaction::class);
+    }
+
+    /**
+     * @return array{0:string|null,1:string}
+     */
+    private function splitAvatarPath(string $value): array
+    {
+        if (! str_contains($value, ':')) {
+            return [null, ltrim($value, '/')];
+        }
+
+        [$disk, $path] = explode(':', $value, 2);
+        $disk = trim($disk);
+        $path = ltrim(trim($path), '/');
+
+        if ($disk === '' || $path === '') {
+            return [null, ltrim($value, '/')];
+        }
+
+        return [$disk, $path];
     }
 }
