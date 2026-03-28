@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Board Master Review Center') }}</title>
+        <title inertia>{{ config('app.name', 'BoardMasters Review Center') }}</title>
         <link rel="icon" type="image/png" href="/images/boardmaster.png">
         <link rel="apple-touch-icon" href="/images/boardmaster.png">
 
@@ -22,3 +22,4 @@
         @inertia
     </body>
 </html>
+

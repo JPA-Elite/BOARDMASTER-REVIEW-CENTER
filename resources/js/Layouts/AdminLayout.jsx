@@ -258,7 +258,7 @@ export default function AdminLayout({ title, children }) {
                                 <span className="inline-flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white">
                                     <img
                                         src="/images/boardmaster.png"
-                                        alt="Board Master Review Center"
+                                        alt="BoardMasters Review Center"
                                         className="size-10 rounded-full object-contain"
                                     />
                                 </span>
@@ -527,3 +527,4 @@ export default function AdminLayout({ title, children }) {
         </div>
     );
 }
+

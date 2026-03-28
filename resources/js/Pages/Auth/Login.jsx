@@ -29,7 +29,7 @@ export default function Login({ status, canResetPassword }) {
                         <span className="inline-flex size-14 items-center justify-center rounded-xl border border-slate-200 bg-white">
                             <img
                                 src="/images/boardmaster.png"
-                                alt="Board Master Review Center"
+                                alt="BoardMasters Review Center"
                                 className="size-12 object-contain"
                             />
                         </span>
@@ -126,3 +126,4 @@ export default function Login({ status, canResetPassword }) {
         </div>
     );
 }
+

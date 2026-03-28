@@ -35,7 +35,7 @@ class MobileAuthService
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols()],
             'school' => ['nullable', 'string', 'max:255'],
             'phone_number' => ['nullable', 'string', 'max:25'],
             'birthdate' => ['nullable', 'date'],

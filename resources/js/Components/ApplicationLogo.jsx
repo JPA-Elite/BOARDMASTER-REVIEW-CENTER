@@ -1,6 +1,6 @@
 export default function ApplicationLogo({
     className = '',
-    alt = 'Board Master Review Center',
+    alt = 'BoardMasters Review Center',
     ...props
 }) {
     return (
@@ -12,3 +12,4 @@ export default function ApplicationLogo({
         />
     );
 }
+
