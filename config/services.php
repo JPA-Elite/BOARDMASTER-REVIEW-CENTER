@@ -51,4 +51,11 @@ return [
         'webhook_tolerance' => (int) env('PAYMONGO_WEBHOOK_TOLERANCE', 300),
     ],
 
+    'google' => [
+        // Comma/space/semicolon separated list of accepted OAuth client IDs (audiences).
+        'auth_audiences' => env('GOOGLE_AUTH_AUDIENCES', ''),
+        // Optional single fallback audience value.
+        'client_id' => env('GOOGLE_CLIENT_ID', ''),
+    ],
+
 ];

@@ -13,10 +13,13 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
@@ -105,6 +108,124 @@ class MobileAuthService
 
         return response()->json([
             'message' => 'Login successful.',
+            'token' => $token,
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function loginWithGoogle(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id_token' => ['required', 'string'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'avatar_url' => ['nullable', 'string', 'max:2048'],
+        ]);
+
+        $audiences = $this->googleAudiences();
+        if ($audiences === []) {
+            return response()->json([
+                'message' => 'Google login is not configured on server yet. Set GOOGLE_AUTH_AUDIENCES in backend .env.',
+            ], 500);
+        }
+
+        $verification = $this->verifyGoogleIdToken($validated['id_token'], $audiences);
+        if (! $verification['ok']) {
+            return response()->json([
+                'message' => $verification['message'] ?? 'Google token verification failed. Please try again.',
+            ], 422);
+        }
+        $claims = $verification['payload'];
+
+        $email = strtolower(trim((string) ($claims['email'] ?? '')));
+        if ($email === '') {
+            return response()->json([
+                'message' => 'Google account email is missing.',
+            ], 422);
+        }
+
+        $emailVerified = filter_var(
+            $claims['email_verified'] ?? false,
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE,
+        ) ?? false;
+        if (! $emailVerified) {
+            return response()->json([
+                'message' => 'Your Google email is not verified.',
+            ], 422);
+        }
+
+        $googleId = trim((string) ($claims['sub'] ?? ''));
+        if ($googleId === '') {
+            return response()->json([
+                'message' => 'Google account identifier is missing.',
+            ], 422);
+        }
+
+        /** @var User|null $user */
+        $user = $this->users->query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
+
+        $googleName = trim((string) ($claims['name'] ?? ''));
+        $fallbackName = trim((string) ($validated['name'] ?? ''));
+        $name = $googleName !== ''
+            ? $googleName
+            : ($fallbackName !== '' ? $fallbackName : $this->nameFromEmail($email));
+
+        $googleAvatar = trim((string) ($claims['picture'] ?? ''));
+        $fallbackAvatar = trim((string) ($validated['avatar_url'] ?? ''));
+        $avatarUrl = $googleAvatar !== '' ? $googleAvatar : $fallbackAvatar;
+        $canStoreGoogleId = Schema::hasColumn('users', 'google_id');
+
+        if (! $user instanceof User) {
+            $newData = [
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make(Str::random(64)),
+                'email_verified_at' => now(),
+                'avatar_path' => $avatarUrl !== '' ? $avatarUrl : null,
+            ];
+            if ($canStoreGoogleId) {
+                $newData['google_id'] = $googleId;
+            }
+
+            /** @var User $createdUser */
+            $createdUser = $this->users->create($newData);
+            $user = $createdUser;
+        } else {
+            $updates = [];
+            if ($canStoreGoogleId && $user->google_id !== null && (string) $user->google_id !== $googleId) {
+                return response()->json([
+                    'message' => 'This email is already linked to a different Google account.',
+                ], 409);
+            }
+            if ($canStoreGoogleId && $user->google_id === null) {
+                $updates['google_id'] = $googleId;
+            }
+            if ($user->name === '' && $name !== '') {
+                $updates['name'] = $name;
+            }
+            if ($user->email_verified_at === null) {
+                $updates['email_verified_at'] = now();
+            }
+            if (($user->avatar_path ?? '') === '' && $avatarUrl !== '') {
+                $updates['avatar_path'] = $avatarUrl;
+            }
+            if ($updates !== []) {
+                $user->fill($updates);
+                $user->save();
+            }
+        }
+
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        $user->tokens()->delete();
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Google login successful.',
             'token' => $token,
             'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ]);
@@ -296,6 +417,117 @@ class MobileAuthService
         return response()->json([
             'user' => $this->mobileUserPayload($user, $plan, $subscription),
         ]);
+    }
+
+    private function verifyGoogleIdToken(string $idToken, array $audiences): array
+    {
+        try {
+            $response = Http::timeout(8)->get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $idToken,
+            ]);
+        } catch (\Throwable) {
+            return [
+                'ok' => false,
+                'message' => 'Unable to contact Google token verification service. Please check internet connection.',
+                'payload' => null,
+            ];
+        }
+
+        if (! $response->successful()) {
+            $body = $response->json();
+            $error = is_array($body) ? trim((string) ($body['error_description'] ?? $body['error'] ?? '')) : '';
+            return [
+                'ok' => false,
+                'message' => $error !== ''
+                    ? "Google token verification failed: $error"
+                    : 'Google token verification failed. Please try again.',
+                'payload' => null,
+            ];
+        }
+
+        $payload = $response->json();
+        if (! is_array($payload)) {
+            return [
+                'ok' => false,
+                'message' => 'Google token verification returned invalid response format.',
+                'payload' => null,
+            ];
+        }
+
+        $issuer = strtolower(trim((string) ($payload['iss'] ?? '')));
+        if (! in_array($issuer, ['accounts.google.com', 'https://accounts.google.com'], true)) {
+            return [
+                'ok' => false,
+                'message' => 'Google token issuer is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        $audience = trim((string) ($payload['aud'] ?? ''));
+        $authorizedParty = trim((string) ($payload['azp'] ?? ''));
+        $audienceMatched =
+            ($audience !== '' && in_array($audience, $audiences, true))
+            || ($authorizedParty !== '' && in_array($authorizedParty, $audiences, true));
+        if (! $audienceMatched) {
+            $expected = implode(', ', $audiences);
+            $received = $audience !== '' ? $audience : '(empty)';
+            $azpText = $authorizedParty !== '' ? " | azp: $authorizedParty" : '';
+            return [
+                'ok' => false,
+                'message' => "Google token audience mismatch. Expected one of: $expected | Received aud: $received$azpText",
+                'payload' => null,
+            ];
+        }
+
+        $expiresAt = (int) ($payload['exp'] ?? 0);
+        if ($expiresAt > 0 && $expiresAt < now()->timestamp) {
+            return [
+                'ok' => false,
+                'message' => 'Google token is already expired.',
+                'payload' => null,
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'message' => null,
+            'payload' => $payload,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function googleAudiences(): array
+    {
+        $raw = trim((string) config('services.google.auth_audiences', ''));
+        $parts = preg_split('/[\s,;]+/', $raw) ?: [];
+        $audiences = [];
+        foreach ($parts as $part) {
+            $value = trim((string) $part);
+            if ($value !== '') {
+                $audiences[] = $value;
+            }
+        }
+
+        if ($audiences === []) {
+            $single = trim((string) config('services.google.client_id', ''));
+            if ($single !== '') {
+                $audiences[] = $single;
+            }
+        }
+
+        return array_values(array_unique($audiences));
+    }
+
+    private function nameFromEmail(string $email): string
+    {
+        $base = trim((string) explode('@', trim($email))[0]);
+        if ($base === '') {
+            return 'BoardMaster User';
+        }
+
+        return ucfirst($base);
     }
 
     private function resolveOrCreateSubscription(User $user): ?UserSubscription

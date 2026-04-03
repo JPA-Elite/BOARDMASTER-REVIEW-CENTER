@@ -21,6 +21,7 @@ Route::post('/paymongo/checkout', [PaymongoCheckoutController::class, 'store'])
 Route::prefix('mobile')->group(function () {
     Route::post('/register', [MobileAuthController::class, 'register']);
     Route::post('/login', [MobileAuthController::class, 'login']);
+    Route::post('/login/google', [MobileAuthController::class, 'loginWithGoogle']);
     Route::post('/password/forgot', [MobileAuthController::class, 'forgotPassword']);
     Route::post('/email/check', [MobileAuthController::class, 'checkEmail']);
     Route::post('/email/verification-notification', [MobileAuthController::class, 'resendVerification'])

@@ -40,3 +40,5 @@ Boardmaster Review Center is a Laravel + Inertia + React application for managin
 ## Notes
 - Admin routes are under `/admin` and require an authenticated user with `role = admin`.
 - Public marketing pages are served through Webflow HTML in `resources/js/webflow`.
+- Mobile Google sign-in endpoint uses `POST /api/mobile/login/google`.
+- Set `GOOGLE_AUTH_AUDIENCES` in `.env` with allowed Google OAuth client IDs (comma-separated).
