@@ -178,9 +178,24 @@ class MobilePlanService
             }
 
             if ($this->hasConsumedFreeTrial($user)) {
+                $cancelDate = now()->toDateString();
+                $this->deactivateActiveSubscriptions($user, $cancelDate);
+                $billingCycle = $this->normalizeBillingCycle($plan->billing_cycle);
+
                 return response()->json([
-                    'message' => 'Free trial can only be activated once. Please choose a paid plan.',
-                ], 422);
+                    'message' => 'Current paid plan cancelled. Free trial is already consumed.',
+                    'data' => [
+                        'subscription_id' => null,
+                        'plan_id' => $plan->id,
+                        'tier' => $tier,
+                        'plan_name' => $plan->name,
+                        'plan_group' => $plan->groupKey(),
+                        'sub_plan_label' => $plan->subPlanTitle(),
+                        'billing_cycle' => $billingCycle,
+                        'duration_days' => $plan->durationDays(),
+                        'end_date' => $cancelDate,
+                    ],
+                ]);
             }
         }
 

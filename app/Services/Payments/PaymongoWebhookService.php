@@ -290,7 +290,7 @@ class PaymongoWebhookService
 
         DB::transaction(function () use ($userId, $planId, $plan, $resolvedBillingCycle): void {
             $today = Carbon::today()->toDateString();
-            $endDate = $this->calculateEndDate(Carbon::today(), $plan->durationDays());
+            $endDate = $this->calculateEndDate(Carbon::today(), $resolvedBillingCycle);
 
             $this->subscriptions->query()
                 ->where('user_id', $userId)
