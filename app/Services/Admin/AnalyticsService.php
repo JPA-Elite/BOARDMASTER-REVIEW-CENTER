@@ -37,13 +37,9 @@ class AnalyticsService
                     ->whereMonth('created_at', $month->month)
                     ->count();
 
-                $published = (int) ceil($total * 0.65);
-                $draft = max($total - $published, 0);
-
                 return [
                     'month' => $month->format('M'),
-                    'published' => $published,
-                    'draft' => $draft,
+                    'total' => $total,
                 ];
             })
             ->values();

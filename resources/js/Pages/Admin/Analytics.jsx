@@ -84,7 +84,7 @@ export default function Analytics({ signups, content }) {
                             Content Production
                         </h2>
                         <p className="text-sm text-slate-500">
-                            Published vs draft pages
+                            Questions created by month
                         </p>
                         <div className="mt-4 h-[260px] rounded-xl border border-slate-100 bg-slate-50/40 p-3">
                             {content.length === 0 ? (
@@ -122,15 +122,8 @@ export default function Analytics({ signups, content }) {
                                             }}
                                         />
                                         <Bar
-                                            dataKey="draft"
-                                            stackId="a"
-                                            fill="#06b6d4"
-                                            radius={[6, 6, 0, 0]}
-                                        />
-                                        <Bar
-                                            dataKey="published"
-                                            stackId="a"
-                                            fill="#22c55e"
+                                            dataKey="total"
+                                            fill="#6366f1"
                                             radius={[6, 6, 0, 0]}
                                         />
                                     </BarChart>

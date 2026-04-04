@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified', 'admin'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
-        Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
         Route::get('/payment-gateway', [AdminPaymentGatewayController::class, 'index'])->name('payment-gateway');
         Route::post('/payment-gateway/test-connection', [AdminPaymentGatewayController::class, 'testConnection'])

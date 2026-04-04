@@ -1,5 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     Area,
     AreaChart,
@@ -37,7 +37,8 @@ export default function Dashboard({
     dateLabel,
     kpis,
     userSignups,
-    contentProduction,
+    signupYears,
+    signupYear,
     recentAttempts,
 }) {
     return (
@@ -59,7 +60,7 @@ export default function Dashboard({
                     </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                     {kpis.map((item) => (
                         <div
                             key={item.title}
@@ -84,13 +85,44 @@ export default function Dashboard({
                 </div>
 
                 <div className="grid gap-4 xl:grid-cols-7">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 xl:col-span-4">
-                        <h2 className="text-xl font-semibold text-slate-900">
-                            User Signups
-                        </h2>
-                        <p className="text-sm text-slate-500">
-                            New user registrations over time
-                        </p>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 xl:col-span-7">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h2 className="text-xl font-semibold text-slate-900">
+                                    User Signups
+                                </h2>
+                                <p className="text-sm text-slate-500">
+                                    New user registrations in {signupYear}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <span className="text-xs uppercase tracking-wide text-slate-400">
+                                    Year
+                                </span>
+                                <select
+                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                    value={signupYear}
+                                    onChange={(event) => {
+                                        const year = event.target.value;
+                                        router.get(
+                                            route('admin.dashboard'),
+                                            { year },
+                                            {
+                                                preserveState: true,
+                                                preserveScroll: true,
+                                                replace: true,
+                                            },
+                                        );
+                                    }}
+                                >
+                                    {signupYears?.map((year) => (
+                                        <option key={year} value={year}>
+                                            {year}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
 
                         <div className="mt-4 h-[300px] rounded-xl border border-slate-100 bg-slate-50/40 p-3">
                             {userSignups.length === 0 ? (
@@ -155,67 +187,6 @@ export default function Dashboard({
                                             fill="url(#signupFill)"
                                         />
                                     </AreaChart>
-                                </ResponsiveContainer>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 xl:col-span-3">
-                        <h2 className="text-xl font-semibold text-slate-900">
-                            Content Production
-                        </h2>
-                        <p className="text-sm text-slate-500">
-                            Pages created by month and status
-                        </p>
-
-                        <div className="mt-4 h-[300px] rounded-xl border border-slate-100 bg-slate-50/40 p-3">
-                            {contentProduction.length === 0 ? (
-                                <div className="flex h-full items-center justify-center text-sm text-slate-500">
-                                    No content data available.
-                                </div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={contentProduction}
-                                        margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
-                                    >
-                                        <CartesianGrid
-                                            strokeDasharray="3 3"
-                                            stroke="#e2e8f0"
-                                            vertical={false}
-                                        />
-                                        <XAxis
-                                            dataKey="month"
-                                            tick={{ fontSize: 12, fill: '#64748b' }}
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <YAxis
-                                            allowDecimals={false}
-                                            tick={{ fontSize: 12, fill: '#94a3b8' }}
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <Tooltip
-                                            cursor={{ fill: '#e2e8f0' }}
-                                            contentStyle={{
-                                                borderRadius: '12px',
-                                                borderColor: '#e2e8f0',
-                                            }}
-                                        />
-                                        <Bar
-                                            dataKey="draft"
-                                            stackId="a"
-                                            fill="#06b6d4"
-                                            radius={[6, 6, 0, 0]}
-                                        />
-                                        <Bar
-                                            dataKey="published"
-                                            stackId="a"
-                                            fill="#22c55e"
-                                            radius={[6, 6, 0, 0]}
-                                        />
-                                    </BarChart>
                                 </ResponsiveContainer>
                             )}
                         </div>

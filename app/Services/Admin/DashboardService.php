@@ -2,8 +2,12 @@
 
 namespace App\Services\Admin;
 
+use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\QuestionRepositoryInterface;
 use App\Repositories\Contracts\QuizAttemptRepositoryInterface;
+use App\Repositories\Contracts\ReferralOfferRepositoryInterface;
+use App\Repositories\Contracts\ReferralRepositoryInterface;
+use App\Repositories\Contracts\SubjectRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
 use Carbon\Carbon;
@@ -13,14 +17,27 @@ class DashboardService
     public function __construct(
         private readonly UserRepositoryInterface $users,
         private readonly QuestionRepositoryInterface $questions,
+        private readonly SubjectRepositoryInterface $subjects,
+        private readonly PlanRepositoryInterface $plans,
         private readonly UserSubscriptionRepositoryInterface $subscriptions,
         private readonly QuizAttemptRepositoryInterface $attempts,
+        private readonly ReferralRepositoryInterface $referrals,
+        private readonly ReferralOfferRepositoryInterface $referralOffers,
     ) {
     }
 
-    public function getDashboardData(): array
+    public function getDashboardData(?int $signupYear = null): array
     {
         $now = now();
+        $resolvedYear = $signupYear ?? (int) $now->year;
+        $minCreated = $this->users->query()->min('created_at');
+        $maxCreated = $this->users->query()->max('created_at');
+        $minYear = $minCreated ? Carbon::parse($minCreated)->year : $resolvedYear;
+        $maxYear = $maxCreated ? Carbon::parse($maxCreated)->year : $resolvedYear;
+        if ($resolvedYear < $minYear || $resolvedYear > $maxYear) {
+            $resolvedYear = $maxYear;
+        }
+        $availableYears = range($maxYear, $minYear);
         $currentMonthStart = $now->copy()->startOfMonth();
         $previousMonthStart = $now->copy()->subMonthNoOverflow()->startOfMonth();
         $previousMonthEnd = $currentMonthStart->copy()->subSecond();
@@ -38,23 +55,43 @@ class DashboardService
                 'trend' => $this->percentageChange($usersThisMonth, $usersLastMonth),
             ],
             [
-                'title' => 'Active Sessions',
-                'value' => $this->subscriptions->countActive(),
-                'trend' => null,
-            ],
-            [
-                'title' => 'Total Pages',
+                'title' => 'Total Questions',
                 'value' => $this->questions->countAll(),
                 'trend' => $this->percentageChange($pagesThisMonth, $pagesLastMonth),
             ],
             [
-                'title' => 'Unread Notifications',
-                'value' => $this->attempts->countSince($now->copy()->subDays(7)),
+                'title' => 'Total Subjects',
+                'value' => $this->subjects->query()->count(),
+                'trend' => null,
+            ],
+            [
+                'title' => 'Total Plans',
+                'value' => $this->plans->query()->count(),
+                'trend' => null,
+            ],
+            [
+                'title' => 'Active Subscriptions',
+                'value' => $this->subscriptions->countActive(),
+                'trend' => null,
+            ],
+            [
+                'title' => 'Total Subscriptions',
+                'value' => $this->subscriptions->query()->count(),
+                'trend' => null,
+            ],
+            [
+                'title' => 'Total Referrals',
+                'value' => $this->referrals->query()->count(),
+                'trend' => null,
+            ],
+            [
+                'title' => 'Referral Offers',
+                'value' => $this->referralOffers->query()->count(),
                 'trend' => null,
             ],
         ];
 
-        $userSignups = $this->lastMonths(12)
+        $userSignups = $this->monthsOfYear($resolvedYear)
             ->map(function (Carbon $month) {
                 $count = $this->users->query()
                     ->whereYear('created_at', $month->year)
@@ -64,24 +101,6 @@ class DashboardService
                 return [
                     'month' => $month->format('M'),
                     'count' => $count,
-                ];
-            })
-            ->values();
-
-        $contentProduction = $this->lastMonths(7)
-            ->map(function (Carbon $month) {
-                $total = $this->questions->query()
-                    ->whereYear('created_at', $month->year)
-                    ->whereMonth('created_at', $month->month)
-                    ->count();
-
-                $published = (int) ceil($total * 0.65);
-                $draft = max($total - $published, 0);
-
-                return [
-                    'month' => $month->format('M'),
-                    'published' => $published,
-                    'draft' => $draft,
                 ];
             })
             ->values();
@@ -100,7 +119,8 @@ class DashboardService
             'dateLabel' => $now->format('l, F j, Y'),
             'kpis' => $kpis,
             'userSignups' => $userSignups,
-            'contentProduction' => $contentProduction,
+            'signupYears' => $availableYears,
+            'signupYear' => $resolvedYear,
             'recentAttempts' => $recentAttempts,
         ];
     }
@@ -118,5 +138,11 @@ class DashboardService
     {
         return collect(range($count - 1, 0))
             ->map(fn (int $offset) => now()->copy()->subMonthsNoOverflow($offset)->startOfMonth());
+    }
+
+    private function monthsOfYear(int $year)
+    {
+        return collect(range(1, 12))
+            ->map(fn (int $month) => Carbon::create($year, $month, 1)->startOfMonth());
     }
 }
