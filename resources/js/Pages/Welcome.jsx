@@ -1,6 +1,7 @@
 import MarketingLayout from '@/Layouts/MarketingLayout';
 import ImageWithSkeleton from '@/Components/Marketing/ImageWithSkeleton';
 import { Link } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ArrowRight,
     BookOpenText,
@@ -163,6 +164,112 @@ const defaultFaqs = [
     },
 ];
 
+const statItems = [
+    {
+        label: 'Practice questions',
+        end: 10000,
+        suffix: 'k+',
+        duration: 1800,
+        renderValue: (value) => {
+            const clamped = Math.max(0, Math.min(10000, value));
+            const compact = clamped >= 9950 ? '10' : (clamped / 1000).toFixed(1);
+            return (
+                <>
+                    <span>{compact}</span>
+                    <span className="ml-1 text-sm font-semibold text-slate-400">k+</span>
+                </>
+            );
+        },
+    },
+    {
+        label: 'Review tracks',
+        end: 6,
+        duration: 1200,
+        renderValue: (value) => Math.max(0, Math.round(value)),
+    },
+    {
+        label: 'Online access',
+        end: 24,
+        duration: 1400,
+        renderValue: (value) => (
+            <>
+                <span>{Math.max(0, Math.round(value))}</span>
+                <span className="ml-1 text-sm font-semibold text-slate-400">/7</span>
+            </>
+        ),
+    },
+    {
+        label: 'Unified review hub',
+        end: 1,
+        duration: 900,
+        renderValue: (value) => Math.max(0, Math.round(value)),
+    },
+];
+
+function StatCounter({ end, duration, delay = 0, renderValue }) {
+    const [value, setValue] = useState(0);
+    const [hasAnimated, setHasAnimated] = useState(false);
+    const counterRef = useRef(null);
+
+    useEffect(() => {
+        const node = counterRef.current;
+        if (!node) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    setHasAnimated(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.45 }
+        );
+
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        if (!hasAnimated) return;
+
+        let start;
+        let frame;
+        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+        const tick = (timestamp) => {
+            if (start === undefined) start = timestamp;
+            const elapsed = timestamp - start - delay;
+            if (elapsed < 0) {
+                frame = requestAnimationFrame(tick);
+                return;
+            }
+
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = easeOutCubic(progress);
+            setValue(end * eased);
+
+            if (progress < 1) {
+                frame = requestAnimationFrame(tick);
+            } else {
+                setValue(end);
+            }
+        };
+
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [delay, duration, end, hasAnimated]);
+
+    return (
+        <p
+            ref={counterRef}
+            className="stat-counter text-2xl font-bold tracking-tight text-slate-900"
+            style={headingFont}
+        >
+            {renderValue(value)}
+        </p>
+    );
+}
+
 export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }) {
     const faqItems = faqs?.data ?? faqs ?? defaultFaqs;
     const reviewItems = reviews?.data ?? reviews ?? defaultReviews;
@@ -175,6 +282,17 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
             ogDescription="Boardmasters provides board exam practice questions with rationalized answers and structured study tracking."
             preloadImages={[heroImage, programsCoveredImage]}
         >
+            <style>{`
+                @keyframes statPop {
+                    0% { transform: scale(0.96); opacity: 0.7; }
+                    60% { transform: scale(1.08); opacity: 1; }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+                .stat-counter {
+                    color: #0f172a;
+                    animation: statPop 900ms ease-out 1;
+                }
+            `}</style>
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
                     <div>
@@ -204,30 +322,17 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             </Link>
                         </div>
                         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                                <p className="text-2xl font-bold text-slate-900" style={headingFont}>
-                                    10k+
-                                </p>
-                                <p className="text-xs text-slate-500">Practice questions</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                                <p className="text-2xl font-bold text-slate-900" style={headingFont}>
-                                    6
-                                </p>
-                                <p className="text-xs text-slate-500">Review tracks</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                                <p className="text-2xl font-bold text-slate-900" style={headingFont}>
-                                    24/7
-                                </p>
-                                <p className="text-xs text-slate-500">Online access</p>
-                            </div>
-                            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                                <p className="text-2xl font-bold text-slate-900" style={headingFont}>
-                                    1
-                                </p>
-                                <p className="text-xs text-slate-500">Unified review hub</p>
-                            </div>
+                            {statItems.map((stat, index) => (
+                                <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                    <StatCounter
+                                        end={stat.end}
+                                        duration={stat.duration}
+                                        delay={index * 120}
+                                        renderValue={stat.renderValue}
+                                    />
+                                    <p className="text-xs text-slate-500">{stat.label}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
