@@ -1,6 +1,6 @@
-# Boardmaster Review Center
+# Boardmasters Review Center
 
-Boardmaster Review Center is a Laravel + Inertia + React application for managing board exam review content, subscriptions, and admin operations.
+Boardmasters Review Center is a Laravel + Inertia + React application for managing board exam review content, subscriptions, and admin operations.
 
 ## Tech Stack
 - Laravel
