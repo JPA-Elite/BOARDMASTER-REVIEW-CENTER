@@ -16,8 +16,8 @@ const headingFont = { fontFamily: '"Sora", "Segoe UI", sans-serif' };
 
 const heroImage = '/images/landing/mobile/home-board-exam-review-platform.webp';
 
-const programsCoveredImage = '/images/landing/mobile/home-board-exam-review-platform2.jpg';
-const defaultReviewAvatar = '/images/boardmaster-square.png';
+const programsCoveredImage = '/images/landing/mobile/home-board-exam-review-platform2.webp';
+const defaultReviewAvatar = '/images/boardmaster-square.webp';
 
 const features = [
     {
@@ -173,6 +173,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
             description="Creative and professional board exam review website focused on Nursing and other Philippine licensure tracks."
             ogTitle="Boardmasters Review Center | Nursing and Board Exam Review"
             ogDescription="Boardmasters provides board exam practice questions with rationalized answers and structured study tracking."
+            preloadImages={[heroImage, programsCoveredImage]}
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
@@ -239,7 +240,9 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                                 wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
                                 className="w-full max-h-[520px] rounded-3xl object-contain object-center"
                                 skeletonClassName="rounded-3xl"
+                                skeletonHeightClassName="h-[520px]"
                                 loading="eager"
+                                fetchPriority="high"
                             />
                         </div>
                     </div>
@@ -311,6 +314,8 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                             wrapperClassName="w-full overflow-hidden rounded-2xl"
                             className="w-full max-h-[520px] rounded-2xl object-contain object-center"
                             skeletonClassName="rounded-2xl"
+                            skeletonHeightClassName="h-[520px]"
+                            loading="eager"
                         />
                     </div>
                 </div>

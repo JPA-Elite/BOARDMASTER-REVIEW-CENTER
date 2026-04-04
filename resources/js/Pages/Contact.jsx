@@ -58,6 +58,7 @@ export default function Contact({ faqs = defaultFaqs }) {
             description="Contact Boardmasters Review Center for support, partnership inquiries, and board exam review assistance."
             ogTitle="Contact | Boardmasters Review Center"
             ogDescription="Get in touch with Boardmasters for Nursing and licensure review support."
+            preloadImages={[contactHeroImage]}
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
@@ -99,6 +100,9 @@ export default function Contact({ faqs = defaultFaqs }) {
                                 wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
                                 className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
                                 skeletonClassName="rounded-3xl"
+                                skeletonHeightClassName="h-[620px]"
+                                loading="eager"
+                                fetchPriority="high"
                             />
                         </div>
                     </div>

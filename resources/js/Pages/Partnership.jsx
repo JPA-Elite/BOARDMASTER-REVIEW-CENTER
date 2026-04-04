@@ -76,6 +76,7 @@ export default function Partnership() {
             description="Partner with Boardmasters Review Center for Nursing and licensure-focused digital board exam preparation."
             ogTitle="Partnership | Boardmasters Review Center"
             ogDescription="Collaborate with Boardmasters for school and review center board exam solutions."
+            preloadImages={[partnershipHeroImage, partnershipSecondaryImage]}
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
@@ -116,6 +117,9 @@ export default function Partnership() {
                                 wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
                                 className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
                                 skeletonClassName="rounded-3xl"
+                                skeletonHeightClassName="h-[620px]"
+                                loading="eager"
+                                fetchPriority="high"
                             />
                         </div>
                     </div>
@@ -178,6 +182,7 @@ export default function Partnership() {
                         wrapperClassName="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100"
                         className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
                         skeletonClassName="rounded-3xl"
+                        skeletonHeightClassName="h-[620px]"
                     />
                 </div>
             </section>
