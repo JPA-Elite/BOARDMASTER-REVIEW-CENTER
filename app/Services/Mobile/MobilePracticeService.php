@@ -42,18 +42,15 @@ class MobilePracticeService
 
         $subscription = $this->resolveOrCreateSubscription($user);
         $plan = $subscription?->plan;
-        if (! $plan) {
-            return response()->json([
-                'message' => $this->inactiveSubscriptionMessage(),
-            ], 422);
+        $planAccesses = collect();
+        if ($plan) {
+            $planAccesses = $plan->subjectAccesses()
+                ->with(['subject' => fn ($subjectQuery) => $subjectQuery->withCount('questions')])
+                ->orderBy('subject_id')
+                ->get()
+                ->filter(fn ($access) => $access->subject instanceof Subject)
+                ->keyBy('subject_id');
         }
-
-        $planAccesses = $plan->subjectAccesses()
-            ->with(['subject' => fn ($subjectQuery) => $subjectQuery->withCount('questions')])
-            ->orderBy('subject_id')
-            ->get()
-            ->filter(fn ($access) => $access->subject instanceof Subject)
-            ->keyBy('subject_id');
 
         $rewardLimits = $this->rewards->rewardSubjectLimits($user);
 
@@ -98,12 +95,12 @@ class MobilePracticeService
         return response()->json([
             'data' => $subjects->all(),
             'meta' => [
-                'plan_id' => $plan->id,
-                'plan_name' => $plan->name,
-                'tier' => $this->resolveTier($plan),
-                'plan_group' => $plan->groupKey(),
-                'group_label' => $plan->groupTitle(),
-                'sub_plan_label' => $plan->subPlanTitle(),
+                'plan_id' => $plan?->id,
+                'plan_name' => $plan?->name,
+                'tier' => $plan ? $this->resolveTier($plan) : 'free',
+                'plan_group' => $plan?->groupKey(),
+                'group_label' => $plan?->groupTitle(),
+                'sub_plan_label' => $plan?->subPlanTitle(),
             ],
         ]);
     }
