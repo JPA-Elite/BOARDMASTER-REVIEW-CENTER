@@ -7,8 +7,11 @@ use App\Repositories\Contracts\QuestionRepositoryInterface;
 use App\Repositories\Contracts\SubjectRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 
 class QuestionService
 {
@@ -110,6 +113,110 @@ class QuestionService
         $this->questions->delete($question);
     }
 
+    public function importFromFile(int $subjectId, UploadedFile $file, int $createdBy): int
+    {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+
+        $rows = $extension === 'xlsx'
+            ? $this->readXlsxRows($file)
+            : $this->readCsvRows($file);
+
+        if ($rows === []) {
+            throw ValidationException::withMessages([
+                'import_file' => 'The import file is empty.',
+            ]);
+        }
+
+        $header = $this->normalizeHeader(array_shift($rows));
+        $headerMap = $this->buildHeaderMap($header);
+
+        $required = ['question', 'choice_a', 'choice_b', 'correct_label'];
+        $missing = array_values(array_diff($required, array_keys($headerMap)));
+
+        if ($missing !== []) {
+            throw ValidationException::withMessages([
+                'import_file' => 'Invalid header. Required columns: question, choice_a, choice_b, correct_label.',
+            ]);
+        }
+
+        $payloads = [];
+        $errors = [];
+
+        foreach ($rows as $index => $row) {
+            $lineNumber = $index + 2;
+            $values = $this->mapRowValues($row, $headerMap);
+
+            if ($this->rowIsEmpty($values)) {
+                continue;
+            }
+
+            $questionText = trim((string) ($values['question'] ?? ''));
+            $correctLabel = strtoupper(trim((string) ($values['correct_label'] ?? '')));
+            $explanation = trim((string) ($values['explanation'] ?? ''));
+
+            if ($questionText === '') {
+                $errors[] = "Row {$lineNumber}: Question text is required.";
+                continue;
+            }
+
+            $choices = $this->extractChoices($values);
+
+            if (count($choices) < 2) {
+                $errors[] = "Row {$lineNumber}: Provide at least two choices.";
+                continue;
+            }
+
+            if ($correctLabel === '') {
+                $errors[] = "Row {$lineNumber}: Correct label is required.";
+                continue;
+            }
+
+            if (!array_key_exists($correctLabel, $choices)) {
+                $errors[] = "Row {$lineNumber}: Correct label must match one of the provided choices.";
+                continue;
+            }
+
+            $payloads[] = [
+                'subject_id' => $subjectId,
+                'question' => $questionText,
+                'created_by' => $createdBy,
+                'choices' => $this->buildChoicesPayload($choices, $correctLabel, $explanation),
+            ];
+        }
+
+        if ($errors !== []) {
+            $message = implode(' ', array_slice($errors, 0, 4));
+
+            if (count($errors) > 4) {
+                $message .= ' Additional rows contain errors.';
+            }
+
+            throw ValidationException::withMessages([
+                'import_file' => $message,
+            ]);
+        }
+
+        if ($payloads === []) {
+            throw ValidationException::withMessages([
+                'import_file' => 'No valid rows were found in the import file.',
+            ]);
+        }
+
+        DB::transaction(function () use ($payloads) {
+            foreach ($payloads as $payload) {
+                $question = $this->questions->create([
+                    'subject_id' => $payload['subject_id'],
+                    'question' => $payload['question'],
+                    'created_by' => $payload['created_by'],
+                ]);
+
+                $question->choices()->createMany($payload['choices']);
+            }
+        });
+
+        return count($payloads);
+    }
+
     public function getEditPayload(Question $question): array
     {
         $question->load(['choices' => fn ($query) => $query->orderBy('choice_label')]);
@@ -155,5 +262,133 @@ class QuestionService
                 'choices' => 'You must mark exactly one correct answer.',
             ]);
         }
+    }
+
+    private function readCsvRows(UploadedFile $file): array
+    {
+        $rows = [];
+        $handle = fopen($file->getRealPath(), 'r');
+
+        if (!is_resource($handle)) {
+            return [];
+        }
+
+        while (($data = fgetcsv($handle)) !== false) {
+            if ($data === [null] || $data === false) {
+                continue;
+            }
+
+            $rows[] = $data;
+        }
+
+        fclose($handle);
+
+        return $rows;
+    }
+
+    private function readXlsxRows(UploadedFile $file): array
+    {
+        $reader = new Xlsx();
+        $reader->setReadDataOnly(true);
+
+        $spreadsheet = $reader->load($file->getRealPath());
+        $sheet = $spreadsheet->getActiveSheet();
+
+        return $sheet->toArray(null, false, false, false);
+    }
+
+    private function normalizeHeader(array $header): array
+    {
+        return array_map(function ($value) {
+            $value = is_string($value) ? trim($value) : '';
+            $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
+
+            return strtolower($value ?? '');
+        }, $header);
+    }
+
+    private function buildHeaderMap(array $header): array
+    {
+        $map = [];
+
+        foreach ($header as $index => $column) {
+            if ($column === '' || array_key_exists($column, $map)) {
+                continue;
+            }
+
+            $map[$column] = $index;
+        }
+
+        return $map;
+    }
+
+    private function mapRowValues(array $row, array $headerMap): array
+    {
+        $values = [];
+
+        foreach ($headerMap as $column => $index) {
+            $values[$column] = $row[$index] ?? null;
+        }
+
+        return $values;
+    }
+
+    private function rowIsEmpty(array $values): bool
+    {
+        foreach ($values as $value) {
+            if (trim((string) $value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function extractChoices(array $values): array
+    {
+        $choiceMap = [
+            'A' => 'choice_a',
+            'B' => 'choice_b',
+            'C' => 'choice_c',
+            'D' => 'choice_d',
+            'E' => 'choice_e',
+            'F' => 'choice_f',
+        ];
+
+        $choices = [];
+
+        foreach ($choiceMap as $label => $column) {
+            if (!array_key_exists($column, $values)) {
+                continue;
+            }
+
+            $text = trim((string) $values[$column]);
+
+            if ($text === '') {
+                continue;
+            }
+
+            $choices[$label] = $text;
+        }
+
+        return $choices;
+    }
+
+    private function buildChoicesPayload(array $choices, string $correctLabel, string $explanation): array
+    {
+        $payload = [];
+
+        foreach ($choices as $label => $text) {
+            $payload[] = [
+                'choice_label' => $label,
+                'choice_text' => $text,
+                'is_correct' => $label === $correctLabel,
+                'explanation' => $label === $correctLabel && $explanation !== ''
+                    ? $explanation
+                    : null,
+            ];
+        }
+
+        return $payload;
     }
 }

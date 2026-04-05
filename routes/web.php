@@ -67,6 +67,10 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::resource('plans', PlanController::class)->except('show');
         Route::resource('subscriptions', UserSubscriptionController::class)->except('show');
         Route::resource('subjects', SubjectController::class)->except('show');
+        Route::get('/questions/import-template', [QuestionController::class, 'template'])
+            ->name('questions.template');
+        Route::post('/questions/import', [QuestionController::class, 'import'])
+            ->name('questions.import');
         Route::resource('questions', QuestionController::class)->except('show');
         Route::resource('faqs', FaqController::class)->except('show');
         Route::patch('/reviews/{review}/toggle', [ReviewController::class, 'toggle'])

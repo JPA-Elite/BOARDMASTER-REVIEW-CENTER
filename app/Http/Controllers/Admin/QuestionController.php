@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class QuestionController extends Controller
 {
@@ -78,6 +79,41 @@ class QuestionController extends Controller
         return redirect()
             ->route('admin.questions.index')
             ->with('success', 'Question deleted successfully.');
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'subject_id' => ['required', 'integer', 'exists:subjects,id'],
+            'import_file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:5120'],
+        ]);
+
+        $count = $this->questions->importFromFile(
+            (int) $validated['subject_id'],
+            $request->file('import_file'),
+            (int) $request->user()->id,
+        );
+
+        return redirect()
+            ->route('admin.questions.index')
+            ->with('success', "{$count} question(s) imported successfully.");
+    }
+
+    public function template(Request $request): BinaryFileResponse
+    {
+        $format = strtolower((string) $request->query('format', 'csv'));
+
+        if (!in_array($format, ['csv', 'xlsx'], true)) {
+            abort(404);
+        }
+
+        $path = resource_path("templates/questions-import-template.{$format}");
+
+        if (!is_file($path)) {
+            abort(404, 'Template file not found.');
+        }
+
+        return response()->download($path, "questions-import-template.{$format}");
     }
 
     private function validateQuestion(Request $request): array
