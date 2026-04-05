@@ -2,11 +2,15 @@ import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
-import { Star, Trash2 } from 'lucide-react';
+import { ChevronDown, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-export default function Index({ reviews }) {
+export default function Index({ reviews, filters = {} }) {
     const [confirmingId, setConfirmingId] = useState(null);
+    const [search, setSearch] = useState(filters.search || '');
+    const [perPage, setPerPage] = useState(
+        filters.per_page ? String(filters.per_page) : '10',
+    );
 
     const openConfirm = (id) => setConfirmingId(id);
     const closeConfirm = () => setConfirmingId(null);
@@ -27,11 +31,66 @@ export default function Index({ reviews }) {
         });
     };
 
+    const submitSearch = (event) => {
+        event.preventDefault();
+        router.get(
+            route('admin.reviews.index'),
+            { search, per_page: perPage },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const applyPerPage = (value) => {
+        setPerPage(value);
+        router.get(
+            route('admin.reviews.index'),
+            { search, per_page: value },
+            { preserveState: true, replace: true },
+        );
+    };
+
     return (
         <AdminLayout title="Reviews">
             <Head title="Admin Reviews" />
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="group relative">
+                            <select
+                                aria-label="Per page"
+                                value={perPage}
+                                onChange={(event) =>
+                                    applyPerPage(event.target.value)
+                                }
+                                className="no-arrow w-[66px] rounded-md border border-slate-300 bg-white px-2 py-2 pr-8 text-sm"
+                            >
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-500 transition-transform group-focus-within:rotate-180" />
+                        </div>
+                        <form onSubmit={submitSearch} className="flex gap-2">
+                            <input
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                placeholder="Search reviews..."
+                            />
+                            <button
+                                type="submit"
+                                className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
+                            >
+                                Search
+                            </button>
+                        </form>
+                    </div>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
                         <thead className="text-slate-500">

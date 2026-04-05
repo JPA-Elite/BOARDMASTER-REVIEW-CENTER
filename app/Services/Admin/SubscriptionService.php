@@ -20,9 +20,9 @@ class SubscriptionService
     ) {
     }
 
-    public function paginate(): LengthAwarePaginator
+    public function paginate(int $perPage = 15): LengthAwarePaginator
     {
-        $subscriptions = $this->subscriptions->paginateWithRelations();
+        $subscriptions = $this->subscriptions->paginateWithRelations($perPage);
 
         $subscriptions->through(fn (UserSubscription $subscription) => [
             'id' => $subscription->id,

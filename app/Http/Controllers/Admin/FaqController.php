@@ -16,12 +16,17 @@ class FaqController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $faqs = $this->faqs->paginate();
+        $perPage = (int) $request->integer('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 10;
+        $faqs = $this->faqs->paginate($perPage);
 
         return Inertia::render('Admin/Faqs/Index', [
             'faqs' => $faqs,
+            'filters' => [
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

@@ -19,11 +19,14 @@ class QuestionController extends Controller
 
     public function index(Request $request): Response
     {
+        $perPage = (int) $request->integer('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 15;
         $filters = [
             'search' => trim((string) $request->get('search', '')),
             'subject_id' => $request->integer('subject_id') ?: null,
+            'per_page' => $perPage,
         ];
-        $questions = $this->questions->paginate($filters);
+        $questions = $this->questions->paginate($filters, $perPage);
 
         return Inertia::render('Admin/Questions/Index', [
             'questions' => $questions,
@@ -97,6 +100,13 @@ class QuestionController extends Controller
         return redirect()
             ->route('admin.questions.index')
             ->with('success', "{$count} question(s) imported successfully.");
+    }
+
+    public function importForm(): Response
+    {
+        return Inertia::render('Admin/Questions/Import', [
+            'subjects' => $this->questions->listSubjects(),
+        ]);
     }
 
     public function template(Request $request): BinaryFileResponse

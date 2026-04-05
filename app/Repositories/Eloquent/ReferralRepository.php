@@ -18,7 +18,8 @@ class ReferralRepository extends AbstractRepository implements ReferralRepositor
         return $this->query()
             ->with(['inviter:id,name,email', 'invitedUser:id,name,email'])
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function syncForInvited(int $invitedUserId, ?int $inviterId): void

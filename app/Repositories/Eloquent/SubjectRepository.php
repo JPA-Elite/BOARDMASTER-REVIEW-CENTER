@@ -19,7 +19,8 @@ class SubjectRepository extends AbstractRepository implements SubjectRepositoryI
         return $this->query()
             ->withCount(['questions', 'quizAttempts'])
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function listAll(): Collection

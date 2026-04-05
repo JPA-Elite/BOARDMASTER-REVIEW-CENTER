@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 
 interface ReviewRepositoryInterface extends RepositoryInterface
 {
-    public function paginate(int $perPage = 10): LengthAwarePaginator;
+    public function paginate(?string $search = null, int $perPage = 10): LengthAwarePaginator;
 
     public function paginateUserReviews(int $perPage = 10): LengthAwarePaginator;
 

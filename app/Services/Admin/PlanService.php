@@ -14,11 +14,11 @@ class PlanService
     {
     }
 
-    public function paginate(): LengthAwarePaginator
+    public function paginate(int $perPage = 10): LengthAwarePaginator
     {
         $this->ensureDefaultFreePlan();
 
-        $plans = $this->plans->paginateWithFeatures();
+        $plans = $this->plans->paginateWithFeatures($perPage);
 
         $plans->through(fn (Plan $plan) => [
             'id' => $plan->id,

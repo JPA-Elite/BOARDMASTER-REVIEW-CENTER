@@ -16,12 +16,19 @@ class ReviewController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $reviews = $this->reviews->paginate();
+        $search = trim((string) $request->string('search'));
+        $perPage = (int) $request->integer('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 10;
+        $reviews = $this->reviews->paginate($search, $perPage);
 
         return Inertia::render('Admin/Reviews/Index', [
             'reviews' => $reviews,
+            'filters' => [
+                'search' => $search,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

@@ -17,12 +17,17 @@ class SubjectController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $subjects = $this->subjects->paginate();
+        $perPage = (int) $request->integer('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 15;
+        $subjects = $this->subjects->paginate($perPage);
 
         return Inertia::render('Admin/Subjects/Index', [
             'subjects' => $subjects,
+            'filters' => [
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

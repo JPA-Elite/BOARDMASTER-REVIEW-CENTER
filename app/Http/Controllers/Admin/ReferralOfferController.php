@@ -18,12 +18,17 @@ class ReferralOfferController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $perPage = $this->resolvePerPage($request);
+
         return Inertia::render('Admin/ReferralOffers/Index', [
-            'offers' => $this->offers->paginate(),
+            'offers' => $this->offers->paginate($perPage),
             'settings' => [
                 'points_per_referral' => \App\Models\ReferralSetting::current()->points_per_referral,
+            ],
+            'filters' => [
+                'per_page' => $perPage,
             ],
         ]);
     }
@@ -136,5 +141,12 @@ class ReferralOfferController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    private function resolvePerPage(Request $request): int
+    {
+        $perPage = (int) $request->integer('per_page', 12);
+
+        return in_array($perPage, [10, 12, 15, 25, 50, 100], true) ? $perPage : 12;
     }
 }

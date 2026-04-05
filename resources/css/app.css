@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+select.no-arrow {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+select.no-arrow::-ms-expand {
+    display: none;
+}
+
 html,
 body,
 #app {

@@ -20,7 +20,8 @@ class ReferralOfferRepository extends AbstractRepository implements ReferralOffe
             ->with('subject:id,name')
             ->orderBy('sort_order')
             ->orderByDesc('id')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function listActive(): Collection

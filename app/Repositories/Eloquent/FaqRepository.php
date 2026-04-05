@@ -19,7 +19,8 @@ class FaqRepository extends AbstractRepository implements FaqRepositoryInterface
         return $this->query()
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function listActive(): Collection

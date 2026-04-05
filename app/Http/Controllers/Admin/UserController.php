@@ -23,11 +23,14 @@ class UserController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->string('search'));
-        $users = $this->users->paginate($search);
+        $perPage = (int) $request->integer('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 15;
+        $users = $this->users->paginate($search, $perPage);
 
         return Inertia::render('Admin/Users/Index', [
             'filters' => [
                 'search' => $search,
+                'per_page' => $perPage,
             ],
             'users' => $users,
         ]);

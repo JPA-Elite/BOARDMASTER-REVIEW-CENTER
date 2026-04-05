@@ -25,10 +25,11 @@ class QuestionService
     /**
      * @param array{search?: string, subject_id?: int|null} $filters
      */
-    public function paginate(array $filters = []): LengthAwarePaginator
+    public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $search = trim((string) ($filters['search'] ?? ''));
         $subjectId = $filters['subject_id'] ?? null;
+        $perPage = $perPage > 0 ? $perPage : 15;
 
         $query = $this->questions->query()
             ->with(['subject:id,name', 'creator:id,name'])
@@ -48,9 +49,10 @@ class QuestionService
             });
         }
 
-        $questions = $query->paginate(15)->appends([
+        $questions = $query->paginate($perPage)->appends([
             'search' => $search,
             'subject_id' => $subjectId,
+            'per_page' => $perPage,
         ]);
 
         $questions->through(fn (Question $question) => [

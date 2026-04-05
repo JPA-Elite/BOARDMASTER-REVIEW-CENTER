@@ -18,7 +18,8 @@ class UserSubscriptionRepository extends AbstractRepository implements UserSubsc
         return $this->query()
             ->with(['user:id,name,email', 'plan:id,name'])
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function countActive(): int

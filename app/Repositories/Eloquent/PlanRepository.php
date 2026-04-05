@@ -23,6 +23,7 @@ class PlanRepository extends AbstractRepository implements PlanRepositoryInterfa
             ])
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 }

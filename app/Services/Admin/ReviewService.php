@@ -12,9 +12,9 @@ class ReviewService
     {
     }
 
-    public function paginate(): LengthAwarePaginator
+    public function paginate(?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
-        $reviews = $this->reviews->paginate(10);
+        $reviews = $this->reviews->paginate($search, $perPage);
 
         $reviews->through(fn (Review $review) => [
             'id' => $review->id,

@@ -19,9 +19,9 @@ class UserService
     ) {
     }
 
-    public function paginate(?string $search): LengthAwarePaginator
+    public function paginate(?string $search, int $perPage = 15): LengthAwarePaginator
     {
-        $users = $this->users->paginateWithFilters($search);
+        $users = $this->users->paginateWithFilters($search, $perPage);
 
         $users->through(fn (User $user) => [
             'id' => $user->id,

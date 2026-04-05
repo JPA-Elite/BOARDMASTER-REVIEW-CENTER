@@ -13,9 +13,9 @@ class SubjectService
     {
     }
 
-    public function paginate(): LengthAwarePaginator
+    public function paginate(int $perPage = 15): LengthAwarePaginator
     {
-        $subjects = $this->subjects->paginateWithCounts();
+        $subjects = $this->subjects->paginateWithCounts($perPage);
 
         $subjects->through(fn (Subject $subject) => [
             'id' => $subject->id,

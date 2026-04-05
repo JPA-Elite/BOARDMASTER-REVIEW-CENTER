@@ -14,13 +14,25 @@ class ReviewRepository extends AbstractRepository implements ReviewRepositoryInt
         parent::__construct($model);
     }
 
-    public function paginate(int $perPage = 10): LengthAwarePaginator
+    public function paginate(?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
+        $term = trim((string) $search);
+
         return $this->query()
             ->with('user:id,name,school')
+            ->when($term !== '', function ($query) use ($term): void {
+                $query->where(function ($nested) use ($term): void {
+                    $nested->where('quote', 'like', "%{$term}%")
+                        ->orWhereHas('user', function ($userQuery) use ($term): void {
+                            $userQuery->where('name', 'like', "%{$term}%")
+                                ->orWhere('school', 'like', "%{$term}%");
+                        });
+                });
+            })
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function paginateUserReviews(int $perPage = 10): LengthAwarePaginator

@@ -18,13 +18,18 @@ class PlanController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->plans->ensureDefaultFreePlan();
-        $plans = $this->plans->paginate();
+        $perPage = (int) $request->integer('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 10;
+        $plans = $this->plans->paginate($perPage);
 
         return Inertia::render('Admin/Plans/Index', [
             'plans' => $plans,
+            'filters' => [
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

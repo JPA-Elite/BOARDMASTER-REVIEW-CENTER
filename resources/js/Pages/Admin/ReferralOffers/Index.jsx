@@ -5,11 +5,14 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-export default function Index({ offers, settings }) {
+export default function Index({ offers, settings, filters = {} }) {
     const [confirmingId, setConfirmingId] = useState(null);
+    const [perPage, setPerPage] = useState(
+        filters.per_page ? String(filters.per_page) : '12',
+    );
     const { data, setData, patch, processing, errors } = useForm({
         points_per_referral: settings?.points_per_referral ?? 10,
     });
@@ -30,6 +33,15 @@ export default function Index({ offers, settings }) {
     const submitSettings = (event) => {
         event.preventDefault();
         patch(route('admin.referral-offers.settings'));
+    };
+
+    const applyPerPage = (value) => {
+        setPerPage(value);
+        router.get(
+            route('admin.referral-offers.index'),
+            { per_page: value },
+            { preserveState: true, replace: true },
+        );
     };
 
     return (
@@ -72,7 +84,23 @@ export default function Index({ offers, settings }) {
             </form>
 
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="mb-4 flex justify-end">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="group relative">
+                        <select
+                            aria-label="Per page"
+                            value={perPage}
+                            onChange={(event) => applyPerPage(event.target.value)}
+                            className="no-arrow w-[66px] rounded-md border border-slate-300 bg-white px-2 py-2 pr-8 text-sm"
+                        >
+                            <option value="10">10</option>
+                            <option value="12">12</option>
+                            <option value="15">15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-500 transition-transform group-focus-within:rotate-180" />
+                    </div>
                     <Link
                         href={route('admin.referral-offers.create')}
                         className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"

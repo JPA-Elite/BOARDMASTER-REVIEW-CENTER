@@ -12,9 +12,9 @@ class FaqService
     {
     }
 
-    public function paginate(): LengthAwarePaginator
+    public function paginate(int $perPage = 10): LengthAwarePaginator
     {
-        $faqs = $this->faqs->paginate(10);
+        $faqs = $this->faqs->paginate($perPage);
 
         $faqs->through(fn (Faq $faq) => [
             'id' => $faq->id,

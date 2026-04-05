@@ -20,12 +20,17 @@ class ReferralController extends Controller
     ) {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $referrals = $this->referrals->paginate();
+        $perPage = (int) $request->integer('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 15;
+        $referrals = $this->referrals->paginate($perPage);
 
         return Inertia::render('Admin/Referrals/Index', [
             'referrals' => $referrals,
+            'filters' => [
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

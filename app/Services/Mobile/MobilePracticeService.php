@@ -187,7 +187,7 @@ class MobilePracticeService
                     ? (string) $choice->explanation
                     : ($choice->is_correct
                         ? 'This option is correct.'
-                        : 'This option does not satisfy this question.');
+                        : 'This option is not a correct answer.');
 
                 if ($choice->is_correct && ! $correctKey) {
                     $correctKey = $label;
@@ -427,7 +427,7 @@ class MobilePracticeService
                     ? (string) $choice->explanation
                     : ($choice->is_correct
                         ? 'This option is correct.'
-                        : 'This option does not satisfy this question.');
+                        : 'This option is not a correct answer.');
 
                 if ($choice->is_correct && ! $correctKey) {
                     $correctKey = $label;
