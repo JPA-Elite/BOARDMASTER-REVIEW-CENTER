@@ -20,12 +20,14 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [MarketingController::class, 'home']);
-Route::get('/partnership', [MarketingController::class, 'partnership']);
-Route::get('/terms-of-use', [MarketingController::class, 'terms']);
-Route::get('/privacy-policy', [MarketingController::class, 'privacy']);
-Route::get('/contact', [MarketingController::class, 'contact']);
-Route::get('/vision-mission', [MarketingController::class, 'visionMission']);
+Route::middleware('throttle:public-pages')->group(function () {
+    Route::get('/', [MarketingController::class, 'home']);
+    Route::get('/partnership', [MarketingController::class, 'partnership']);
+    Route::get('/terms-of-use', [MarketingController::class, 'terms']);
+    Route::get('/privacy-policy', [MarketingController::class, 'privacy']);
+    Route::get('/contact', [MarketingController::class, 'contact']);
+    Route::get('/vision-mission', [MarketingController::class, 'visionMission']);
+});
 
 Route::get('/payments/success', [PaymentsController::class, 'success'])
     ->name('payments.success');

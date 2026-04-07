@@ -19,19 +19,22 @@ Route::post('/paymongo/checkout', [PaymongoCheckoutController::class, 'store'])
     ->name('api.paymongo.checkout');
 
 Route::prefix('mobile')->group(function () {
-    Route::post('/register', [MobileAuthController::class, 'register']);
-    Route::post('/login', [MobileAuthController::class, 'login']);
-    Route::post('/login/google', [MobileAuthController::class, 'loginWithGoogle']);
-    Route::post('/password/forgot', [MobileAuthController::class, 'forgotPassword']);
-    Route::post('/email/check', [MobileAuthController::class, 'checkEmail']);
+    Route::middleware('throttle:mobile-auth')->group(function () {
+        Route::post('/register', [MobileAuthController::class, 'register']);
+        Route::post('/login', [MobileAuthController::class, 'login']);
+        Route::post('/login/google', [MobileAuthController::class, 'loginWithGoogle']);
+        Route::post('/password/forgot', [MobileAuthController::class, 'forgotPassword']);
+        Route::post('/email/check', [MobileAuthController::class, 'checkEmail']);
+    });
     Route::post('/email/verification-notification', [MobileAuthController::class, 'resendVerification'])
         ->middleware('throttle:6,1');
     Route::get('/email/verify/{id}/{hash}', [MobileAuthController::class, 'verifyEmail'])
         ->middleware(['signed', 'throttle:6,1'])
         ->name('api.mobile.verification.verify');
-    Route::get('/plans', [MobilePlanController::class, 'index']);
+    Route::get('/plans', [MobilePlanController::class, 'index'])
+        ->middleware('throttle:mobile-public');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'throttle:mobile-api'])->group(function () {
         Route::get('/me', [MobileAuthController::class, 'me']);
         Route::post('/profile', [MobileAuthController::class, 'updateProfile']);
         Route::post('/plans/select', [MobilePlanController::class, 'select']);

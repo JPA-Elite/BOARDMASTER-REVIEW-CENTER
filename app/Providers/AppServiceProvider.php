@@ -25,6 +25,9 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserSubscriptionRepository;
 use App\Repositories\Eloquent\PaymentTransactionRepository;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -55,5 +58,22 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Vite::prefetch(concurrency: 3);
+
+        RateLimiter::for('public-pages', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
+
+        RateLimiter::for('mobile-auth', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
+        });
+
+        RateLimiter::for('mobile-public', function (Request $request) {
+            return Limit::perMinute(60)->by($request->ip());
+        });
+
+        RateLimiter::for('mobile-api', function (Request $request) {
+            $key = $request->user()?->id ?? $request->ip();
+            return Limit::perMinute(120)->by($key);
+        });
     }
 }
