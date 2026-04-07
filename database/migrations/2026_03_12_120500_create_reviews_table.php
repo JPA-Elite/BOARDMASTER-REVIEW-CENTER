@@ -26,7 +26,7 @@ return new class extends Migration
                 'school' => 'Asia Pacific College',
                 'email' => 'patrick.bat-og@boardmasters.ph',
                 'quote' =>
-                    'Board Masters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
+                    'BoardMasters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
                 'sort_order' => 1,
             ],
             [

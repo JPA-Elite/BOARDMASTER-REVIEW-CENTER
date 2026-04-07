@@ -74,7 +74,7 @@
             <div class="card">
                 <div class="card__header">
                     <h1>Password updated</h1>
-                    <p>Board Masters Review Center</p>
+                    <p>BoardMasters Review Center</p>
                 </div>
                 <div class="card__body">
                     <div class="alert">

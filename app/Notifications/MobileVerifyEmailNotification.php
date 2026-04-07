@@ -27,12 +27,12 @@ class MobileVerifyEmailNotification extends VerifyEmail
         $actionUrl = $this->verificationUrl($notifiable);
 
         return (new MailMessage)
-            ->subject('Verify your Board Masters email')
+            ->subject('Verify your BoardMasters email')
             ->view('emails.mobile.verify-email', [
                 'name' => $notifiable->name ?? 'Review Student',
                 'email' => $notifiable->getEmailForVerification(),
                 'actionUrl' => $actionUrl,
-                'appName' => config('app.name', 'Board Masters Review Center'),
+                'appName' => config('app.name', 'BoardMasters Review Center'),
                 'expireMinutes' => (int) Config::get('auth.verification.expire', 60),
             ]);
     }

@@ -23,7 +23,7 @@
                     <td style="padding:28px;">
                         <p style="margin:0 0 14px;font-size:16px;font-weight:700;color:#2a3763;">Hi {{ $name }},</p>
                         <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#334269;">
-                            We received a request to activate <strong>{{ $email }}</strong>. Click the button below to verify your email and continue using Board Masters.
+                            We received a request to activate <strong>{{ $email }}</strong>. Click the button below to verify your email and continue using BoardMasters.
                         </p>
                         <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 18px;">
                             <tr>

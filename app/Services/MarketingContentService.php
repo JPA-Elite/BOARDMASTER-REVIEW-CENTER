@@ -63,7 +63,7 @@ class MarketingContentService
     {
         return [
             [
-                'question' => 'Does Board Masters focus on Nursing only?',
+                'question' => 'Does BoardMasters focus on Nursing only?',
                 'answer' =>
                     'Nursing is a primary focus, but we also support other major Philippine licensure tracks.',
             ],

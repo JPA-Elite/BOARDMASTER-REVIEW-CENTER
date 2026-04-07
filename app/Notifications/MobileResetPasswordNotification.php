@@ -15,12 +15,12 @@ class MobileResetPasswordNotification extends ResetPassword
         ], false));
 
         return (new MailMessage)
-            ->subject('Reset your Board Masters password')
+            ->subject('Reset your BoardMasters password')
             ->view('emails.mobile.reset-password', [
                 'name' => $notifiable->name ?? 'Review Student',
                 'email' => $notifiable->getEmailForPasswordReset(),
                 'actionUrl' => $actionUrl,
-                'appName' => config('app.name', 'Board Masters Review Center'),
+                'appName' => config('app.name', 'BoardMasters Review Center'),
                 'expireMinutes' => (int) config('auth.passwords.users.expire', 60),
             ]);
     }

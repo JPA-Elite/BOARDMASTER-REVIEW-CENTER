@@ -183,7 +183,7 @@
             <div class="card">
                 <div class="card__header">
                     <h1>Reset your password</h1>
-                    <p>Board Masters Review Center</p>
+                    <p>BoardMasters Review Center</p>
                 </div>
                 <div class="card__body">
                     @if (session('status'))
