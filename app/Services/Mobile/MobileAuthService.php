@@ -293,6 +293,15 @@ class MobileAuthService
             && strcasecmp((string) $validated['email'], (string) $user->email) !== 0;
 
         if ($emailChanged) {
+            return response()->json([
+                'message' => 'Email cannot be changed after account creation.',
+                'errors' => [
+                    'email' => ['Email cannot be changed after account creation.'],
+                ],
+            ], 422);
+        }
+
+        if ($emailChanged) {
             $user->email_verified_at = null;
         }
 
