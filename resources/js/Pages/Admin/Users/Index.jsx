@@ -206,36 +206,42 @@ export default function Index({ users, filters }) {
 
             <Modal show={previewUser !== null} onClose={closePreview} maxWidth="lg">
                 <div className="p-6">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h2 className="text-lg font-semibold text-slate-900">
-                                {previewUser?.name}
-                            </h2>
-                            <p className="text-sm text-slate-500">
-                                {previewUser?.email}
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={closePreview}
-                            className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-600"
-                        >
-                            Close
-                        </button>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center">
-                        {previewUser?.avatar_url ? (
-                            <img
-                                src={previewUser.avatar_url}
-                                alt={previewUser.name}
-                                className="max-h-[360px] w-full rounded-xl object-cover"
-                            />
-                        ) : (
-                            <div className="flex h-48 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-                                No profile photo uploaded.
+                    {previewUser ? (
+                        <>
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-900">
+                                        {previewUser?.name}
+                                    </h2>
+                                    <p className="text-sm text-slate-500">
+                                        {previewUser?.email}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={closePreview}
+                                    className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-600"
+                                >
+                                    Close
+                                </button>
                             </div>
-                        )}
-                    </div>
+                            <div className="mt-4 flex items-center justify-center">
+                                {previewUser?.avatar_url ? (
+                                    <img
+                                        src={previewUser.avatar_url}
+                                        alt={previewUser.name}
+                                        className="max-h-[360px] w-full rounded-xl object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-48 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                                        No profile photo uploaded.
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="h-72" />
+                    )}
                 </div>
             </Modal>
         </AdminLayout>
