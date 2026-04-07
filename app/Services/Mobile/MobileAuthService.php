@@ -207,7 +207,6 @@ class MobileAuthService
                 'name' => $profile['name'],
                 'email' => $email,
                 'password' => Hash::make(Str::random(64)),
-                'email_verified_at' => now(),
                 'school' => $profile['school'],
                 'phone_number' => $this->normalizePhilippinePhone((string) $profile['phone_number']),
                 'avatar_path' => $avatarUrl !== '' ? $avatarUrl : null,
@@ -219,6 +218,10 @@ class MobileAuthService
             /** @var User $createdUser */
             $createdUser = $this->users->create($newData);
             $user = $createdUser;
+            if ($user->email_verified_at === null) {
+                $user->email_verified_at = now();
+                $user->save();
+            }
         } else {
             $updates = [];
             if ($canStoreGoogleId && $user->google_id === null) {
@@ -234,14 +237,17 @@ class MobileAuthService
             if ($user->name === '' && $name !== '') {
                 $updates['name'] = $name;
             }
-            if ($user->email_verified_at === null) {
-                $updates['email_verified_at'] = now();
-            }
             if (($user->avatar_path ?? '') === '' && $avatarUrl !== '') {
                 $updates['avatar_path'] = $avatarUrl;
             }
             if ($updates !== []) {
                 $user->fill($updates);
+                if ($user->email_verified_at === null) {
+                    $user->email_verified_at = now();
+                }
+                $user->save();
+            } elseif ($user->email_verified_at === null) {
+                $user->email_verified_at = now();
                 $user->save();
             }
         }
