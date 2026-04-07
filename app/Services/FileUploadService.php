@@ -6,7 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Encoders\AutoEncoder;
+use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
 use Throwable;
 
@@ -39,26 +39,25 @@ class FileUploadService
     {
         $disk = $this->resolveDisk();
         $directory = trim($directory, '/');
-        $extension = strtolower(
-            $file->guessExtension()
-                ?: $file->getClientOriginalExtension()
-                ?: 'bin'
-        );
-        $filename = Str::uuid()->toString().'.'.$extension;
-        $path = $directory.'/'.$filename;
 
         if ($this->isImage($file)) {
+            $filename = Str::uuid()->toString().'.webp';
+            $path = $directory.'/'.$filename;
+
             try {
                 $image = $this->imageManager->read($file->getRealPath());
                 $image->scaleDown(width: 2000, height: 2000);
                 $encoded = $image->encode(
-                    new AutoEncoder(quality: $this->imageQuality())
+                    new WebpEncoder(quality: $this->imageQuality())
                 );
 
                 Storage::disk($disk)->put(
                     $path,
                     (string) $encoded,
-                    ['visibility' => 'public']
+                    [
+                        'visibility' => 'public',
+                        'ContentType' => 'image/webp',
+                    ]
                 );
 
                 return $this->formatStoredPath($disk, $path);
@@ -66,6 +65,14 @@ class FileUploadService
                 // Fallback to original file if compression fails.
             }
         }
+
+        $extension = strtolower(
+            $file->guessExtension()
+                ?: $file->getClientOriginalExtension()
+                ?: 'bin'
+        );
+        $filename = Str::uuid()->toString().'.'.$extension;
+        $path = $directory.'/'.$filename;
 
         Storage::disk($disk)->putFileAs(
             $directory,
