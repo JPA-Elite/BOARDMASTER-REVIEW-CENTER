@@ -32,11 +32,19 @@ class MobileReferralService
             $user->save();
         }
 
+        $perPage = (int) $request->query('per_page', 5);
+        if ($perPage < 5) {
+            $perPage = 5;
+        }
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
         $referrals = $this->referrals->query()
             ->with('invitedUser:id,name,email')
             ->where('inviter_id', $user->id)
             ->latest()
-            ->paginate(10);
+            ->paginate($perPage);
 
         $earnedPoints = $this->rewards->earnedPoints($user);
         $spentPoints = $this->rewards->spentPoints($user);
