@@ -100,7 +100,7 @@ export default function Dashboard({
                                     Year
                                 </span>
                                 <select
-                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                     value={signupYear}
                                     onChange={(event) => {
                                         const year = event.target.value;
