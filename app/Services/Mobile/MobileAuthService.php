@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -36,11 +37,11 @@ class MobileAuthService
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => $this->nameValidationRules(),
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()->symbols()],
-            'school' => ['nullable', 'string', 'max:255'],
-            'phone_number' => ['nullable', 'string', 'max:25'],
+            'school' => ['required', 'string', 'max:255'],
+            'phone_number' => $this->phoneValidationRules(),
             'birthdate' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
         ]);
@@ -50,8 +51,8 @@ class MobileAuthService
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'school' => $validated['school'] ?? null,
-            'phone_number' => $validated['phone_number'] ?? null,
+            'school' => $validated['school'],
+            'phone_number' => $this->normalizePhilippinePhone((string) $validated['phone_number']),
             'birthdate' => $validated['birthdate'] ?? null,
             'gender' => $validated['gender'] ?? null,
         ]);
@@ -73,6 +74,16 @@ class MobileAuthService
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
+
+        /** @var User|null $originUser */
+        $originUser = $this->users->query()
+            ->whereRaw('LOWER(email) = ?', [strtolower(trim((string) $validated['email']))])
+            ->first();
+        if ($originUser instanceof User && $this->isGoogleOriginUser($originUser)) {
+            return response()->json([
+                'message' => 'This account was created with Google sign-in. Please use Sign in with Google.',
+            ], 409);
+        }
 
         if (! Auth::attempt([
             'email' => $validated['email'],
@@ -179,11 +190,26 @@ class MobileAuthService
         $canStoreGoogleId = Schema::hasColumn('users', 'google_id');
 
         if (! $user instanceof User) {
+            $profileValidation = Validator::make($request->all(), [
+                'name' => $this->nameValidationRules(),
+                'school' => ['required', 'string', 'max:255'],
+                'phone_number' => $this->phoneValidationRules(),
+            ]);
+            if ($profileValidation->fails()) {
+                return response()->json([
+                    'message' => 'Complete your profile first (full name, phone number, school) to continue with Google sign-in.',
+                    'errors' => $profileValidation->errors(),
+                ], 428);
+            }
+            $profile = $profileValidation->validated();
+
             $newData = [
-                'name' => $name,
+                'name' => $profile['name'],
                 'email' => $email,
                 'password' => Hash::make(Str::random(64)),
                 'email_verified_at' => now(),
+                'school' => $profile['school'],
+                'phone_number' => $this->normalizePhilippinePhone((string) $profile['phone_number']),
                 'avatar_path' => $avatarUrl !== '' ? $avatarUrl : null,
             ];
             if ($canStoreGoogleId) {
@@ -195,13 +221,15 @@ class MobileAuthService
             $user = $createdUser;
         } else {
             $updates = [];
+            if ($canStoreGoogleId && $user->google_id === null) {
+                return response()->json([
+                    'message' => 'This email is already registered with manual signup. Please sign in using email and password.',
+                ], 409);
+            }
             if ($canStoreGoogleId && $user->google_id !== null && (string) $user->google_id !== $googleId) {
                 return response()->json([
                     'message' => 'This email is already linked to a different Google account.',
                 ], 409);
-            }
-            if ($canStoreGoogleId && $user->google_id === null) {
-                $updates['google_id'] = $googleId;
             }
             if ($user->name === '' && $name !== '') {
                 $updates['name'] = $name;
@@ -528,6 +556,54 @@ class MobileAuthService
         }
 
         return ucfirst($base);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function nameValidationRules(): array
+    {
+        return [
+            'required',
+            'string',
+            'max:255',
+            'regex:/^\s*\S+(?:\s+\S+)+\s*$/',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function phoneValidationRules(): array
+    {
+        return [
+            'required',
+            'string',
+            'max:25',
+            'regex:/^(?:09\d{9}|\+639\d{9}|639\d{9})$/',
+        ];
+    }
+
+    private function normalizePhilippinePhone(string $value): string
+    {
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+        if (str_starts_with($digits, '63') && strlen($digits) === 12) {
+            return '0'.substr($digits, 2);
+        }
+        if (str_starts_with($digits, '09') && strlen($digits) === 11) {
+            return $digits;
+        }
+
+        return trim($value);
+    }
+
+    private function isGoogleOriginUser(User $user): bool
+    {
+        if (! Schema::hasColumn('users', 'google_id')) {
+            return false;
+        }
+
+        return trim((string) ($user->google_id ?? '')) !== '';
     }
 
     private function resolveOrCreateSubscription(User $user): ?UserSubscription
