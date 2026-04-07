@@ -264,7 +264,7 @@ export default function AdminLayout({ title, children }) {
                                 </span>
                                 <span className="min-w-0">
                                     <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                                        Boardmasters
+                                        BoardMasters
                                     </span>
                                     <span className="block text-lg font-semibold text-slate-900">
                                         Review Center

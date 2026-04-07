@@ -90,7 +90,7 @@ class MarketingContentService
                 'reviewer_name' => 'Patrick Bat-Og',
                 'reviewer_school' => 'Asia Pacific College',
                 'quote' =>
-                    'Boardmasters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
+                    'BoardMasters is the biggest game changer. It stopped me from spending too much time on topics I already mastered.',
                 'rating' => '5',
             ],
             [

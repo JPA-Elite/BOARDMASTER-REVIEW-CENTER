@@ -35,7 +35,7 @@ const contactOptions = [
 
 const defaultFaqs = [
     {
-        question: 'Does Boardmasters focus on Nursing only?',
+        question: 'Does BoardMasters focus on Nursing only?',
         answer: 'Nursing is a primary focus, but we also support other major Philippine licensure tracks.',
     },
     {
@@ -54,17 +54,17 @@ export default function Contact({ faqs = defaultFaqs }) {
 
     return (
         <MarketingLayout
-            title="Contact | Boardmasters Review Center"
-            description="Contact Boardmasters Review Center for support, partnership inquiries, and board exam review assistance."
-            ogTitle="Contact | Boardmasters Review Center"
-            ogDescription="Get in touch with Boardmasters for Nursing and licensure review support."
+            title="Contact | BoardMasters Review Center"
+            description="Contact BoardMasters Review Center for support, partnership inquiries, and board exam review assistance."
+            ogTitle="Contact | BoardMasters Review Center"
+            ogDescription="Get in touch with BoardMasters for Nursing and licensure review support."
             preloadImages={[contactHeroImage]}
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
                 <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
                     <div>
                         <p className="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
-                            Contact Boardmasters
+                            Contact BoardMasters
                         </p>
                         <h1 className="mt-5 text-4xl font-bold leading-tight text-slate-900 sm:text-5xl" style={headingFont}>
                             Let us support your board review journey.
@@ -96,7 +96,7 @@ export default function Contact({ faqs = defaultFaqs }) {
                         <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
                             <ImageWithSkeleton
                                 src={contactHeroImage}
-                                alt="Boardmasters contact preview"
+                                alt="BoardMasters Contact Preview"
                                 wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
                                 className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
                                 skeletonClassName="rounded-3xl"

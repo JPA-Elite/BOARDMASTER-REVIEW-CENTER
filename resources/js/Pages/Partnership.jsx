@@ -72,10 +72,10 @@ const process = [
 export default function Partnership() {
     return (
         <MarketingLayout
-            title="Partnership | Boardmasters Review Center"
-            description="Partner with Boardmasters Review Center for Nursing and licensure-focused digital board exam preparation."
-            ogTitle="Partnership | Boardmasters Review Center"
-            ogDescription="Collaborate with Boardmasters for school and review center board exam solutions."
+            title="Partnership | BoardMasters Review Center"
+            description="Partner with BoardMasters Review Center for Nursing and licensure-focused digital board exam preparation."
+            ogTitle="Partnership | BoardMasters Review Center"
+            ogDescription="Collaborate with BoardMasters for school and review center board exam solutions."
             preloadImages={[partnershipHeroImage, partnershipSecondaryImage]}
         >
             <section className="reveal-on-scroll px-4 pb-14 pt-12 sm:px-6">
@@ -88,7 +88,7 @@ export default function Partnership() {
                             Build stronger board exam outcomes with a smarter review partnership.
                         </h1>
                         <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                            Boardmasters Review Center works with schools, departments, and review centers to deliver
+                            BoardMasters Review Center works with schools, departments, and review centers to deliver
                             structured digital board preparation, especially for Nursing and allied programs.
                         </p>
                         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -113,7 +113,7 @@ export default function Partnership() {
                         <div className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
                             <ImageWithSkeleton
                                 src={partnershipHeroImage}
-                                alt="Boardmasters partnership analytics preview"
+                                alt="BoardMasters partnership analytics preview"
                                 wrapperClassName="overflow-hidden rounded-3xl bg-slate-100"
                                 className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
                                 skeletonClassName="rounded-3xl"
@@ -129,7 +129,7 @@ export default function Partnership() {
             <section className="reveal-on-scroll px-4 pb-14 sm:px-6">
                 <div className="mx-auto w-full max-w-6xl">
                     <h2 className="text-3xl font-bold text-slate-900" style={headingFont}>
-                        Why institutions partner with Boardmasters
+                        Why institutions partner with BoardMasters
                     </h2>
                     <div className="mt-6 grid gap-4 md:grid-cols-3">
                         {partnershipBenefits.map((benefit) => {
@@ -178,7 +178,7 @@ export default function Partnership() {
                     </div>
                     <ImageWithSkeleton
                         src={partnershipSecondaryImage}
-                        alt="Boardmasters collaboration model interface preview"
+                        alt="BoardMasters collaboration model interface preview"
                         wrapperClassName="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100"
                         className="mx-auto max-h-[620px] w-full rounded-3xl object-contain"
                         skeletonClassName="rounded-3xl"
