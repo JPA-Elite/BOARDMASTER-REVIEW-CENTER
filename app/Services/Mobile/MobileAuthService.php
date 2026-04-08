@@ -81,7 +81,7 @@ class MobileAuthService
             ->first();
         if ($originUser instanceof User && $this->isGoogleOriginUser($originUser)) {
             return response()->json([
-                'message' => 'This account was created with Google sign-in. Please use Sign in with Google.',
+                'message' => 'Invalid credentials.',
             ], 409);
         }
 
