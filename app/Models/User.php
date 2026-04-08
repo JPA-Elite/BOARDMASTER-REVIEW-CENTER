@@ -70,6 +70,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'birthdate' => 'date',
+            'mobile_demo_seen_at' => 'datetime',
         ];
     }
 

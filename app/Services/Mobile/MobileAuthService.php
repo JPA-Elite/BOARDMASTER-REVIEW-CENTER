@@ -480,6 +480,23 @@ class MobileAuthService
         ]);
     }
 
+    public function markDemoSeen(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        if ($user->mobile_demo_seen_at === null) {
+            $user->mobile_demo_seen_at = now();
+            $user->save();
+        }
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        return response()->json([
+            'message' => 'Demo status updated.',
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
     private function verifyGoogleIdToken(string $idToken, array $audiences): array
     {
         try {
@@ -747,6 +764,8 @@ class MobileAuthService
             'avatar_url' => $user->avatar_url,
             'referral_code' => $user->referral_code,
             'referred_by' => $user->referred_by,
+            'mobile_demo_seen' => $user->mobile_demo_seen_at !== null,
+            'mobile_demo_seen_at' => $user->mobile_demo_seen_at?->toDateTimeString(),
             'trial_consumed' => $this->hasConsumedFreeTrial($user),
             'plan_tier' => $this->resolveTier($plan),
             'subscription' => $subscription ? [

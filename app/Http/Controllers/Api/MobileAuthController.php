@@ -57,4 +57,9 @@ class MobileAuthController extends Controller
     {
         return $this->authService->me($request);
     }
+
+    public function markDemoSeen(Request $request): JsonResponse
+    {
+        return $this->authService->markDemoSeen($request);
+    }
 }
