@@ -81,7 +81,7 @@ class MobileAuthService
             ->first();
         if ($originUser instanceof User && $this->isGoogleOriginUser($originUser)) {
             return response()->json([
-                'message' => 'Invalid credentials.',
+                'message' => 'Invalid credentials. Please Try again.',
             ], 409);
         }
 
@@ -90,9 +90,9 @@ class MobileAuthService
             'password' => $validated['password'],
         ])) {
             return response()->json([
-                'message' => 'Invalid credentials.',
+                'message' => 'Invalid credentials. Please try again.',
                 'errors' => [
-                    'email' => ['Invalid credentials.'],
+                    'email' => ['Invalid credentials. Please try again.'],
                 ],
             ], 422);
         }
@@ -336,6 +336,24 @@ class MobileAuthService
         $validated = $request->validate([
             'email' => ['required', 'string', 'email'],
         ]);
+
+        $email = strtolower(trim((string) $validated['email']));
+        if ($email !== '' && Schema::hasColumn('users', 'google_id')) {
+            /** @var User|null $user */
+            $user = $this->users->query()
+                ->whereRaw('LOWER(email) = ?', [$email])
+                ->first();
+            if ($user instanceof User && ($user->google_id ?? '') !== '') {
+                return response()->json([
+                    'message' => 'Cannot proceed with password reset. This email is linked to Google sign-in.',
+                    'errors' => [
+                        'email' => [
+                            'Cannot proceed with password reset. This email is linked to Google sign-in.',
+                        ],
+                    ],
+                ], 422);
+            }
+        }
 
         $status = Password::broker()->sendResetLink([
             'email' => $validated['email'],
