@@ -5,22 +5,27 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Form({ mode, offer, subjects = [] }) {
-    const { data, setData, post, put, processing, errors } = useForm({
+    const initialData = {
         title: offer?.title || '',
         description: offer?.description || '',
         points_cost: offer?.points_cost ?? 0,
         subject_id: offer?.subject_id ?? '',
         question_limit: offer?.question_limit ?? '',
         access_duration_days: offer?.access_duration_days ?? '',
-        category: offer?.category || '',
-        brand: offer?.brand || '',
-        image_url: offer?.image_url || '',
         sort_order: offer?.sort_order ?? 0,
         starts_at: offer?.starts_at || '',
         ends_at: offer?.ends_at || '',
         is_active: offer?.is_active ?? true,
         is_featured: offer?.is_featured ?? false,
-    });
+    };
+
+    if (mode === 'edit') {
+        initialData.category = offer?.category || '';
+        initialData.brand = offer?.brand || '';
+        initialData.image_url = offer?.image_url || '';
+    }
+
+    const { data, setData, post, put, processing, errors } = useForm(initialData);
 
     const submit = (event) => {
         event.preventDefault();
@@ -148,46 +153,52 @@ export default function Form({ mode, offer, subjects = [] }) {
                         <InputError message={errors.access_duration_days} className="mt-2" />
                     </div>
                     <div>
-                        <InputLabel htmlFor="image_url" value="Image URL" />
-                        <TextInput
-                            id="image_url"
-                            value={data.image_url}
-                            onChange={(event) =>
-                                setData('image_url', event.target.value)
-                            }
-                            className="mt-1 block w-full"
-                            placeholder="https://..."
-                        />
-                        <InputError message={errors.image_url} className="mt-2" />
+                        {mode === 'edit' && (
+                            <>
+                                <InputLabel htmlFor="image_url" value="Image URL" />
+                                <TextInput
+                                    id="image_url"
+                                    value={data.image_url}
+                                    onChange={(event) =>
+                                        setData('image_url', event.target.value)
+                                    }
+                                    className="mt-1 block w-full"
+                                    placeholder="https://..."
+                                />
+                                <InputError message={errors.image_url} className="mt-2" />
+                            </>
+                        )}
                     </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <InputLabel htmlFor="category" value="Category" />
-                        <TextInput
-                            id="category"
-                            value={data.category}
-                            onChange={(event) =>
-                                setData('category', event.target.value)
-                            }
-                            className="mt-1 block w-full"
-                        />
-                        <InputError message={errors.category} className="mt-2" />
+                {mode === 'edit' && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <InputLabel htmlFor="category" value="Category" />
+                            <TextInput
+                                id="category"
+                                value={data.category}
+                                onChange={(event) =>
+                                    setData('category', event.target.value)
+                                }
+                                className="mt-1 block w-full"
+                            />
+                            <InputError message={errors.category} className="mt-2" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="brand" value="Brand" />
+                            <TextInput
+                                id="brand"
+                                value={data.brand}
+                                onChange={(event) =>
+                                    setData('brand', event.target.value)
+                                }
+                                className="mt-1 block w-full"
+                            />
+                            <InputError message={errors.brand} className="mt-2" />
+                        </div>
                     </div>
-                    <div>
-                        <InputLabel htmlFor="brand" value="Brand" />
-                        <TextInput
-                            id="brand"
-                            value={data.brand}
-                            onChange={(event) =>
-                                setData('brand', event.target.value)
-                            }
-                            className="mt-1 block w-full"
-                        />
-                        <InputError message={errors.brand} className="mt-2" />
-                    </div>
-                </div>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div>
