@@ -33,11 +33,17 @@ class MobileSubscriptionService
             ->orderByDesc('id')
             ->paginate(10);
 
-        $methodMap = $this->resolvePaymentMethodMap($user->id, $subscriptions->getCollection());
+        $paymentMeta = $this->resolvePaymentMetaMap($user->id, $subscriptions->getCollection());
+        $methodMap = $paymentMeta['methods'];
+        $paymentIdMap = $paymentMeta['provider_payment_ids'];
 
         return response()->json([
             'data' => $subscriptions->getCollection()->map(
-                fn (UserSubscription $subscription) => $this->toHistoryRow($subscription, $methodMap),
+                fn (UserSubscription $subscription) => $this->toHistoryRow(
+                    $subscription,
+                    $methodMap,
+                    $paymentIdMap,
+                ),
             )->values(),
             'pagination' => [
                 'current_page' => $subscriptions->currentPage(),
@@ -62,10 +68,11 @@ class MobileSubscriptionService
      *   start_date: string|null,
      *   end_date: string|null,
      *   status: string|null,
-     *   payment_method: string|null
+     *   payment_method: string|null,
+     *   provider_payment_id: string|null
      * }
      */
-    private function toHistoryRow(UserSubscription $subscription, array $methodMap): array
+    private function toHistoryRow(UserSubscription $subscription, array $methodMap, array $paymentIdMap): array
     {
         $startDate = $subscription->start_date?->toDateString();
         $key = $subscription->plan_id.'|'.$startDate;
@@ -83,14 +90,15 @@ class MobileSubscriptionService
             'end_date' => $subscription->end_date?->toDateString(),
             'status' => $subscription->status,
             'payment_method' => $methodMap[$key] ?? null,
+            'provider_payment_id' => $paymentIdMap[$key] ?? null,
         ];
     }
 
     /**
      * @param  \Illuminate\Support\Collection<int, UserSubscription>  $collection
-     * @return array<string, string|null>
+     * @return array{methods: array<string, string|null>, provider_payment_ids: array<string, string|null>}
      */
-    private function resolvePaymentMethodMap(int $userId, $collection): array
+    private function resolvePaymentMetaMap(int $userId, $collection): array
     {
         $planIds = $collection
             ->pluck('plan_id')
@@ -133,9 +141,10 @@ class MobileSubscriptionService
                 $maxStart->copy()->endOfDay(),
             ])
             ->orderByDesc('processed_at')
-            ->get(['plan_id', 'processed_at', 'raw_payload']);
+            ->get(['plan_id', 'processed_at', 'raw_payload', 'provider_payment_id']);
 
         $methodMap = [];
+        $paymentIdMap = [];
         foreach ($transactions as $transaction) {
             $dateKey = $transaction->processed_at?->toDateString();
             if (! $dateKey) {
@@ -153,10 +162,19 @@ class MobileSubscriptionService
             }
 
             $key = $planId.'|'.$dateKey;
+
+            $providerPaymentId = $transaction->provider_payment_id;
+            if (is_string($providerPaymentId) && $providerPaymentId !== '') {
+                $paymentIdMap[$key] ??= $providerPaymentId;
+            }
+
             $methodMap[$key] ??= $method;
         }
 
-        return $methodMap;
+        return [
+            'methods' => $methodMap,
+            'provider_payment_ids' => $paymentIdMap,
+        ];
     }
 
     /**
