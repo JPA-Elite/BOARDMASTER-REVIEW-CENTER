@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 
 function Icon({ children, className = 'size-4' }) {
@@ -167,6 +168,114 @@ function isActiveRoute(routeName) {
     );
 }
 
+function FloatingSidebarTooltip({ anchorRef, label, open }) {
+    const [coords, setCoords] = useState(null);
+
+    useEffect(() => {
+        if (!open) {
+            setCoords(null);
+            return;
+        }
+
+        const el = anchorRef.current;
+        if (!el) {
+            return;
+        }
+
+        const update = () => {
+            const rect = el.getBoundingClientRect();
+            setCoords({
+                top: rect.top + rect.height / 2,
+                left: rect.right,
+            });
+        };
+
+        const raf = window.requestAnimationFrame(update);
+        window.addEventListener('scroll', update, true);
+        window.addEventListener('resize', update);
+        return () => {
+            window.cancelAnimationFrame(raf);
+            window.removeEventListener('scroll', update, true);
+            window.removeEventListener('resize', update);
+        };
+    }, [open, anchorRef]);
+
+    if (!open || !coords) {
+        return null;
+    }
+
+    return createPortal(
+        <div
+            className="admin-floating-tooltip pointer-events-none fixed z-[9999]"
+            style={{
+                top: coords.top,
+                left: coords.left,
+                transform: 'translateY(-50%)',
+            }}
+        >
+            <div className="relative">
+                <div className="rounded-r-xl rounded-l-none bg-slate-900/95 px-3 py-2 text-xs font-semibold text-white shadow-xl ring-1 ring-black/10 backdrop-blur">
+                    <span className="block max-w-[240px] truncate">{label}</span>
+                </div>
+            </div>
+        </div>,
+        document.body,
+    );
+}
+
+function AdminSidebarNavItem({ item, href, active, collapsed }) {
+    const [open, setOpen] = useState(false);
+    const linkRef = useRef(null);
+    const ItemIcon = item.icon;
+
+    return (
+        <Link
+            ref={linkRef}
+            href={href}
+            aria-label={collapsed ? item.label : undefined}
+            onMouseEnter={() => collapsed && setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+            onFocus={() => collapsed && setOpen(true)}
+            onBlur={() => setOpen(false)}
+            className={`group relative flex items-center rounded-md py-2.5 text-sm transition ${
+                active
+                    ? 'bg-slate-200 text-slate-950'
+                    : 'text-slate-700 hover:bg-slate-200 hover:text-slate-950'
+            } ${collapsed ? 'justify-center px-1' : 'gap-3 px-3'}`}
+        >
+            {collapsed ? (
+                <span className="text-slate-500">
+                    <ItemIcon />
+                </span>
+            ) : (
+                <>
+                    <span className="flex items-center gap-3">
+                        <span className="text-slate-500">
+                            <ItemIcon />
+                        </span>
+                        <span>{item.label}</span>
+                    </span>
+                    <span
+                        className={`ml-auto text-slate-400 opacity-0 transition ${
+                            active
+                                ? 'opacity-100 text-slate-600'
+                                : 'group-hover:translate-x-0.5 group-hover:opacity-100'
+                        }`}
+                    >
+                        <ArrowRightIcon />
+                    </span>
+                </>
+            )}
+
+            <FloatingSidebarTooltip
+                anchorRef={linkRef}
+                label={item.label}
+                open={collapsed && open}
+            />
+        </Link>
+    );
+}
+
 export default function AdminLayout({ title, children }) {
     const { auth, flash } = usePage().props;
     const hideFlash = route().current('admin.settings');
@@ -176,8 +285,31 @@ export default function AdminLayout({ title, children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
     const [visibleNotifications, setVisibleNotifications] = useState(10);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        try {
+            if (typeof window === 'undefined') {
+                return false;
+            }
+            return window.localStorage.getItem('admin_sidebar_collapsed') === '1';
+        } catch (_) {
+            return false;
+        }
+    });
+    const [desktopShell, setDesktopShell] = useState(() => {
+        try {
+            if (typeof window === 'undefined') {
+                return true;
+            }
+            return window.matchMedia('(min-width: 1024px)').matches;
+        } catch (_) {
+            return true;
+        }
+    });
     const notificationButtonRef = useRef(null);
     const notificationPanelRef = useRef(null);
+    const collapsedLogoutRef = useRef(null);
+    const [collapsedLogoutTooltipOpen, setCollapsedLogoutTooltipOpen] =
+        useState(false);
 
     const initials = useMemo(() => {
         const name = auth.user?.name || 'Admin User';
@@ -192,6 +324,31 @@ export default function AdminLayout({ title, children }) {
     useEffect(() => {
         setUnreadCount(notificationCount);
     }, [notificationCount]);
+
+    useEffect(() => {
+        try {
+            const media = window.matchMedia('(min-width: 1024px)');
+            const onChange = (event) => setDesktopShell(event.matches);
+            setDesktopShell(media.matches);
+            media.addEventListener?.('change', onChange);
+            return () => media.removeEventListener?.('change', onChange);
+        } catch (_) {
+            return undefined;
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(
+                'admin_sidebar_collapsed',
+                sidebarCollapsed ? '1' : '0',
+            );
+        } catch (_) {
+            // Ignore persistence failures.
+        }
+    }, [sidebarCollapsed]);
+
+    const effectiveSidebarCollapsed = sidebarCollapsed && desktopShell;
 
     useEffect(() => {
         if (!notificationOpen) {
@@ -245,16 +402,21 @@ export default function AdminLayout({ title, children }) {
     }, [notificationOpen, unreadCount]);
 
     return (
-        <div className="min-h-screen bg-[#f4f5f7] text-slate-900">
+        <div className="admin-shell min-h-screen bg-[#f4f5f7] text-slate-900">
             <div className="flex min-h-screen">
                 <aside
-                    className={`fixed inset-y-0 left-0 z-40 w-[290px] border-r border-slate-200 bg-[#f7f7f8] transition-transform ${
+                    className={`fixed inset-y-0 left-0 z-40 w-[290px] border-r border-slate-200 bg-[#f7f7f8] transition-[transform,width] duration-200 ${
                         mobileOpen ? 'translate-x-0' : '-translate-x-full'
-                    } lg:translate-x-0`}
+                    } lg:translate-x-0 ${effectiveSidebarCollapsed ? 'lg:w-[72px]' : ''}`}
                 >
-                    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                        <div className="border-b border-slate-200 px-6 py-2">
-                            <Link href={route('admin.dashboard')} className="flex items-center gap-3">
+                    <div className="flex h-full min-h-0 flex-col overflow-visible">
+                        <div
+                            className={`relative border-b border-slate-200 py-2 ${effectiveSidebarCollapsed ? 'px-3' : 'px-6 pr-14'}`}
+                        >
+                            <Link
+                                href={route('admin.dashboard')}
+                                className={`flex items-center ${effectiveSidebarCollapsed ? 'justify-center' : 'gap-3'}`}
+                            >
                                 <span className="inline-flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white">
                                     <img
                                         src="/images/boardmaster.png"
@@ -262,7 +424,7 @@ export default function AdminLayout({ title, children }) {
                                         className="size-10 rounded-full object-contain"
                                     />
                                 </span>
-                                <span className="min-w-0">
+                                <span className={`min-w-0 ${effectiveSidebarCollapsed ? 'hidden' : ''}`}>
                                     <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
                                         BoardMasters
                                     </span>
@@ -271,14 +433,41 @@ export default function AdminLayout({ title, children }) {
                                     </span>
                                 </span>
                             </Link>
+
+                            {!effectiveSidebarCollapsed && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSidebarCollapsed(true)}
+                                    className="hidden lg:inline-flex absolute right-4 top-1/2 size-9 -translate-y-1/2 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                                    aria-pressed={effectiveSidebarCollapsed}
+                                    title="Collapse sidebar"
+                                >
+                                    <span className="sr-only">Collapse sidebar</span>
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="size-5"
+                                    >
+                                        <path d="M15 18l-6-6 6-6" />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
 
-                        <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5">
+                        <nav
+                            className={`min-h-0 flex-1 space-y-6 overflow-y-auto py-5 ${effectiveSidebarCollapsed ? 'px-1' : 'px-4'}`}
+                        >
                             {navSections.map((section) => (
                                 <div key={section.label}>
-                                    <p className="px-3 text-sm font-semibold text-[#4b5563]">
-                                        {section.label}
-                                    </p>
+                                    {!effectiveSidebarCollapsed && (
+                                        <p className="px-3 text-sm font-semibold text-[#4b5563]">
+                                            {section.label}
+                                        </p>
+                                    )}
                                     <div className="mt-2 space-y-1">
                                         {section.items.map((item) => {
                                             const ItemIcon = item.icon;
@@ -288,77 +477,141 @@ export default function AdminLayout({ title, children }) {
                                                 : item.href;
 
                                             return (
-                                                <Link
+                                                <AdminSidebarNavItem
                                                     key={item.routeName + item.label}
+                                                    item={item}
                                                     href={href}
-                                                    className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition ${
-                                                        active
-                                                            ? 'bg-slate-100 text-slate-950'
-                                                            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
-                                                    }`}
-                                                >
-                                                    <span className="flex items-center gap-3">
-                                                        <span className="text-slate-500">
-                                                            <ItemIcon />
-                                                        </span>
-                                                        <span>{item.label}</span>
-                                                    </span>
-                                                    <span
-                                                        className={`ml-auto text-slate-400 opacity-0 transition ${
-                                                            active
-                                                                ? 'opacity-100 text-slate-600'
-                                                                : 'group-hover:translate-x-0.5 group-hover:opacity-100'
-                                                        }`}
-                                                    >
-                                                        <ArrowRightIcon />
-                                                    </span>
-                                                </Link>
+                                                    active={active}
+                                                    collapsed={effectiveSidebarCollapsed}
+                                                />
                                             );
                                         })}
                                     </div>
+
+                                    {effectiveSidebarCollapsed && section.label === 'Management' && (
+                                        <div className="mt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setSidebarCollapsed(false)}
+                                                className="hidden w-full justify-center rounded-md border border-slate-200 bg-white px-1 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 lg:inline-flex"
+                                                aria-pressed={sidebarCollapsed}
+                                                title="Expand sidebar"
+                                            >
+                                                <span className="sr-only">Expand sidebar</span>
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className="size-5"
+                                                    aria-hidden="true"
+                                                >
+                                                    <path d="M9 18l6-6-6-6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </nav>
 
-                        <div className="mt-auto shrink-0 border-t border-slate-200 p-4">
-                            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                                <span className="inline-flex size-10 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
-                                    {auth.user?.avatar_url ? (
-                                        <img
-                                            src={auth.user.avatar_url}
-                                            alt={auth.user?.name ?? 'Admin'}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    ) : (
-                                        initials
-                                    )}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-semibold text-slate-900">
-                                        {auth.user?.name}
-                                    </p>
-                                    <p className="truncate text-xs text-slate-500">
-                                        {auth.user?.email}
-                                    </p>
+                        <div className={`mt-auto shrink-0 border-t border-slate-200 ${effectiveSidebarCollapsed ? 'p-3' : 'p-4'}`}>
+                            {effectiveSidebarCollapsed ? (
+                                <div className="flex justify-center">
+                                    <Link
+                                        ref={collapsedLogoutRef}
+                                        href={route('logout')}
+                                        method="post"
+                                        as="button"
+                                        onSuccess={() =>
+                                            toast.success('Logged out successfully.')
+                                        }
+                                        onMouseEnter={() =>
+                                            setCollapsedLogoutTooltipOpen(true)
+                                        }
+                                        onMouseLeave={() =>
+                                            setCollapsedLogoutTooltipOpen(false)
+                                        }
+                                        onFocus={() =>
+                                            setCollapsedLogoutTooltipOpen(true)
+                                        }
+                                        onBlur={() =>
+                                            setCollapsedLogoutTooltipOpen(false)
+                                        }
+                                        className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+                                        aria-label="Log out"
+                                    >
+                                        <span className="sr-only">Log out</span>
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className="size-4"
+                                        >
+                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                            <path d="M16 17l5-5-5-5" />
+                                            <path d="M21 12H9" />
+                                        </svg>
+                                    </Link>
+                                    <FloatingSidebarTooltip
+                                        anchorRef={collapsedLogoutRef}
+                                        label="Log out"
+                                        open={collapsedLogoutTooltipOpen}
+                                    />
                                 </div>
-                                <Link
-                                    href={route('logout')}
-                                    method="post"
-                                    as="button"
-                                    onSuccess={() =>
-                                        toast.success('Logged out successfully.')
-                                    }
-                                    className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
-                                >
-                                    Log out
-                                </Link>
-                            </div>
+                            ) : (
+                                <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                    <span className="inline-flex size-10 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
+                                        {auth.user?.avatar_url ? (
+                                            <img
+                                                src={auth.user.avatar_url}
+                                                alt={auth.user?.name ?? 'Admin'}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            initials
+                                        )}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-slate-900">
+                                            {auth.user?.name}
+                                        </p>
+                                        <p className="truncate text-xs text-slate-500">
+                                            {auth.user?.email}
+                                        </p>
+                                    </div>
+                                    <Link
+                                        href={route('logout')}
+                                        method="post"
+                                        as="button"
+                                        onSuccess={() =>
+                                            toast.success('Logged out successfully.')
+                                        }
+                                        className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                                    >
+                                        Log out
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </aside>
 
-                <div className="flex min-w-0 flex-1 flex-col lg:pl-[290px]">
-                    <header className="fixed top-0 left-0 right-0 z-30 border-b border-slate-200 bg-[#f8f8f9] lg:left-[290px]">
+                <div
+                    className={`flex min-w-0 flex-1 flex-col ${
+                        effectiveSidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[290px]'
+                    }`}
+                >
+                    <header
+                        className={`fixed top-0 left-0 right-0 z-30 border-b border-slate-200 bg-[#f8f8f9] ${
+                            effectiveSidebarCollapsed ? 'lg:left-[72px]' : 'lg:left-[290px]'
+                        }`}
+                    >
                         <div className="flex h-16 items-center gap-4 px-4 md:px-6">
                             <button
                                 type="button"

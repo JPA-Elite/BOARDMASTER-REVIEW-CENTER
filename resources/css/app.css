@@ -83,3 +83,27 @@ body,
     animation: skeleton-shimmer 1.8s linear infinite;
     border-radius: inherit;
 }
+
+.admin-shell table tbody tr {
+    transition: background-color 160ms ease;
+}
+
+.admin-shell table tbody tr:hover {
+    background-color: rgb(248 250 252);
+}
+
+@keyframes admin-tooltip-in {
+    from {
+        opacity: 0;
+        transform: translate3d(-8px, -50%, 0) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, -50%, 0) scale(1);
+    }
+}
+
+.admin-shell .admin-floating-tooltip {
+    will-change: opacity, transform;
+    animation: admin-tooltip-in 160ms ease-out both;
+}
