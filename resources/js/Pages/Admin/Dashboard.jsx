@@ -1,11 +1,13 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
+import { Users } from 'lucide-react';
+import { useState } from 'react';
 import {
     Area,
-    AreaChart,
     Bar,
-    BarChart,
     CartesianGrid,
+    ComposedChart,
+    Line,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -33,6 +35,26 @@ function TrendBadge({ value }) {
     );
 }
 
+function SignupTooltip({ active, payload, label }) {
+    if (!active || !payload || payload.length === 0) {
+        return null;
+    }
+
+    const countEntry = payload.find((entry) => entry?.dataKey === 'count');
+    const countValue = countEntry?.value ?? payload[0]?.value ?? 0;
+
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <p className="text-xs font-semibold text-slate-900">
+                Month: {label}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-indigo-600">
+                Signups: {countValue}
+            </p>
+        </div>
+    );
+}
+
 export default function Dashboard({
     dateLabel,
     kpis,
@@ -41,6 +63,13 @@ export default function Dashboard({
     signupYear,
     recentAttempts,
 }) {
+    const [signupChartType, setSignupChartType] = useState('line');
+
+    const totalSignups = userSignups.reduce(
+        (total, item) => total + (Number(item?.count) || 0),
+        0,
+    );
+
     return (
         <AdminLayout title="Dashboard">
             <Head title="Admin Dashboard" />
@@ -91,9 +120,20 @@ export default function Dashboard({
                                 <h2 className="text-xl font-semibold text-slate-900">
                                     User Signups
                                 </h2>
-                                <p className="text-sm text-slate-500">
-                                    New user registrations in {signupYear}
-                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                                    <span>Total user registrations in {signupYear}</span>
+                                    <span className="text-slate-500">/</span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-50 to-violet-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
+                                        <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                                        Total:{' '}
+                                        <span className="tabular-nums text-slate-950">
+                                            {totalSignups}
+                                        </span>{' '}
+                                        <span className="font-medium text-slate-600">
+                                            {totalSignups === 1 ? 'user' : 'users'}
+                                        </span>
+                                    </span>
+                                </div>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-slate-600">
                                 <span className="text-xs uppercase tracking-wide text-slate-400">
@@ -131,9 +171,9 @@ export default function Dashboard({
                                 </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart
+                                    <ComposedChart
                                         data={userSignups}
-                                        margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                                        margin={{ top: 26, right: 12, left: 6, bottom: 16 }}
                                     >
                                         <defs>
                                             <linearGradient
@@ -173,23 +213,84 @@ export default function Dashboard({
                                             tickLine={false}
                                         />
                                         <Tooltip
-                                            cursor={{ stroke: '#cbd5f5' }}
-                                            contentStyle={{
-                                                borderRadius: '12px',
-                                                borderColor: '#e2e8f0',
-                                            }}
+                                            cursor={
+                                                signupChartType === 'bar'
+                                                    ? { fill: '#e2e8f0' }
+                                                    : { stroke: '#cbd5f5' }
+                                            }
+                                            content={(props) => (
+                                                <SignupTooltip {...props} />
+                                            )}
                                         />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="count"
-                                            stroke="#6366f1"
-                                            strokeWidth={2}
-                                            fill="url(#signupFill)"
-                                        />
-                                    </AreaChart>
+                                        {signupChartType === 'bar' ? (
+                                            <Bar
+                                                dataKey="count"
+                                                fill="#6366f1"
+                                                radius={[10, 10, 0, 0]}
+                                                barSize={26}
+                                            />
+                                        ) : (
+                                            <>
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="count"
+                                                    stroke="#6366f1"
+                                                    strokeWidth={2}
+                                                    fill="url(#signupFill)"
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="count"
+                                                    stroke="#4f46e5"
+                                                    strokeWidth={2}
+                                                    dot={{
+                                                        r: 3,
+                                                        stroke: '#4f46e5',
+                                                        strokeWidth: 2,
+                                                        fill: '#ffffff',
+                                                    }}
+                                                    activeDot={{
+                                                        r: 5,
+                                                        stroke: '#4f46e5',
+                                                        strokeWidth: 2,
+                                                        fill: '#ffffff',
+                                                    }}
+                                                />
+                                            </>
+                                        )}
+                                    </ComposedChart>
                                 </ResponsiveContainer>
                             )}
                         </div>
+
+                        {userSignups.length > 0 && (
+                            <div className="mt-4 flex justify-center">
+                                <div className="inline-flex rounded-xl bg-slate-100 p-1 ring-1 ring-inset ring-slate-200">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSignupChartType('line')}
+                                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                            signupChartType === 'line'
+                                                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        Line
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSignupChartType('bar')}
+                                        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                            signupChartType === 'bar'
+                                                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        Bar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -223,4 +324,3 @@ export default function Dashboard({
         </AdminLayout>
     );
 }
-
