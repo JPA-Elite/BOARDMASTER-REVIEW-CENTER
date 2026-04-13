@@ -62,4 +62,9 @@ class MobileAuthController extends Controller
     {
         return $this->authService->markDemoSeen($request);
     }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        return $this->authService->destroy($request);
+    }
 }

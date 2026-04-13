@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\FileUploadService;
+use App\Services\UserDeletionService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,7 +61,7 @@ class ProfileController extends Controller
      */
     public function destroy(
         Request $request,
-        FileUploadService $uploads
+        UserDeletionService $userDeletion
     ): RedirectResponse
     {
         $request->validate([
@@ -71,8 +72,7 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $uploads->delete($user->avatar_path);
-        $user->delete();
+        $userDeletion->delete($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

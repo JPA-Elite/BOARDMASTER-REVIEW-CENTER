@@ -9,6 +9,7 @@ use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
 use App\Services\FileUploadService;
+use App\Services\UserDeletionService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,7 @@ class MobileAuthService
         private readonly PlanRepositoryInterface $plans,
         private readonly UserSubscriptionRepositoryInterface $subscriptions,
         private readonly FileUploadService $uploads,
+        private readonly UserDeletionService $userDeletion,
     ) {
     }
 
@@ -494,6 +496,43 @@ class MobileAuthService
         return response()->json([
             'message' => 'Demo status updated.',
             'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'password' => ['nullable', 'string'],
+        ]);
+
+        $password = trim((string) ($validated['password'] ?? ''));
+        if (! $this->isGoogleOriginUser($user)) {
+            if ($password === '') {
+                return response()->json([
+                    'message' => 'Password is required to delete your account.',
+                    'errors' => [
+                        'password' => ['Password is required to delete your account.'],
+                    ],
+                ], 422);
+            }
+
+            if (! Hash::check($password, (string) $user->password)) {
+                return response()->json([
+                    'message' => 'Incorrect password. Please try again.',
+                    'errors' => [
+                        'password' => ['Incorrect password. Please try again.'],
+                    ],
+                ], 422);
+            }
+        }
+
+        $this->userDeletion->delete($user);
+
+        return response()->json([
+            'message' => 'Your account has been deleted successfully.',
         ]);
     }
 

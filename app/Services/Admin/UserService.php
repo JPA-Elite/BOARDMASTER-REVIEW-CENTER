@@ -5,7 +5,7 @@ namespace App\Services\Admin;
 use App\Models\User;
 use App\Repositories\Contracts\ReferralRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
-use App\Services\FileUploadService;
+use App\Services\UserDeletionService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +15,7 @@ class UserService
     public function __construct(
         private readonly UserRepositoryInterface $users,
         private readonly ReferralRepositoryInterface $referrals,
-        private readonly FileUploadService $uploads,
+        private readonly UserDeletionService $userDeletion,
     ) {
     }
 
@@ -89,8 +89,7 @@ class UserService
             return false;
         }
 
-        $this->uploads->delete($user->avatar_path);
-        $this->users->delete($user);
+        $this->userDeletion->delete($user);
 
         return true;
     }
