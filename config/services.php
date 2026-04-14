@@ -51,6 +51,16 @@ return [
         'webhook_tolerance' => (int) env('PAYMONGO_WEBHOOK_TOLERANCE', 300),
     ],
 
+    'mobile_payments' => [
+        // Supported values: paymongo, in_app_purchase
+        'provider' => env('MOBILE_PAYMENT_PROVIDER', 'paymongo'),
+        // JSON map:
+        // {"android":{"2":"com.example.plan_a_monthly"},"ios":{"2":"com.example.plan_a_monthly_ios"}}
+        // Keys may be plan ID, "plan_group:billing_cycle", or plan_group.
+        // Only used when provider is 'in_app_purchase', ignored for 'paymongo'
+        'in_app_products' => env('MOBILE_PAYMENT_PROVIDER', 'paymongo') == 'in_app_purchase' ? env('MOBILE_IAP_PRODUCTS', '') : '',
+    ],
+
     'google' => [
         // Comma/space/semicolon separated list of accepted OAuth client IDs (audiences).
         'auth_audiences' => env('GOOGLE_AUTH_AUDIENCES', ''),

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserSubscription;
 use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
+use App\Services\Payments\MobilePaymentConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,7 @@ class MobilePlanService
     public function __construct(
         private readonly PlanRepositoryInterface $plans,
         private readonly UserSubscriptionRepositoryInterface $subscriptions,
+        private readonly MobilePaymentConfigService $payments,
     ) {
     }
 
@@ -49,6 +51,7 @@ class MobilePlanService
         return response()->json([
             'data' => $plans,
             'groups' => $groups,
+            'payment_provider' => $this->payments->provider(),
         ]);
     }
 
@@ -239,6 +242,7 @@ class MobilePlanService
         $tier = $this->resolveTier($plan);
         $billingCycle = $this->normalizeBillingCycle($plan->billing_cycle);
         $durationDays = $plan->durationDays();
+        $payment = $this->payments->paymentPayloadForPlan($plan);
 
         return [
             'id' => $plan->id,
@@ -260,6 +264,9 @@ class MobilePlanService
             'group_label' => $plan->groupTitle(),
             'sub_plan_label' => $plan->subPlanTitle(),
             'sort_order' => (int) ($plan->sort_order ?? 0),
+            'payment_provider' => $payment['provider'],
+            'in_app_product_id_android' => $payment['android'],
+            'in_app_product_id_ios' => $payment['ios'],
         ];
     }
 

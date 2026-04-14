@@ -108,7 +108,10 @@ class MobileSubscriptionService
             ->all();
 
         if ($planIds === []) {
-            return [];
+            return [
+                'methods' => [],
+                'provider_payment_ids' => [],
+            ];
         }
 
         /** @var Carbon|null $minStart */
@@ -131,7 +134,7 @@ class MobileSubscriptionService
         }
 
         $transactions = PaymentTransaction::query()
-            ->where('provider', 'paymongo')
+            ->whereIn('provider', ['paymongo', 'in_app_purchase'])
             ->where('user_id', $userId)
             ->whereIn('plan_id', $planIds)
             ->where('status', 'processed')
@@ -141,7 +144,7 @@ class MobileSubscriptionService
                 $maxStart->copy()->endOfDay(),
             ])
             ->orderByDesc('processed_at')
-            ->get(['plan_id', 'processed_at', 'raw_payload', 'provider_payment_id']);
+            ->get(['provider', 'plan_id', 'processed_at', 'raw_payload', 'provider_payment_id']);
 
         $methodMap = [];
         $paymentIdMap = [];
@@ -156,7 +159,7 @@ class MobileSubscriptionService
                 continue;
             }
 
-            $method = $this->extractMethodLabel($transaction->raw_payload);
+            $method = $this->extractMethodLabel($transaction->provider, $transaction->raw_payload);
             if ($method === null) {
                 continue;
             }
@@ -180,8 +183,12 @@ class MobileSubscriptionService
     /**
      * @param  array<string, mixed>|null  $payload
      */
-    private function extractMethodLabel(?array $payload): ?string
+    private function extractMethodLabel(?string $provider, ?array $payload): ?string
     {
+        if ($provider === 'in_app_purchase') {
+            return $this->extractInAppMethodLabel($payload);
+        }
+
         if (! is_array($payload) || $payload === []) {
             return null;
         }
@@ -198,6 +205,22 @@ class MobileSubscriptionService
             'paymaya' => 'PayMaya',
             'qrph' => 'QRPh',
             default => strtoupper($found),
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $payload
+     */
+    private function extractInAppMethodLabel(?array $payload): string
+    {
+        $platform = is_array($payload)
+            ? strtolower(trim((string) ($payload['platform'] ?? '')))
+            : '';
+
+        return match ($platform) {
+            'android' => 'Google Play',
+            'ios' => 'Apple App Store',
+            default => 'In-App Purchase',
         };
     }
 

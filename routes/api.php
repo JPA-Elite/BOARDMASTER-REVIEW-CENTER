@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\PaymongoCheckoutController;
+use App\Http\Controllers\Api\MobileInAppPurchaseController;
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileDashboardController;
 use App\Http\Controllers\Api\MobilePlanController;
@@ -41,6 +42,7 @@ Route::prefix('mobile')->group(function () {
         Route::post('/profile', [MobileAuthController::class, 'updateProfile']);
         Route::delete('/account', [MobileAuthController::class, 'destroy']);
         Route::post('/plans/select', [MobilePlanController::class, 'select']);
+        Route::post('/in-app-purchases/complete', [MobileInAppPurchaseController::class, 'complete']);
         Route::get('/dashboard/metrics', [MobileDashboardController::class, 'metrics']);
         Route::get('/referrals', [MobileReferralController::class, 'index']);
         Route::post('/referrals/apply', [MobileReferralController::class, 'apply']);
