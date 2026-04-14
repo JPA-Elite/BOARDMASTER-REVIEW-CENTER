@@ -28,6 +28,11 @@ class MobileAuthController extends Controller
         return $this->authService->loginWithGoogle($request);
     }
 
+    public function loginWithApple(Request $request): JsonResponse
+    {
+        return $this->authService->loginWithApple($request);
+    }
+
     public function updateProfile(Request $request): JsonResponse
     {
         return $this->authService->updateProfile($request);

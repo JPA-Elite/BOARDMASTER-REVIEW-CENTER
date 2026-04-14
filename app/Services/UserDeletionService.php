@@ -31,6 +31,7 @@ class UserDeletionService
                 'name' => "Deleted User $userId",
                 'email' => "deleted+$suffix@deleted.local",
                 'google_id' => null,
+                'apple_id' => null,
                 'password' => Hash::make(Str::random(64)),
                 'school' => null,
                 'birthdate' => null,
@@ -49,4 +50,3 @@ class UserDeletionService
         });
     }
 }
-

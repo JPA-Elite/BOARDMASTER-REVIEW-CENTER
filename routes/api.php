@@ -23,6 +23,7 @@ Route::prefix('mobile')->group(function () {
         Route::post('/register', [MobileAuthController::class, 'register']);
         Route::post('/login', [MobileAuthController::class, 'login']);
         Route::post('/login/google', [MobileAuthController::class, 'loginWithGoogle']);
+        Route::post('/login/apple', [MobileAuthController::class, 'loginWithApple']);
         Route::post('/password/forgot', [MobileAuthController::class, 'forgotPassword']);
         Route::post('/email/check', [MobileAuthController::class, 'checkEmail']);
     });

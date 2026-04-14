@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
@@ -81,7 +82,7 @@ class MobileAuthService
         $originUser = $this->users->query()
             ->whereRaw('LOWER(email) = ?', [strtolower(trim((string) $validated['email']))])
             ->first();
-        if ($originUser instanceof User && $this->isGoogleOriginUser($originUser)) {
+        if ($originUser instanceof User && $this->isSocialOriginUser($originUser)) {
             return response()->json([
                 'message' => 'Invalid credentials. Please try again.',
             ], 409);
@@ -267,6 +268,152 @@ class MobileAuthService
         ]);
     }
 
+    public function loginWithApple(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id_token' => ['required', 'string'],
+            'apple_user_id' => ['nullable', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'string', 'email', 'max:255'],
+            'avatar_url' => ['nullable', 'string', 'max:2048'],
+        ]);
+
+        $audiences = $this->appleAudiences();
+        if ($audiences === []) {
+            return response()->json([
+                'message' => 'Apple login is not configured on server yet. Set APPLE_AUTH_AUDIENCES in backend .env.',
+            ], 500);
+        }
+
+        $verification = $this->verifyAppleIdentityToken($validated['id_token'], $audiences);
+        if (! $verification['ok']) {
+            return response()->json([
+                'message' => $verification['message'] ?? 'Apple token verification failed. Please try again.',
+            ], 422);
+        }
+
+        /** @var array<string, mixed> $claims */
+        $claims = $verification['payload'];
+        $appleId = trim((string) ($claims['sub'] ?? $validated['apple_user_id'] ?? ''));
+        if ($appleId === '') {
+            return response()->json([
+                'message' => 'Apple account identifier is missing.',
+            ], 422);
+        }
+
+        $email = strtolower(trim((string) ($claims['email'] ?? $validated['email'] ?? '')));
+        $emailVerified = filter_var(
+            $claims['email_verified'] ?? ($email === '' ? true : false),
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE,
+        ) ?? false;
+        if ($email !== '' && ! $emailVerified) {
+            return response()->json([
+                'message' => 'Your Apple email is not verified.',
+            ], 422);
+        }
+
+        $canStoreAppleId = Schema::hasColumn('users', 'apple_id');
+        /** @var User|null $user */
+        $user = null;
+        if ($canStoreAppleId) {
+            $user = $this->users->query()
+                ->where('apple_id', $appleId)
+                ->first();
+        }
+
+        if (! $user instanceof User && $email !== '') {
+            $user = $this->users->query()
+                ->whereRaw('LOWER(email) = ?', [$email])
+                ->first();
+        }
+
+        $fallbackName = trim((string) ($validated['name'] ?? ''));
+        $name = $fallbackName !== '' ? $fallbackName : ($email !== '' ? $this->nameFromEmail($email) : '');
+        $avatarUrl = trim((string) ($validated['avatar_url'] ?? ''));
+
+        if (! $user instanceof User) {
+            if ($email === '') {
+                return response()->json([
+                    'message' => 'Apple account email is missing. Revoke this app from Apple ID settings and sign in again.',
+                ], 422);
+            }
+
+            $profileValidation = Validator::make($request->all(), [
+                'name' => $this->nameValidationRules(),
+                'school' => ['required', 'string', 'max:255'],
+                'phone_number' => $this->phoneValidationRules(),
+            ]);
+            if ($profileValidation->fails()) {
+                return response()->json([
+                    'message' => 'Complete your profile first (full name, phone number, school) to continue with Apple sign-in.',
+                    'errors' => $profileValidation->errors(),
+                ], 428);
+            }
+            $profile = $profileValidation->validated();
+
+            $newData = [
+                'name' => $profile['name'],
+                'email' => $email,
+                'password' => Hash::make(Str::random(64)),
+                'school' => $profile['school'],
+                'phone_number' => $this->normalizePhilippinePhone((string) $profile['phone_number']),
+                'avatar_path' => $avatarUrl !== '' ? $avatarUrl : null,
+            ];
+            if ($canStoreAppleId) {
+                $newData['apple_id'] = $appleId;
+            }
+
+            /** @var User $createdUser */
+            $createdUser = $this->users->create($newData);
+            $user = $createdUser;
+            if ($user->email_verified_at === null) {
+                $user->email_verified_at = now();
+                $user->save();
+            }
+        } else {
+            $updates = [];
+            if ($canStoreAppleId && $user->apple_id === null) {
+                return response()->json([
+                    'message' => 'This email is already registered with another sign-in method. Please use your existing login option.',
+                ], 409);
+            }
+            if ($canStoreAppleId && $user->apple_id !== null && (string) $user->apple_id !== $appleId) {
+                return response()->json([
+                    'message' => 'This email is already linked to a different Apple account.',
+                ], 409);
+            }
+            if ($user->name === '' && $name !== '') {
+                $updates['name'] = $name;
+            }
+            if (($user->avatar_path ?? '') === '' && $avatarUrl !== '') {
+                $updates['avatar_path'] = $avatarUrl;
+            }
+            if ($updates !== []) {
+                $user->fill($updates);
+                if ($user->email_verified_at === null) {
+                    $user->email_verified_at = now();
+                }
+                $user->save();
+            } elseif ($user->email_verified_at === null) {
+                $user->email_verified_at = now();
+                $user->save();
+            }
+        }
+
+        $subscription = $this->resolveOrCreateSubscription($user);
+        $plan = $subscription?->plan;
+
+        $user->tokens()->delete();
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Apple login successful.',
+            'token' => $token,
+            'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
     public function updateProfile(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -340,17 +487,17 @@ class MobileAuthService
         ]);
 
         $email = strtolower(trim((string) $validated['email']));
-        if ($email !== '' && Schema::hasColumn('users', 'google_id')) {
+        if ($email !== '') {
             /** @var User|null $user */
             $user = $this->users->query()
                 ->whereRaw('LOWER(email) = ?', [$email])
                 ->first();
-            if ($user instanceof User && ($user->google_id ?? '') !== '') {
+            if ($user instanceof User && $this->isSocialOriginUser($user)) {
                 return response()->json([
-                    'message' => 'Cannot proceed with password reset. This email is linked to Google sign-in.',
+                    'message' => 'Cannot proceed with password reset. This email is linked to social sign-in.',
                     'errors' => [
                         'email' => [
-                            'Cannot proceed with password reset. This email is linked to Google sign-in.',
+                            'Cannot proceed with password reset. This email is linked to social sign-in.',
                         ],
                     ],
                 ], 422);
@@ -509,7 +656,7 @@ class MobileAuthService
         ]);
 
         $password = trim((string) ($validated['password'] ?? ''));
-        if (! $this->isGoogleOriginUser($user)) {
+        if (! $this->isSocialOriginUser($user)) {
             if ($password === '') {
                 return response()->json([
                     'message' => 'Password is required to delete your account.',
@@ -534,6 +681,122 @@ class MobileAuthService
         return response()->json([
             'message' => 'Your account has been deleted successfully.',
         ]);
+    }
+
+    private function verifyAppleIdentityToken(string $idToken, array $audiences): array
+    {
+        $parts = explode('.', trim($idToken));
+        if (count($parts) !== 3) {
+            return [
+                'ok' => false,
+                'message' => 'Apple token format is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        [$encodedHeader, $encodedPayload, $encodedSignature] = $parts;
+        $header = $this->decodeJwtSegmentAsArray($encodedHeader);
+        $payload = $this->decodeJwtSegmentAsArray($encodedPayload);
+        if (! is_array($header) || ! is_array($payload)) {
+            return [
+                'ok' => false,
+                'message' => 'Apple token payload is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        $algorithm = trim((string) ($header['alg'] ?? ''));
+        $keyId = trim((string) ($header['kid'] ?? ''));
+        if ($algorithm !== 'RS256' || $keyId === '') {
+            return [
+                'ok' => false,
+                'message' => 'Apple token header is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        $keys = $this->applePublicKeys();
+        $jwk = null;
+        foreach ($keys as $candidate) {
+            if (is_array($candidate) && trim((string) ($candidate['kid'] ?? '')) === $keyId) {
+                $jwk = $candidate;
+                break;
+            }
+        }
+        if (! is_array($jwk)) {
+            return [
+                'ok' => false,
+                'message' => 'Unable to match Apple signing key.',
+                'payload' => null,
+            ];
+        }
+
+        $publicKey = $this->jwkToPem($jwk);
+        if ($publicKey === null) {
+            return [
+                'ok' => false,
+                'message' => 'Apple signing key format is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        $signature = $this->base64UrlDecode($encodedSignature);
+        if ($signature === null) {
+            return [
+                'ok' => false,
+                'message' => 'Apple token signature is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        $verified = openssl_verify(
+            $encodedHeader.'.'.$encodedPayload,
+            $signature,
+            $publicKey,
+            OPENSSL_ALGO_SHA256,
+        );
+        if ($verified !== 1) {
+            return [
+                'ok' => false,
+                'message' => 'Apple token signature verification failed.',
+                'payload' => null,
+            ];
+        }
+
+        $issuer = trim((string) ($payload['iss'] ?? ''));
+        if ($issuer !== 'https://appleid.apple.com') {
+            return [
+                'ok' => false,
+                'message' => 'Apple token issuer is invalid.',
+                'payload' => null,
+            ];
+        }
+
+        $audience = trim((string) ($payload['aud'] ?? ''));
+        if ($audience === '' || ! in_array($audience, $audiences, true)) {
+            $expected = implode(', ', $audiences);
+            $received = $audience !== '' ? $audience : '(empty)';
+            return [
+                'ok' => false,
+                'message' => "Apple token audience mismatch. Expected one of: $expected | Received aud: $received",
+                'payload' => null,
+            ];
+        }
+
+        $expiresAt = (int) ($payload['exp'] ?? 0);
+        if ($expiresAt > 0 && $expiresAt < now()->timestamp) {
+            return [
+                'ok' => false,
+                'message' => 'Apple token is already expired.',
+                'payload' => null,
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'message' => null,
+            'payload' => $payload,
+        ];
     }
 
     private function verifyGoogleIdToken(string $idToken, array $audiences): array
@@ -637,6 +900,147 @@ class MobileAuthService
         return array_values(array_unique($audiences));
     }
 
+    /**
+     * @return list<string>
+     */
+    private function appleAudiences(): array
+    {
+        $raw = trim((string) config('services.apple.auth_audiences', ''));
+        $parts = preg_split('/[\s,;]+/', $raw) ?: [];
+        $audiences = [];
+        foreach ($parts as $part) {
+            $value = trim((string) $part);
+            if ($value !== '') {
+                $audiences[] = $value;
+            }
+        }
+
+        if ($audiences === []) {
+            $single = trim((string) config('services.apple.client_id', ''));
+            if ($single !== '') {
+                $audiences[] = $single;
+            }
+        }
+
+        return array_values(array_unique($audiences));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function applePublicKeys(): array
+    {
+        return Cache::remember('mobile_apple_signin_keys', now()->addHours(6), function (): array {
+            $response = Http::timeout(8)->get('https://appleid.apple.com/auth/keys');
+            if (! $response->successful()) {
+                return [];
+            }
+
+            $body = $response->json();
+            if (! is_array($body) || ! isset($body['keys']) || ! is_array($body['keys'])) {
+                return [];
+            }
+
+            $keys = [];
+            foreach ($body['keys'] as $item) {
+                if (is_array($item)) {
+                    $keys[] = $item;
+                }
+            }
+
+            return $keys;
+        });
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function decodeJwtSegmentAsArray(string $segment): ?array
+    {
+        $json = $this->base64UrlDecode($segment);
+        if ($json === null) {
+            return null;
+        }
+
+        $decoded = json_decode($json, true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    private function base64UrlDecode(string $input): ?string
+    {
+        $normalized = strtr($input, '-_', '+/');
+        $padding = strlen($normalized) % 4;
+        if ($padding !== 0) {
+            $normalized .= str_repeat('=', 4 - $padding);
+        }
+        $decoded = base64_decode($normalized, true);
+
+        return $decoded === false ? null : $decoded;
+    }
+
+    /**
+     * @param  array<string, mixed>  $jwk
+     */
+    private function jwkToPem(array $jwk): ?string
+    {
+        if (($jwk['kty'] ?? '') !== 'RSA') {
+            return null;
+        }
+
+        $modulus = $this->base64UrlDecode((string) ($jwk['n'] ?? ''));
+        $exponent = $this->base64UrlDecode((string) ($jwk['e'] ?? ''));
+        if ($modulus === null || $exponent === null || $modulus === '' || $exponent === '') {
+            return null;
+        }
+
+        $modulusInteger = $this->asn1Integer($modulus);
+        $exponentInteger = $this->asn1Integer($exponent);
+        $rsaPublicKey = $this->asn1Sequence($modulusInteger.$exponentInteger);
+
+        $algorithmIdentifier = hex2bin('300d06092a864886f70d0101010500');
+        if ($algorithmIdentifier === false) {
+            return null;
+        }
+        $bitString = "\x03".$this->asn1Length(strlen($rsaPublicKey) + 1)."\x00".$rsaPublicKey;
+        $subjectPublicKeyInfo = $this->asn1Sequence($algorithmIdentifier.$bitString);
+
+        $pem = chunk_split(base64_encode($subjectPublicKeyInfo), 64, "\n");
+
+        return "-----BEGIN PUBLIC KEY-----\n".$pem."-----END PUBLIC KEY-----\n";
+    }
+
+    private function asn1Sequence(string $value): string
+    {
+        return "\x30".$this->asn1Length(strlen($value)).$value;
+    }
+
+    private function asn1Integer(string $value): string
+    {
+        if ($value === '') {
+            $value = "\x00";
+        }
+        if ((ord($value[0]) & 0x80) !== 0) {
+            $value = "\x00".$value;
+        }
+
+        return "\x02".$this->asn1Length(strlen($value)).$value;
+    }
+
+    private function asn1Length(int $length): string
+    {
+        if ($length < 128) {
+            return chr($length);
+        }
+
+        $temp = '';
+        while ($length > 0) {
+            $temp = chr($length & 0xFF).$temp;
+            $length >>= 8;
+        }
+
+        return chr(0x80 | strlen($temp)).$temp;
+    }
+
     private function nameFromEmail(string $email): string
     {
         $base = trim((string) explode('@', trim($email))[0]);
@@ -693,6 +1097,20 @@ class MobileAuthService
         }
 
         return trim((string) ($user->google_id ?? '')) !== '';
+    }
+
+    private function isAppleOriginUser(User $user): bool
+    {
+        if (! Schema::hasColumn('users', 'apple_id')) {
+            return false;
+        }
+
+        return trim((string) ($user->apple_id ?? '')) !== '';
+    }
+
+    private function isSocialOriginUser(User $user): bool
+    {
+        return $this->isGoogleOriginUser($user) || $this->isAppleOriginUser($user);
     }
 
     private function resolveOrCreateSubscription(User $user): ?UserSubscription

@@ -58,4 +58,11 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID', ''),
     ],
 
+    'apple' => [
+        // Accepted Apple Sign in audiences, usually your iOS bundle identifier.
+        'auth_audiences' => env('APPLE_AUTH_AUDIENCES', ''),
+        // Optional single fallback audience value.
+        'client_id' => env('APPLE_CLIENT_ID', ''),
+    ],
+
 ];
