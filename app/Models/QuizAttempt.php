@@ -30,6 +30,9 @@ class QuizAttempt extends Model
 
     public function answers(): HasMany
     {
-        return $this->hasMany(UserAnswer::class);
+        // Preserve the submission order of answers (createMany inserts sequential IDs).
+        // Without an explicit order, MySQL may return rows ordered by an index such as
+        // (quiz_attempt_id, question_id), which reorders question/answer display in the app.
+        return $this->hasMany(UserAnswer::class)->orderBy('id');
     }
 }
