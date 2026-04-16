@@ -1,0 +1,129 @@
+name: boardmasters-prod
+
+x-laravel-environment: &laravel-environment
+  DB_CONNECTION: mysql
+  DB_HOST: db
+  DB_PORT: 3306
+  DB_DATABASE: ${DB_DATABASE:-app_review_center}
+  DB_USERNAME: ${DB_USERNAME:-boardmasters}
+  DB_PASSWORD: ${DB_PASSWORD:-change-this}
+  RUN_MIGRATIONS: ${RUN_MIGRATIONS:-false}
+  RUN_CONFIG_CACHE: ${RUN_CONFIG_CACHE:-true}
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_URL: ${APP_URL:-https://boardmasters.example.com}
+  LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: php_runtime
+    image: boardmasters/app:latest
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-.env.production}
+    environment:
+      <<: *laravel-environment
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx_prod
+    image: boardmasters/web:latest
+    restart: unless-stopped
+    environment:
+      CERT_DOMAIN: ${CERT_DOMAIN}
+      NGINX_SERVER_NAME: ${NGINX_SERVER_NAME}
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - app_storage:/var/www/html/storage
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - app
+
+  queue:
+    image: boardmasters/app:latest
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-.env.production}
+    environment:
+      <<: *laravel-environment
+      RUN_MIGRATIONS: "false"
+      RUN_CONFIG_CACHE: "false"
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=120", "--max-time=3600"]
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  scheduler:
+    image: boardmasters/app:latest
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-.env.production}
+    environment:
+      <<: *laravel-environment
+      RUN_MIGRATIONS: "false"
+      RUN_CONFIG_CACHE: "false"
+    command: ["sh", "-lc", "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-app_review_center}
+      MYSQL_USER: ${DB_USERNAME:-boardmasters}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-change-this}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change-root-password}
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  phpmyadmin:
+    image: phpmyadmin:5.2-apache
+    restart: unless-stopped
+    profiles: ["tools"]
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD:-change-root-password}
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  app_storage:
+  app_cache:
+  mysql_data:

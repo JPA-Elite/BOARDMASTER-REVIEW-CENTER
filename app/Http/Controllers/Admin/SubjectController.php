@@ -42,7 +42,7 @@ class SubjectController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:subjects,name'],
+            'name' => ['required', 'string', 'max:512', 'unique:subjects,name'],
         ]);
 
         $this->subjects->create($validated);
@@ -66,7 +66,7 @@ class SubjectController extends Controller
     public function update(Request $request, Subject $subject): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('subjects', 'name')->ignore($subject->id)],
+            'name' => ['required', 'string', 'max:512', Rule::unique('subjects', 'name')->ignore($subject->id)],
         ]);
 
         $this->subjects->update($subject, $validated);
