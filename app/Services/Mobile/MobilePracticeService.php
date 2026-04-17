@@ -4,6 +4,7 @@ namespace App\Services\Mobile;
 
 use App\Models\Plan;
 use App\Models\Question;
+use App\Models\QuestionChoice;
 use App\Models\QuizAttempt;
 use App\Models\Subject;
 use App\Models\User;
@@ -171,42 +172,11 @@ class MobilePracticeService
             ], 422);
         }
 
-        $payload = $questions->map(function (Question $question): array {
-            $choices = [];
-            $rationales = [];
-            $correctKey = null;
-
-            foreach ($question->choices as $choice) {
-                $label = strtoupper(trim((string) $choice->choice_label));
-                if ($label === '') {
-                    continue;
-                }
-
-                $choices[$label] = (string) $choice->choice_text;
-                $rationales[$label] = $choice->explanation
-                    ? (string) $choice->explanation
-                    : ($choice->is_correct
-                        ? 'This option is correct.'
-                        : 'This option is not a correct answer.');
-
-                if ($choice->is_correct && ! $correctKey) {
-                    $correctKey = $label;
-                }
-            }
-
-            if (! $correctKey) {
-                $correctKey = array_key_first($choices) ?: 'A';
-            }
-
-            return [
-                'id' => $question->id,
-                'subject_id' => (string) $question->subject_id,
-                'question' => (string) $question->question,
-                'choices' => $choices,
-                'correct_key' => $correctKey,
-                'rationales' => $rationales,
-            ];
-        })->values();
+        $displaySeed = random_int(1, PHP_INT_MAX);
+        $payload = $questions
+            ->map(fn (Question $question): ?array => $this->questionPayload($question, $displaySeed))
+            ->filter()
+            ->values();
 
         return response()->json([
             'data' => $payload->all(),
@@ -215,6 +185,7 @@ class MobilePracticeService
                 'requested_questions' => $requestedCount,
                 'max_allowed_by_plan' => $maxAllowed,
                 'available_questions' => $availableCount,
+                'display_seed' => $displaySeed,
             ],
         ]);
     }
@@ -226,6 +197,7 @@ class MobilePracticeService
             'answers' => ['required', 'array', 'min:1'],
             'answers.*.question_id' => ['required', 'integer', 'distinct', 'exists:questions,id'],
             'answers.*.selected_choice' => ['nullable', 'string', 'max:5'],
+            'display_seed' => ['nullable', 'integer', 'min:1'],
         ]);
 
         /** @var User|null $user */
@@ -297,6 +269,15 @@ class MobilePracticeService
 
         $score = 0;
         $answerPayloads = [];
+        $displaySeed = (int) ($validated['display_seed'] ?? 0);
+
+        /** @var array<int, array<string, QuestionChoice>> $displayChoiceLookups */
+        $displayChoiceLookups = [];
+        if ($displaySeed > 0) {
+            foreach ($questions as $question) {
+                $displayChoiceLookups[(int) $question->id] = $this->choiceLookupByDisplayLabel($question, $displaySeed);
+            }
+        }
 
         foreach ($answers as $answer) {
             $questionId = (int) $answer['question_id'];
@@ -306,9 +287,15 @@ class MobilePracticeService
             }
 
             $selectedLabel = strtoupper(trim((string) ($answer['selected_choice'] ?? '')));
-            $selectedChoice = $selectedLabel === ''
-                ? null
-                : $question->choices->firstWhere('choice_label', $selectedLabel);
+            $selectedChoice = null;
+            if ($selectedLabel !== '') {
+                $selectedChoice = $displayChoiceLookups[$questionId][$selectedLabel] ?? null;
+
+                if (! ($selectedChoice instanceof QuestionChoice)) {
+                    // Backward compatibility for clients still submitting the original DB choice labels.
+                    $selectedChoice = $question->choices->firstWhere('choice_label', $selectedLabel);
+                }
+            }
             $isCorrect = (bool) ($selectedChoice?->is_correct ?? false);
 
             if ($isCorrect) {
@@ -322,12 +309,17 @@ class MobilePracticeService
             ];
         }
 
+        if ($displaySeed <= 0) {
+            $displaySeed = random_int(1, PHP_INT_MAX);
+        }
+
         /** @var QuizAttempt $attempt */
         $attempt = $this->quizAttempts->create([
             'user_id' => $user->id,
             'subject_id' => $validated['subject_id'],
             'total_questions' => $answers->count(),
             'score' => $score,
+            'display_seed' => $displaySeed,
         ]);
 
         if (! empty($answerPayloads)) {
@@ -340,6 +332,7 @@ class MobilePracticeService
                 'attempt_id' => $attempt->id,
                 'score' => $score,
                 'total_questions' => $answers->count(),
+                'display_seed' => $displaySeed,
             ],
         ]);
     }
@@ -405,6 +398,10 @@ class MobilePracticeService
 
         $questions = [];
         $answers = [];
+        $displaySeed = (int) ($quizAttempt->display_seed ?? 0);
+        if ($displaySeed <= 0) {
+            $displaySeed = (int) $quizAttempt->id;
+        }
 
         foreach ($quizAttempt->answers as $answer) {
             $question = $answer->question;
@@ -412,51 +409,29 @@ class MobilePracticeService
                 continue;
             }
 
-            $choices = [];
-            $rationales = [];
-            $correctKey = null;
-
-            foreach ($question->choices as $choice) {
-                $label = strtoupper(trim((string) $choice->choice_label));
-                if ($label === '') {
-                    continue;
-                }
-
-                $choices[$label] = (string) $choice->choice_text;
-                $rationales[$label] = $choice->explanation
-                    ? (string) $choice->explanation
-                    : ($choice->is_correct
-                        ? 'This option is correct.'
-                        : 'This option is not a correct answer.');
-
-                if ($choice->is_correct && ! $correctKey) {
-                    $correctKey = $label;
-                }
-            }
-
-            if (empty($choices)) {
+            $questionPayload = $this->questionPayload($question, $displaySeed);
+            if (! $questionPayload) {
                 continue;
             }
 
-            if (! $correctKey) {
-                $correctKey = array_key_first($choices) ?: 'A';
+            $questions[] = $questionPayload;
+
+            $selectedLabel = null;
+            $selectedChoiceId = (int) ($answer->selected_choice_id ?? 0);
+            if ($selectedChoiceId > 0) {
+                $selectedLabel = $this->displayLabelLookupByChoiceId($question, $displaySeed)[$selectedChoiceId] ?? null;
             }
 
-            $questions[] = [
-                'id' => $question->id,
-                'subject_id' => (string) $question->subject_id,
-                'question' => (string) $question->question,
-                'choices' => $choices,
-                'correct_key' => $correctKey,
-                'rationales' => $rationales,
-            ];
+            if (! $selectedLabel) {
+                $legacyLabel = $answer->selectedChoice?->choice_label;
+                $selectedLabel = $legacyLabel
+                    ? strtoupper(trim((string) $legacyLabel))
+                    : null;
+            }
 
-            $selectedLabel = $answer->selectedChoice?->choice_label;
             $answers[] = [
                 'question_id' => $question->id,
-                'selected_choice' => $selectedLabel
-                    ? strtoupper(trim((string) $selectedLabel))
-                    : null,
+                'selected_choice' => $selectedLabel,
             ];
         }
 
@@ -473,6 +448,7 @@ class MobilePracticeService
                 'score' => $quizAttempt->score,
                 'total_questions' => $quizAttempt->total_questions,
                 'created_at' => $quizAttempt->created_at?->toDateTimeString(),
+                'display_seed' => $displaySeed,
                 'questions' => $questions,
                 'answers' => $answers,
             ],
@@ -667,6 +643,148 @@ class MobilePracticeService
         }
 
         return min($limit, $totalQuestions);
+    }
+
+    private function questionPayload(Question $question, int $displaySeed): ?array
+    {
+        $choices = [];
+        $rationales = [];
+        $correctKey = null;
+
+        foreach ($this->orderedChoiceModels($question, $displaySeed) as $index => $choice) {
+            $displayLabel = $this->choiceDisplayLabel($index);
+
+            $choices[$displayLabel] = (string) $choice->choice_text;
+            $rationales[$displayLabel] = $choice->explanation
+                ? (string) $choice->explanation
+                : ($choice->is_correct
+                    ? 'This option is correct.'
+                    : 'This option is not a correct answer.');
+
+            if ($choice->is_correct && ! $correctKey) {
+                $correctKey = $displayLabel;
+            }
+        }
+
+        if (empty($choices)) {
+            return null;
+        }
+
+        if (! $correctKey) {
+            $correctKey = array_key_first($choices) ?: 'A';
+        }
+
+        return [
+            'id' => $question->id,
+            'subject_id' => (string) $question->subject_id,
+            'question' => (string) $question->question,
+            'choices' => $choices,
+            'correct_key' => $correctKey,
+            'rationales' => $rationales,
+            'display_seed' => $displaySeed,
+        ];
+    }
+
+    /**
+     * @return array<string, QuestionChoice>
+     */
+    private function choiceLookupByDisplayLabel(Question $question, int $displaySeed): array
+    {
+        $lookup = [];
+        foreach ($this->orderedChoiceModels($question, $displaySeed) as $index => $choice) {
+            $lookup[$this->choiceDisplayLabel($index)] = $choice;
+        }
+
+        return $lookup;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function displayLabelLookupByChoiceId(Question $question, int $displaySeed): array
+    {
+        $lookup = [];
+        foreach ($this->orderedChoiceModels($question, $displaySeed) as $index => $choice) {
+            $choiceId = (int) ($choice->id ?? 0);
+            if ($choiceId <= 0) {
+                continue;
+            }
+
+            $lookup[$choiceId] = $this->choiceDisplayLabel($index);
+        }
+
+        return $lookup;
+    }
+
+    private function choiceDisplayLabel(int $index): string
+    {
+        $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        if ($index < 26) {
+            return $alphabet[$index];
+        }
+
+        $label = '';
+        $value = $index + 1;
+        while ($value > 0) {
+            $value--;
+            $label = $alphabet[$value % 26] . $label;
+            $value = intdiv($value, 26);
+        }
+
+        return $label;
+    }
+
+    /**
+     * @return array<int, QuestionChoice>
+     */
+    private function orderedChoiceModels(Question $question, int $displaySeed): array
+    {
+        $original = $question->choices->values()->all();
+        $shuffled = $question->choices
+            ->sortBy(function (QuestionChoice $choice) use ($question, $displaySeed): string {
+                $choiceLabel = strtoupper(trim((string) $choice->choice_label));
+                $choiceId = (int) ($choice->id ?? 0);
+                $questionId = (int) ($question->id ?? 0);
+
+                return hash('sha256', "{$displaySeed}:{$questionId}:{$choiceId}:{$choiceLabel}");
+            })
+            ->values()
+            ->all();
+
+        // Enforce visible shuffling: if hashed ordering matches the original
+        // DB label order (A,B,C,D...), rotate deterministically by 1..N-1.
+        if (count($shuffled) > 1 && $this->sameChoiceOrder($original, $shuffled)) {
+            $questionId = (int) ($question->id ?? 0);
+            $rotationSeed = hash('sha256', "{$displaySeed}:{$questionId}:rotate");
+            $rotation = (hexdec(substr($rotationSeed, 0, 8)) % (count($shuffled) - 1)) + 1;
+            $shuffled = array_merge(
+                array_slice($shuffled, $rotation),
+                array_slice($shuffled, 0, $rotation),
+            );
+        }
+
+        return $shuffled;
+    }
+
+    /**
+     * @param  array<int, QuestionChoice>  $a
+     * @param  array<int, QuestionChoice>  $b
+     */
+    private function sameChoiceOrder(array $a, array $b): bool
+    {
+        if (count($a) !== count($b)) {
+            return false;
+        }
+
+        foreach ($a as $index => $choice) {
+            $leftId = (int) ($choice->id ?? 0);
+            $rightId = (int) (($b[$index]->id ?? 0));
+            if ($leftId !== $rightId) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function subjectGroupKey(string $name): string

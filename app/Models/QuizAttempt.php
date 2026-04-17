@@ -16,7 +16,15 @@ class QuizAttempt extends Model
         'subject_id',
         'total_questions',
         'score',
+        'display_seed',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'display_seed' => 'integer',
+        ];
+    }
 
     public function user(): BelongsTo
     {
