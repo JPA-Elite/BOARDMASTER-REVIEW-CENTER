@@ -44,7 +44,7 @@ export default function Import({ subjects = [] }) {
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-sky-50 p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
+                        <div className="w-full sm:w-auto">
                             <p className="text-sm font-semibold text-slate-900">
                                 Import Studio
                             </p>
@@ -52,10 +52,10 @@ export default function Import({ subjects = [] }) {
                                 Bring in bulk questions with a clean CSV layout and auto validation.
                             </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                             <a
                                 href={route('admin.questions.template')}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                                className="whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:border-slate-300 hover:text-slate-900"
                             >
                                 CSV Template
                             </a>
@@ -63,11 +63,11 @@ export default function Import({ subjects = [] }) {
                                 href={route('admin.questions.template', {
                                     format: 'xlsx',
                                 })}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                                className="whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:border-slate-300 hover:text-slate-900"
                             >
                                 XLSX Template
                             </a>
-                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <span className="whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 CSV / XLSX
                             </span>
                         </div>
@@ -134,12 +134,12 @@ export default function Import({ subjects = [] }) {
                             </div>
                         </form>
 
-                        <div className="space-y-3 rounded-xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-600">
+                        <div className="min-w-0 space-y-3 overflow-hidden rounded-xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-600">
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 CSV Blueprint
                             </p>
-                            <div className="rounded-lg border border-slate-200 bg-slate-900 text-slate-100">
-                                <pre className="overflow-x-auto p-3 text-[11px] leading-5">
+                            <div className="min-w-0 w-full max-w-full overflow-x-auto rounded-lg border border-slate-200 bg-slate-900 text-slate-100">
+                                <pre className="w-max p-3 text-[11px] leading-5">
 {`question,choice_a,choice_b,choice_c,choice_d,choice_e,choice_f,correct_label,explanation
 "Which vitamin is fat-soluble?","Vitamin C","Vitamin A","Vitamin B1","Vitamin B6","","","B","Fat-soluble vitamins include A, D, E, K."
 `}
