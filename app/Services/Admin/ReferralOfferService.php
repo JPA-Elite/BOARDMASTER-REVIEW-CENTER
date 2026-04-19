@@ -12,9 +12,9 @@ class ReferralOfferService
         private readonly ReferralOfferRepositoryInterface $offers,
     ) {}
 
-    public function paginate(int $perPage = 12): LengthAwarePaginator
+    public function paginate(int $perPage = 12, ?string $search = null): LengthAwarePaginator
     {
-        return $this->offers->paginate($perPage)->through(
+        return $this->offers->paginate($perPage, $search)->through(
             fn (ReferralOffer $offer) => [
                 'id' => $offer->id,
                 'title' => $offer->title,

@@ -14,10 +14,15 @@ class SubjectRepository extends AbstractRepository implements SubjectRepositoryI
         parent::__construct($model);
     }
 
-    public function paginateWithCounts(int $perPage = 15): LengthAwarePaginator
+    public function paginateWithCounts(int $perPage = 15, ?string $search = null): LengthAwarePaginator
     {
+        $term = trim((string) $search);
+
         return $this->query()
             ->withCount(['questions', 'quizAttempts'])
+            ->when($term, function ($query) use ($term): void {
+                $query->where('name', 'like', "%{$term}%");
+            })
             ->latest()
             ->paginate($perPage)
             ->withQueryString();

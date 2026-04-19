@@ -13,10 +13,23 @@ class ReferralRepository extends AbstractRepository implements ReferralRepositor
         parent::__construct($model);
     }
 
-    public function paginateWithRelations(int $perPage = 15): LengthAwarePaginator
+    public function paginateWithRelations(int $perPage = 15, ?string $search = null): LengthAwarePaginator
     {
+        $term = trim((string) $search);
+
         return $this->query()
             ->with(['inviter:id,name,email', 'invitedUser:id,name,email'])
+            ->when($term, function ($query) use ($term): void {
+                $query->where(function ($nested) use ($term): void {
+                    $nested->whereHas('inviter', function ($userQuery) use ($term): void {
+                        $userQuery->where('name', 'like', "%{$term}%")
+                            ->orWhere('email', 'like', "%{$term}%");
+                    })->orWhereHas('invitedUser', function ($userQuery) use ($term): void {
+                        $userQuery->where('name', 'like', "%{$term}%")
+                            ->orWhere('email', 'like', "%{$term}%");
+                    });
+                });
+            })
             ->latest()
             ->paginate($perPage)
             ->withQueryString();

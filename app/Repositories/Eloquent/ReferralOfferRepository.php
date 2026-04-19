@@ -14,10 +14,22 @@ class ReferralOfferRepository extends AbstractRepository implements ReferralOffe
         parent::__construct($model);
     }
 
-    public function paginate(int $perPage = 10): LengthAwarePaginator
+    public function paginate(int $perPage = 10, ?string $search = null): LengthAwarePaginator
     {
+        $term = trim((string) $search);
+
         return $this->query()
             ->with('subject:id,name')
+            ->when($term, function ($query) use ($term): void {
+                $query->where(function ($nested) use ($term): void {
+                    $nested->where('title', 'like', "%{$term}%")
+                        ->orWhere('category', 'like', "%{$term}%")
+                        ->orWhere('brand', 'like', "%{$term}%")
+                        ->orWhereHas('subject', function ($subjectQuery) use ($term): void {
+                            $subjectQuery->where('name', 'like', "%{$term}%");
+                        });
+                });
+            })
             ->orderBy('sort_order')
             ->orderByDesc('id')
             ->paginate($perPage)

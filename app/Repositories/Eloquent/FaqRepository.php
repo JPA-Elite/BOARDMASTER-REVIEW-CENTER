@@ -14,9 +14,17 @@ class FaqRepository extends AbstractRepository implements FaqRepositoryInterface
         parent::__construct($model);
     }
 
-    public function paginate(int $perPage = 10): LengthAwarePaginator
+    public function paginate(int $perPage = 10, ?string $search = null): LengthAwarePaginator
     {
+        $term = trim((string) $search);
+
         return $this->query()
+            ->when($term, function ($query) use ($term): void {
+                $query->where(function ($nested) use ($term): void {
+                    $nested->where('question', 'like', "%{$term}%")
+                        ->orWhere('answer', 'like', "%{$term}%");
+                });
+            })
             ->orderBy('sort_order')
             ->orderBy('id')
             ->paginate($perPage)

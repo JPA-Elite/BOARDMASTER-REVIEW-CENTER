@@ -20,14 +20,16 @@ class ReferralOfferController extends Controller
 
     public function index(Request $request): Response
     {
+        $search = trim((string) $request->string('search'));
         $perPage = $this->resolvePerPage($request);
 
         return Inertia::render('Admin/ReferralOffers/Index', [
-            'offers' => $this->offers->paginate($perPage),
+            'offers' => $this->offers->paginate($perPage, $search),
             'settings' => [
                 'points_per_referral' => \App\Models\ReferralSetting::current()->points_per_referral,
             ],
             'filters' => [
+                'search' => $search,
                 'per_page' => $perPage,
             ],
         ]);

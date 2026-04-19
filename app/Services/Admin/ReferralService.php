@@ -15,9 +15,9 @@ class ReferralService
     ) {
     }
 
-    public function paginate(int $perPage = 15): LengthAwarePaginator
+    public function paginate(int $perPage = 15, ?string $search = null): LengthAwarePaginator
     {
-        $referrals = $this->referrals->paginateWithRelations($perPage);
+        $referrals = $this->referrals->paginateWithRelations($perPage, $search);
 
         $referrals->through(fn (Referral $referral) => [
             'id' => $referral->id,

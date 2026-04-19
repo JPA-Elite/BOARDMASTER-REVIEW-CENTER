@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 
 interface SubjectRepositoryInterface extends RepositoryInterface
 {
-    public function paginateWithCounts(int $perPage = 15): LengthAwarePaginator;
+    public function paginateWithCounts(int $perPage = 15, ?string $search = null): LengthAwarePaginator;
 
     public function listAll(): Collection;
 }
