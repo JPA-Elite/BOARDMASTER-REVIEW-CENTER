@@ -5,7 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Index({ offers, settings, filters = {} }) {
@@ -131,9 +131,11 @@ export default function Index({ offers, settings, filters = {} }) {
                     </form>
                     <Link
                         href={route('admin.referral-offers.create')}
+                        aria-label="New Offer"
                         className="order-2 ml-auto rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800 sm:order-3"
                     >
-                        New Offer
+                        <Plus className="size-4 sm:hidden" />
+                        <span className="hidden sm:inline">New Offer</span>
                     </Link>
                 </div>
 

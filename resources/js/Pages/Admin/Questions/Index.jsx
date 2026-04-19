@@ -2,7 +2,7 @@ import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Index({ questions, subjects = [], filters = {} }) {
@@ -75,9 +75,9 @@ export default function Index({ questions, subjects = [], filters = {} }) {
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <form
                         onSubmit={submitSearch}
-                        className="flex flex-wrap items-center gap-2"
+                        className="flex w-full flex-wrap items-center gap-2"
                     >
-                        <div className="group relative">
+                        <div className="order-1 group relative">
                             <select
                                 aria-label="Per page"
                                 value={perPage}
@@ -94,12 +94,34 @@ export default function Index({ questions, subjects = [], filters = {} }) {
                             </select>
                             <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-500 transition-transform group-focus-within:rotate-180" />
                         </div>
+                        <div className="order-2 ml-auto flex gap-2 sm:order-6">
+                            <Link
+                                href={route('admin.questions.import-form')}
+                                aria-label="Import Questions"
+                                className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                            >
+                                <Upload className="size-4 sm:hidden" />
+                                <span className="hidden sm:inline">
+                                    Import Questions
+                                </span>
+                            </Link>
+                            <Link
+                                href={route('admin.questions.create')}
+                                aria-label="New Question"
+                                className="inline-flex items-center justify-center rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"
+                            >
+                                <Plus className="size-4 sm:hidden" />
+                                <span className="hidden sm:inline">
+                                    New Question
+                                </span>
+                            </Link>
+                        </div>
                         <input
                             type="text"
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search question or subject"
-                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64"
+                            className="order-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:order-2 sm:w-64"
                         />
                         <select
                             value={subjectId}
@@ -107,7 +129,7 @@ export default function Index({ questions, subjects = [], filters = {} }) {
                                 setSubjectId(event.target.value);
                                 applyFilters({ subject_id: event.target.value });
                             }}
-                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-56"
+                            className="order-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:order-3 sm:w-56"
                         >
                             <option value="">All subjects</option>
                             {subjects.map((subject) => (
@@ -118,32 +140,18 @@ export default function Index({ questions, subjects = [], filters = {} }) {
                         </select>
                         <button
                             type="submit"
-                            className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
+                            className="order-5 rounded-md bg-slate-900 px-4 py-2 text-sm text-white sm:order-4"
                         >
                             Search
                         </button>
                         <button
                             type="button"
                             onClick={resetFilters}
-                            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                            className="order-6 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 sm:order-5"
                         >
                             Clear
                         </button>
                     </form>
-                    <div className="flex flex-wrap gap-2">
-                        <Link
-                            href={route('admin.questions.import-form')}
-                            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                        >
-                            Import Questions
-                        </Link>
-                        <Link
-                            href={route('admin.questions.create')}
-                            className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"
-                        >
-                            New Question
-                        </Link>
-                    </div>
                 </div>
 
                 <div className="overflow-x-auto">

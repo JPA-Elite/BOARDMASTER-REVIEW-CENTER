@@ -3,7 +3,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import Modal from '@/Components/Modal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Index({ users, filters }) {
@@ -91,9 +91,11 @@ export default function Index({ users, filters }) {
 
                     <Link
                         href={route('admin.users.create')}
+                        aria-label="New User"
                         className="order-2 ml-auto rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800 sm:order-3"
                     >
-                        New User
+                        <Plus className="size-4 sm:hidden" />
+                        <span className="hidden sm:inline">New User</span>
                     </Link>
                 </div>
 

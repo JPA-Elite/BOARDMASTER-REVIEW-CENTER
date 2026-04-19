@@ -2,7 +2,7 @@ import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export default function Index({ plans, filters = {} }) {
@@ -98,9 +98,11 @@ export default function Index({ plans, filters = {} }) {
                     </div>
                     <Link
                         href={route('admin.plans.create')}
+                        aria-label="Create New Plan"
                         className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"
                     >
-                        Create New Plan
+                        <Plus className="size-4 sm:hidden" />
+                        <span className="hidden sm:inline">Create New Plan</span>
                     </Link>
                 </div>
 
