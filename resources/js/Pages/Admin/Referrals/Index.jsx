@@ -49,44 +49,42 @@ export default function Index({ referrals, filters = {} }) {
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="group relative">
-                            <select
-                                aria-label="Per page"
-                                value={perPage}
-                                onChange={(event) =>
-                                    applyPerPage(event.target.value)
-                                }
-                                className="no-arrow w-[66px] rounded-md border border-slate-300 bg-white px-2 py-2 pr-8 text-sm"
-                            >
-                                <option value="10">10</option>
-                                <option value="15">15</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-500 transition-transform group-focus-within:rotate-180" />
-                        </div>
-                        <form onSubmit={submitSearch} className="flex gap-2">
-                            <input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-                                placeholder="Search referrals..."
-                            />
-                            <button
-                                type="submit"
-                                className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
-                            >
-                                Search
-                            </button>
-                        </form>
+                    <div className="order-1 group relative">
+                        <select
+                            aria-label="Per page"
+                            value={perPage}
+                            onChange={(event) => applyPerPage(event.target.value)}
+                            className="no-arrow w-[66px] rounded-md border border-slate-300 bg-white px-2 py-2 pr-8 text-sm"
+                        >
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-500 transition-transform group-focus-within:rotate-180" />
                     </div>
+
+                    <form
+                        onSubmit={submitSearch}
+                        className="order-3 flex w-full gap-2 sm:order-2 sm:w-auto"
+                    >
+                        <input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            className="w-full flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64 sm:flex-none"
+                            placeholder="Search referrals..."
+                        />
+                        <button
+                            type="submit"
+                            className="shrink-0 rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
+                        >
+                            Search
+                        </button>
+                    </form>
                     <Link
                         href={route('admin.referrals.create')}
-                        className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"
+                        className="order-2 ml-auto rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800 sm:order-3"
                     >
                         New Referral
                     </Link>
