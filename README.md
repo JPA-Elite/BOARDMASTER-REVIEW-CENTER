@@ -31,7 +31,7 @@ BoardMasters Review Center is a Laravel + Inertia + React application for managi
    - `npm run dev`
 
 ## Docker Setup (Development)
-This uses `docker-compose.yml` with Nginx, PHP-FPM, MySQL, and phpMyAdmin.
+This uses `docker-compose.yml` with Nginx, PHP-FPM, Vite (hot reload), MySQL, and phpMyAdmin.
 
 1. Copy Docker env template.
    - `copy .env.docker.example .env.docker`
@@ -44,8 +44,14 @@ This uses `docker-compose.yml` with Nginx, PHP-FPM, MySQL, and phpMyAdmin.
 
 URLs:
 - App: `http://boardmasters.local:8080`
+- Vite service (internal for HMR): `http://boardmasters.local:5173`
 - phpMyAdmin: `http://localhost:8081`
 - MySQL Host Port: `3306`
+
+Hot reload notes:
+- Frontend changes under `resources/` now refresh automatically through Vite HMR while browsing the app URL on `:8080`.
+- PHP/Laravel changes are mounted into the container, so you do not need to rebuild for code edits.
+- If dev feels heavy on Windows/Docker, increase `VITE_POLL_INTERVAL` in `.env.docker` (for example `800` or `1000`) to reduce watcher CPU usage.
 
 Optional workers (queue + scheduler):
 - `docker compose --env-file .env.docker -f docker-compose.yml --profile workers up -d`
