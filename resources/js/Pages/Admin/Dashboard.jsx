@@ -89,16 +89,16 @@ export default function Dashboard({
                     </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                     {kpis.map((item) => (
                         <div
                             key={item.title}
-                            className="rounded-2xl border border-slate-200 bg-white px-6 py-5"
+                            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5"
                         >
-                            <p className="text-lg font-semibold text-slate-900">
+                            <p className="text-base font-semibold text-slate-900 sm:text-lg">
                                 {item.title}
                             </p>
-                            <p className="mt-4 text-4xl font-bold text-slate-950">
+                            <p className="mt-3 text-3xl font-bold text-slate-950 sm:mt-4 sm:text-4xl">
                                 {item.value}
                             </p>
                             <div className="mt-3 flex items-center gap-2">
