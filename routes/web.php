@@ -59,6 +59,12 @@ Route::middleware(['auth', 'verified', 'admin'])
             ->name('payment-gateway.webhooks.clear');
         Route::delete('/payment-gateway/webhooks/{transaction}', [AdminPaymentGatewayController::class, 'deleteWebhook'])
             ->name('payment-gateway.webhooks.delete');
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])
+            ->name('notifications.index');
+        Route::delete('/notifications', [AdminNotificationController::class, 'clear'])
+            ->name('notifications.clear');
+        Route::delete('/notifications/{notification}', [AdminNotificationController::class, 'destroy'])
+            ->name('notifications.destroy');
         Route::post('/notifications/mark-read', [AdminNotificationController::class, 'markRead'])
             ->name('notifications.mark-read');
         Route::resource('users', UserController::class)->except('show');

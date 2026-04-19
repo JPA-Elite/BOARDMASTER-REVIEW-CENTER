@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
@@ -112,6 +112,18 @@ function SettingsIcon() {
         <Icon>
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.21 7.2a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </Icon>
+    );
+}
+
+function TrashIcon() {
+    return (
+        <Icon className="size-4">
+            <path d="M3 6h18" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
         </Icon>
     );
 }
@@ -284,7 +296,6 @@ export default function AdminLayout({ title, children }) {
     const [unreadCount, setUnreadCount] = useState(notificationCount);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
-    const [visibleNotifications, setVisibleNotifications] = useState(10);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
         try {
             if (typeof window === 'undefined') {
@@ -685,27 +696,54 @@ export default function AdminLayout({ title, children }) {
                                                         No notifications yet.
                                                     </p>
                                                 )}
-                                                {notifications
-                                                    .slice(0, visibleNotifications)
-                                                    .map(
+                                                {notifications.map(
                                                     (notification) => (
                                                         <div
                                                             key={
                                                                 notification.id
                                                             }
-                                                            className="border-b border-slate-100 px-4 py-3 last:border-b-0"
+                                                            className="border-b border-slate-100 px-4 py-3 transition-colors hover:bg-slate-50 last:border-b-0"
                                                         >
-                                                            <p className="text-sm font-medium text-slate-900">
-                                                                {
-                                                                    notification.title
-                                                                }
-                                                            </p>
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <p className="text-sm font-medium text-slate-900">
+                                                                    {
+                                                                        notification.title
+                                                                    }
+                                                                </p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            router.delete(
+                                                                                route(
+                                                                                    'admin.notifications.destroy',
+                                                                                    notification.id,
+                                                                                ),
+                                                                                {
+                                                                                    preserveScroll: true,
+                                                                                    preserveState: true,
+                                                                                    onSuccess: () => {
+                                                                                        toast.success(
+                                                                                            'Notification deleted.',
+                                                                                        );
+                                                                                    },
+                                                                                },
+                                                                            );
+                                                                        }}
+                                                                        className="inline-flex size-7 items-center justify-center rounded-md text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                        title="Delete"
+                                                                        aria-label="Delete notification"
+                                                                    >
+                                                                        <TrashIcon />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                             <p className="mt-1 text-xs text-slate-500">
                                                                 {
                                                                     notification.message
                                                                 }
                                                             </p>
-                                                            <p className="mt-2 text-[11px] text-slate-400">
+<p className="mt-2 text-[11px] text-slate-400">
                                                                 {
                                                                     notification.time
                                                                 }
@@ -713,27 +751,21 @@ export default function AdminLayout({ title, children }) {
                                                         </div>
                                                     ),
                                                 )}
-                                                {notifications.length >
-                                                    visibleNotifications && (
-                                                    <div className="border-t border-slate-100 px-4 py-3">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setVisibleNotifications(
-                                                                    (count) =>
-                                                                        Math.min(
-                                                                            count +
-                                                                                10,
-                                                                            notifications.length,
-                                                                        ),
-                                                                )
-                                                            }
-                                                            className="w-full rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:bg-slate-50"
-                                                        >
-                                                            Show more
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                <div className="border-t border-slate-100 px-4 py-3">
+                                                    <Link
+                                                        href={route(
+                                                            'admin.notifications.index',
+                                                        )}
+                                                        onClick={() =>
+                                                            setNotificationOpen(
+                                                                false,
+                                                            )
+                                                        }
+                                                        className="block w-full rounded-md border border-slate-200 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600 hover:bg-slate-50"
+                                                    >
+                                                        Show all
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
