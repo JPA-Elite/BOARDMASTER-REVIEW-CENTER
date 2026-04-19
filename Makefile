@@ -5,7 +5,11 @@ PROD_ENV ?= .env.docker.prod
 PROD_COMPOSE ?= docker-compose.prod.yml
 
 APP_SERVICE ?= app
-DEV_API_BASE ?= http://api.boardmasters.local:8080
+
+-include $(DEV_ENV)
+
+DEV_API_BASE ?= $(APP_API_URL)
+DEV_API_BASE ?= http://localhost:8080
 
 .PHONY: dev-build dev-up dev-migrate dev-deploy prod-build prod-up prod-migrate prod-deploy
 .PHONY: dev-seed prod-seed
