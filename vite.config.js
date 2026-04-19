@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => {
     const hmrHost = env.VITE_HMR_HOST || undefined;
     const backendUrl = env.VITE_BACKEND_URL || 'http://web';
     const appUrl = process.env.APP_URL || env.APP_URL || 'http://boardmasters.local:8080';
+    const allowedOrigins = (env.VITE_ALLOWED_ORIGINS || appUrl)
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
 
     return {
         plugins: [
@@ -55,7 +59,7 @@ export default defineConfig(({ mode }) => {
                 ],
             },
             cors: {
-                origin: [appUrl],
+                origin: allowedOrigins,
             },
             proxy: {
                 '^/(?!@vite|@react-refresh|__vite_ping|resources/|node_modules/).*': {

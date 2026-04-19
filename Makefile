@@ -5,10 +5,12 @@ PROD_ENV ?= .env.docker.prod
 PROD_COMPOSE ?= docker-compose.prod.yml
 
 APP_SERVICE ?= app
+DEV_API_BASE ?= http://api.boardmasters.local:8080
 
 .PHONY: dev-build dev-up dev-migrate dev-deploy prod-build prod-up prod-migrate prod-deploy
 .PHONY: dev-seed prod-seed
 .PHONY: dev-down prod-down
+.PHONY: dev-login-token
 
 dev-build:
 	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) build
@@ -43,3 +45,33 @@ prod-seed:
 	docker compose --env-file $(PROD_ENV) -f $(PROD_COMPOSE) run --rm $(APP_SERVICE) php artisan db:seed --force
 
 prod-deploy: prod-build prod-up prod-migrate
+
+dev-login-token:
+	@EMAIL_INPUT="$(EMAIL)"; \
+	PASSWORD_INPUT="$(PASSWORD)"; \
+	if [ -z "$$EMAIL_INPUT" ]; then \
+		printf "Email: "; \
+		read EMAIL_INPUT; \
+	fi; \
+	if [ -z "$$PASSWORD_INPUT" ]; then \
+		printf "Password: "; \
+		stty -echo; \
+		read PASSWORD_INPUT; \
+		stty echo; \
+		printf "\n"; \
+	fi; \
+	if [ -z "$$EMAIL_INPUT" ] || [ -z "$$PASSWORD_INPUT" ]; then \
+		echo "Email and password are required."; \
+		exit 1; \
+	fi; \
+	RESPONSE=$$(curl -sS -X POST "$(DEV_API_BASE)/api/mobile/login" \
+		-H "Accept: application/json" \
+		-H "Content-Type: application/json" \
+		-d "{\"email\":\"$$EMAIL_INPUT\",\"password\":\"$$PASSWORD_INPUT\"}"); \
+	TOKEN=$$(printf "%s" "$$RESPONSE" | php -r '$$json = json_decode(stream_get_contents(STDIN), true); if (is_array($$json) && isset($$json["token"]) && is_string($$json["token"])) { echo $$json["token"]; }'); \
+	if [ -n "$$TOKEN" ]; then \
+		echo "$$TOKEN"; \
+	else \
+		echo "$$RESPONSE"; \
+		exit 1; \
+	fi

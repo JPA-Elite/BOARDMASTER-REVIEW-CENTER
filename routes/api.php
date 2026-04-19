@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\PaymongoCheckoutController;
+use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\Api\MobileInAppPurchaseController;
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileDashboardController;
@@ -11,6 +12,14 @@ use App\Http\Controllers\Api\MobileReferralController;
 use App\Http\Controllers\Api\MobileSubscriptionController;
 use App\Http\Controllers\Webhooks\PaymongoWebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/docs', [ApiDocsController::class, 'ui'])
+    ->middleware('throttle:mobile-public')
+    ->name('api.docs.ui');
+
+Route::get('/docs/openapi.json', [ApiDocsController::class, 'openapi'])
+    ->middleware('throttle:mobile-public')
+    ->name('api.docs.openapi');
 
 Route::post('/webhooks/paymongo', PaymongoWebhookController::class)
     ->name('api.webhooks.paymongo');

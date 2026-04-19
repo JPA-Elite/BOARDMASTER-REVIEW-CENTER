@@ -12,6 +12,9 @@ x-laravel-environment: &laravel-environment
   APP_ENV: production
   APP_DEBUG: "false"
   APP_URL: ${APP_URL:-https://boardmasters.example.com}
+  APP_LANDING_URL: ${APP_LANDING_URL:-https://boardmasters.com}
+  APP_API_URL: ${APP_API_URL:-https://api.boardmasters.com}
+  APP_ADMIN_URL: ${APP_ADMIN_URL:-https://app.boardmasters.com}
   LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
 
 services:
@@ -42,7 +45,7 @@ services:
     restart: unless-stopped
     environment:
       CERT_DOMAIN: ${CERT_DOMAIN}
-      NGINX_SERVER_NAME: ${NGINX_SERVER_NAME}
+      NGINX_SERVER_NAMES: ${NGINX_SERVER_NAMES:-boardmasters.com api.boardmasters.com app.boardmasters.com}
     ports:
       - "${NGINX_HTTP_PORT:-80}:80"
       - "${NGINX_HTTPS_PORT:-443}:443"

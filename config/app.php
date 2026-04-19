@@ -55,6 +55,26 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    |----------------------------------------------------------------------
+    | Host-specific Application URLs
+    |----------------------------------------------------------------------
+    |
+    | These URLs are used to enforce domain-specific route access for
+    | landing, admin, and API traffic across dev/prod environments.
+    |
+    */
+    'landing_url' => env('APP_LANDING_URL', env('APP_URL', 'http://localhost')),
+    'api_url' => env('APP_API_URL', env('APP_URL', 'http://localhost')),
+    'api_allowed_urls' => array_values(array_filter(array_map(
+        static fn ($value) => trim((string) $value),
+        preg_split(
+            '/[\s,;]+/',
+            (string) env('APP_API_ALLOWED_URLS', env('APP_API_URL', env('APP_URL', 'http://localhost')))
+        ) ?: []
+    ))),
+    'admin_url' => env('APP_ADMIN_URL', env('APP_URL', 'http://localhost')),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

@@ -37,14 +37,19 @@ This uses `docker-compose.yml` with Nginx, PHP-FPM, Vite (hot reload), MySQL, an
    - `copy .env.docker.example .env.docker`
 2. Ensure your Laravel app env exists.
    - `copy .env.example .env`
-3. Add a local host entry (run editor as Administrator):
+3. Add local host entries (run editor as Administrator):
    - `127.0.0.1 boardmasters.local`
+   - `127.0.0.1 api.boardmasters.local`
+   - `127.0.0.1 app.boardmasters.local`
 4. Start containers.
    - `docker compose --env-file .env.docker -f docker-compose.yml up -d --build`
 
 URLs:
-- App: `http://boardmasters.local:8080`
-- Vite service (internal for HMR): `http://boardmasters.local:5173`
+- Landing: `http://boardmasters.local:8080`
+- API host (mobile): `http://api.boardmasters.local:8080`
+- API docs (Swagger UI): `http://api.boardmasters.local:8080/api/docs`
+- Admin host: `http://app.boardmasters.local:8080`
+- Vite service (internal for HMR): `http://app.boardmasters.local:5173`
 - phpMyAdmin: `http://localhost:8081`
 - MySQL Host Port: `3306`
 
@@ -52,6 +57,7 @@ Hot reload notes:
 - Frontend changes under `resources/` now refresh automatically through Vite HMR while browsing the app URL on `:8080`.
 - PHP/Laravel changes are mounted into the container, so you do not need to rebuild for code edits.
 - If dev feels heavy on Windows/Docker, increase `VITE_POLL_INTERVAL` in `.env.docker` (for example `800` or `1000`) to reduce watcher CPU usage.
+- In development, API host restrictions are relaxed so physical phone testing can use LAN IP directly.
 
 Optional workers (queue + scheduler):
 - `docker compose --env-file .env.docker -f docker-compose.yml --profile workers up -d`
@@ -75,6 +81,7 @@ This uses `docker-compose.prod.yml` with HTTPS-ready Nginx config and optional p
 4. Ensure Let's Encrypt certs exist on host:
    - `/etc/letsencrypt/live/<CERT_DOMAIN>/fullchain.pem`
    - `/etc/letsencrypt/live/<CERT_DOMAIN>/privkey.pem`
+   - `NGINX_SERVER_NAMES` can include landing/api/admin hosts (for example `boardmasters.com api.boardmasters.com app.boardmasters.com`).
 5. Start production stack.
    - `docker compose --env-file .env.docker.prod -f docker-compose.prod.yml up -d --build`
 
@@ -93,4 +100,5 @@ Make shortcuts:
 - Admin routes are under `/admin` and require an authenticated user with `role = admin`.
 - Public marketing pages are served through Webflow HTML in `resources/js/webflow`.
 - Mobile Google sign-in endpoint uses `POST /api/mobile/login/google`.
+- In production, API routes are host/scheme-restricted via `APP_API_ALLOWED_URLS` (defaults to `APP_API_URL`).
 - Set `GOOGLE_AUTH_AUDIENCES` in `.env` with allowed Google OAuth client IDs (comma-separated).
