@@ -413,7 +413,7 @@ export default function AdminLayout({ title, children }) {
     }, [notificationOpen, unreadCount]);
 
     return (
-        <div className="admin-shell min-h-screen bg-[#f4f5f7] text-slate-900">
+        <div className="admin-shell min-h-screen overflow-x-hidden bg-[#f4f5f7] text-slate-900">
             <div className="flex min-h-screen">
                 <aside
                     className={`fixed inset-y-0 left-0 z-40 w-[290px] border-r border-slate-200 bg-[#f7f7f8] transition-[transform,width] duration-200 ${
@@ -645,9 +645,11 @@ export default function AdminLayout({ title, children }) {
                                 </svg>
                             </button>
 
-                            <p className="text-sm font-medium text-slate-900">{title}</p>
+                            <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+                                {title}
+                            </p>
 
-                            <div className="ml-auto flex items-center gap-2">
+                            <div className="ml-auto flex shrink-0 items-center gap-2">
                                 <div className="relative">
                                     <button
                                         type="button"

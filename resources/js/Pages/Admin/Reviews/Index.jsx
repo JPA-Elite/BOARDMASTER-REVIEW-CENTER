@@ -53,7 +53,7 @@ export default function Index({ reviews, filters = {} }) {
         <AdminLayout title="Reviews">
             <Head title="Admin Reviews" />
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="group relative">
@@ -94,14 +94,18 @@ export default function Index({ reviews, filters = {} }) {
                         </form>
                     </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="max-w-full overflow-x-auto overscroll-x-contain">
                     <table className="min-w-full text-left text-sm">
                         <thead className="text-slate-500">
                             <tr>
                                 <th className="px-3 py-2">Reviewer</th>
-                                <th className="px-3 py-2">School</th>
+                                <th className="hidden px-3 py-2 sm:table-cell">
+                                    School
+                                </th>
                                 <th className="px-3 py-2">Rating</th>
-                                <th className="px-3 py-2">Quote</th>
+                                <th className="hidden px-3 py-2 sm:table-cell">
+                                    Quote
+                                </th>
                                 <th className="px-3 py-2">Status</th>
                                 <th className="px-3 py-2">Actions</th>
                             </tr>
@@ -109,15 +113,21 @@ export default function Index({ reviews, filters = {} }) {
                         <tbody>
                             {reviews.data.map((review) => (
                                 <tr key={review.id} className="border-t border-slate-200">
-                                    <td className="whitespace-nowrap px-3 py-2">
+                                    <td className="px-3 py-2 align-top">
                                         <p className="font-medium text-slate-900">
                                             {review.reviewer_name}
                                         </p>
                                         <p className="text-xs text-slate-500">
                                             Added {review.created_at}
                                         </p>
+                                        <p className="mt-1 text-xs text-slate-500 sm:hidden">
+                                            {review.reviewer_school || '—'}
+                                        </p>
+                                        <p className="mt-1 break-words text-xs text-slate-500 sm:hidden">
+                                            "{review.quote}"
+                                        </p>
                                     </td>
-                                    <td className="px-3 py-2">
+                                    <td className="hidden px-3 py-2 sm:table-cell">
                                         {review.reviewer_school || '—'}
                                     </td>
                                     <td className="px-3 py-2">
@@ -134,7 +144,7 @@ export default function Index({ reviews, filters = {} }) {
                                             ))}
                                         </div>
                                     </td>
-                                    <td className="px-3 py-2 text-slate-600">
+                                    <td className="hidden px-3 py-2 text-slate-600 sm:table-cell">
                                         "{review.quote}"
                                     </td>
                                     <td className="px-3 py-2">
