@@ -42,10 +42,11 @@ export default function Index({ notifications, filters = {} }) {
                         </select>
                         <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-500 transition-transform group-focus-within:rotate-180" />
                     </div>
-                        <button
-                            type="button"
-                            onClick={() => setConfirmClear(true)}
-                            className="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:bg-slate-50"
+                    <button
+                        type="button"
+                        onClick={() => setConfirmClear(true)}
+                        disabled={notifications.data.length === 0}
+                        className="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Empty all
                     </button>
