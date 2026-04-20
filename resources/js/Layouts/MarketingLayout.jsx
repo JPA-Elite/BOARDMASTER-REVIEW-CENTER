@@ -15,6 +15,10 @@ export default function MarketingLayout({
     description,
     ogTitle,
     ogDescription,
+    ogImage,
+    canonicalUrl,
+    noindex = false,
+    jsonLd,
     children,
     preloadImages = [],
 }) {
@@ -32,6 +36,65 @@ export default function MarketingLayout({
         () => resolvedPreloadImages.join('|'),
         [resolvedPreloadImages],
     );
+
+    const origin =
+        typeof window !== 'undefined' && window.location?.origin
+            ? window.location.origin
+            : '';
+
+    const resolvedCanonical = useMemo(() => {
+        if (canonicalUrl && canonicalUrl.trim()) {
+            return canonicalUrl.trim();
+        }
+        if (!origin) {
+            return url;
+        }
+        try {
+            return new URL(url, origin).toString();
+        } catch (_) {
+            return `${origin}${url}`;
+        }
+    }, [canonicalUrl, origin, url]);
+
+    const resolvedOgTitle = ogTitle || title;
+    const resolvedOgDescription = ogDescription || description;
+    const defaultOgImage = '/images/boardmaster-square.webp';
+    const resolvedOgImage = useMemo(() => {
+        if (ogImage && ogImage.trim()) {
+            return ogImage.trim();
+        }
+        if (resolvedPreloadImages.length > 0) {
+            return resolvedPreloadImages[0];
+        }
+        return defaultOgImage;
+    }, [ogImage, resolvedPreloadImages]);
+
+    const resolvedOgImageAbsolute = useMemo(() => {
+        if (!resolvedOgImage) {
+            return null;
+        }
+        if (!origin) {
+            return resolvedOgImage;
+        }
+        try {
+            return new URL(resolvedOgImage, origin).toString();
+        } catch (_) {
+            return resolvedOgImage.startsWith('/')
+                ? `${origin}${resolvedOgImage}`
+                : resolvedOgImage;
+        }
+    }, [origin, resolvedOgImage]);
+
+    const resolvedJsonLd = useMemo(() => {
+        if (!jsonLd) {
+            return null;
+        }
+        try {
+            return JSON.stringify(jsonLd);
+        } catch (_) {
+            return null;
+        }
+    }, [jsonLd]);
 
     useEffect(() => {
         const elements = Array.from(
@@ -105,12 +168,56 @@ export default function MarketingLayout({
                 {description ? (
                     <meta name="description" content={description} />
                 ) : null}
-                {ogTitle ? <meta property="og:title" content={ogTitle} /> : null}
-                {ogDescription ? (
-                    <meta property="og:description" content={ogDescription} />
+                {noindex ? (
+                    <meta name="robots" content="noindex,nofollow" />
+                ) : (
+                    <meta name="robots" content="index,follow" />
+                )}
+                {resolvedCanonical ? (
+                    <link rel="canonical" href={resolvedCanonical} />
+                ) : null}
+                {resolvedOgTitle ? (
+                    <meta property="og:title" content={resolvedOgTitle} />
+                ) : null}
+                {resolvedOgDescription ? (
+                    <meta
+                        property="og:description"
+                        content={resolvedOgDescription}
+                    />
                 ) : null}
                 <meta property="og:type" content="website" />
+                {resolvedCanonical ? (
+                    <meta property="og:url" content={resolvedCanonical} />
+                ) : null}
+                <meta
+                    property="og:site_name"
+                    content="BoardMasters Review Center"
+                />
+                {resolvedOgImageAbsolute ? (
+                    <meta property="og:image" content={resolvedOgImageAbsolute} />
+                ) : null}
+                {resolvedOgImageAbsolute ? (
+                    <meta
+                        property="twitter:image"
+                        content={resolvedOgImageAbsolute}
+                    />
+                ) : null}
                 <meta name="twitter:card" content="summary_large_image" />
+                {resolvedOgTitle ? (
+                    <meta name="twitter:title" content={resolvedOgTitle} />
+                ) : null}
+                {resolvedOgDescription ? (
+                    <meta
+                        name="twitter:description"
+                        content={resolvedOgDescription}
+                    />
+                ) : null}
+                {resolvedJsonLd ? (
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: resolvedJsonLd }}
+                    />
+                ) : null}
                 {resolvedPreloadImages.map((src) => (
                     <link
                         key={`preload-${src}`}

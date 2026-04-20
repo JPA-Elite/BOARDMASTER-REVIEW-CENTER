@@ -8,6 +8,7 @@ export default function Cancel() {
             description="Your payment was cancelled. You can try again anytime."
             ogTitle="Payment Cancelled"
             ogDescription="Your payment was cancelled."
+            noindex
         >
             <section className="mx-auto flex w-full max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-700">

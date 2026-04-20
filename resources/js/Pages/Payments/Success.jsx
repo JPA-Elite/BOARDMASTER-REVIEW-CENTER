@@ -8,6 +8,7 @@ export default function Success() {
             description="Your payment has been received. Thank you for your purchase."
             ogTitle="Payment Successful"
             ogDescription="Your payment has been received."
+            noindex
         >
             <section className="mx-auto flex w-full max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
