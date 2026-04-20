@@ -560,7 +560,7 @@ export default function Welcome({ faqs = defaultFaqs, reviews = defaultReviews }
                                 return (
                                     <div
                                         key={`${item.reviewer_name}-${index}`}
-                                        className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                                        className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/70"
                                     >
                                         <div className="flex items-center gap-3">
                                             <ImageWithSkeleton
