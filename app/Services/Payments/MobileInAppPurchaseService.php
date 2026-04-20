@@ -123,7 +123,7 @@ class MobileInAppPurchaseService
 
         $billingCycle = $this->resolveBillingCycle($plan, $validated['billing_cycle'] ?? null);
         $today = Carbon::today()->toDateString();
-        $endDate = Carbon::today()->addDays(max(1, Plan::durationDaysForCycle($billingCycle)))->toDateString();
+        $endDate = Plan::calculateEndDateForCycle(Carbon::today(), $billingCycle)->toDateString();
 
         $transactionPayload = [
             'platform' => $platform,

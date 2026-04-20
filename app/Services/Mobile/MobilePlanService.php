@@ -206,7 +206,7 @@ class MobilePlanService
 
         $billingCycle = $validated['billing_cycle'] ?? $this->normalizeBillingCycle($plan->billing_cycle);
         $durationDays = $plan->durationDays();
-        $endDate = $this->calculateEndDate(now(), $durationDays);
+        $endDate = $this->calculateEndDate(now(), $billingCycle);
 
         /** @var UserSubscription $subscription */
         $subscription = $this->subscriptions->create([
@@ -291,13 +291,9 @@ class MobilePlanService
             : Plan::BILLING_MONTHLY;
     }
 
-    private function calculateEndDate(Carbon|string $startDate, int $durationDays): string
+    private function calculateEndDate(Carbon|string $startDate, string $billingCycle): string
     {
-        $start = $startDate instanceof Carbon
-            ? $startDate->copy()
-            : Carbon::parse($startDate);
-
-        return $start->addDays(max(1, $durationDays))->toDateString();
+        return Plan::calculateEndDateForCycle($startDate, $billingCycle)->toDateString();
     }
 
     private function deactivateActiveSubscriptions(User $user, string $endDate): void

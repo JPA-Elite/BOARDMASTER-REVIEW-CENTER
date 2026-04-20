@@ -72,16 +72,12 @@ class SubscriptionService
 
     private function preparePayload(array $data): array
     {
-        $plan = $this->plans->find((int) $data['plan_id']);
         $billingCycle = $this->resolveBillingCycle($data);
         $startDate = Carbon::parse($data['start_date']);
         $endDate = $data['end_date'] ?? null;
 
         if (! $endDate) {
-            $durationDays = $plan instanceof Plan
-                ? $plan->durationDays()
-                : Plan::durationDaysForCycle($billingCycle);
-            $endDate = $startDate->copy()->addDays(max(1, $durationDays))->toDateString();
+            $endDate = Plan::calculateEndDateForCycle($startDate, $billingCycle)->toDateString();
         }
 
         return [

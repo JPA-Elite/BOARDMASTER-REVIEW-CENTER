@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Plan extends Model
 {
@@ -105,6 +106,22 @@ class Plan extends Model
             self::BILLING_ANNUAL, self::BILLING_YEARLY => 365,
             self::BILLING_MONTHLY => 30,
             default => 30,
+        };
+    }
+
+    public static function calculateEndDateForCycle(Carbon|string $startDate, ?string $billingCycle): Carbon
+    {
+        $start = $startDate instanceof Carbon
+            ? $startDate->copy()
+            : Carbon::parse($startDate);
+
+        return match ($billingCycle) {
+            self::BILLING_TRIAL => $start->addDays(3),
+            self::BILLING_QUARTERLY => $start->addMonthsNoOverflow(3),
+            self::BILLING_SEMI_ANNUAL => $start->addMonthsNoOverflow(6),
+            self::BILLING_ANNUAL, self::BILLING_YEARLY => $start->addMonthsNoOverflow(12),
+            self::BILLING_MONTHLY => $start->addMonthNoOverflow(),
+            default => $start->addDays(self::durationDaysForCycle($billingCycle)),
         };
     }
 

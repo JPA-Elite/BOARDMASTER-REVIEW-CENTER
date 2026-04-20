@@ -346,6 +346,6 @@ class PaymongoWebhookService
 
     private function calculateEndDate(Carbon $startDate, string $billingCycle): string
     {
-        return $startDate->copy()->addDays(max(1, Plan::durationDaysForCycle($billingCycle)))->toDateString();
+        return Plan::calculateEndDateForCycle($startDate, $billingCycle)->toDateString();
     }
 }

@@ -1158,7 +1158,7 @@ class MobileAuthService
         }
 
         $billingCycle = $this->normalizeBillingCycle($defaultPlan->billing_cycle);
-        $endDate = $this->calculateEndDate(now(), $defaultPlan->durationDays());
+        $endDate = $this->calculateEndDate(now(), $billingCycle);
 
         /** @var UserSubscription $subscription */
         $subscription = $this->subscriptions->create([
@@ -1193,13 +1193,9 @@ class MobileAuthService
             : Plan::BILLING_MONTHLY;
     }
 
-    private function calculateEndDate(Carbon|string $startDate, int $durationDays): string
+    private function calculateEndDate(Carbon|string $startDate, string $billingCycle): string
     {
-        $start = $startDate instanceof Carbon
-            ? $startDate->copy()
-            : Carbon::parse($startDate);
-
-        return $start->addDays(max(1, $durationDays))->toDateString();
+        return Plan::calculateEndDateForCycle($startDate, $billingCycle)->toDateString();
     }
 
     private function mobileUserPayload(
