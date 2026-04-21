@@ -138,7 +138,7 @@ export default function Partnership() {
                             return (
                                 <article
                                     key={benefit.title}
-                                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/70"
                                 >
                                     <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
                                         <BenefitIcon className="h-5 w-5" />
@@ -196,7 +196,7 @@ export default function Partnership() {
                         {process.map((item) => (
                             <article
                                 key={item.label}
-                                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/70"
                             >
                                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-amber-600">
                                     Step {item.label}
@@ -248,4 +248,3 @@ export default function Partnership() {
         </MarketingLayout>
     );
 }
-

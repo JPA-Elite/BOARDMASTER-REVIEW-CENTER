@@ -117,7 +117,7 @@ export default function Contact({ faqs = defaultFaqs }) {
                         return (
                             <article
                                 key={option.title}
-                                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/70"
                             >
                                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
                                     <OptionIcon className="h-5 w-5" />
@@ -141,7 +141,7 @@ export default function Contact({ faqs = defaultFaqs }) {
                         {faqItems.map((faq, index) => (
                             <article
                                 key={`${faq.question}-${index}`}
-                                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60"
+                                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/70"
                             >
                                 <h3 className="text-base font-bold text-slate-900" style={headingFont}>
                                     {faq.question}
@@ -174,4 +174,3 @@ export default function Contact({ faqs = defaultFaqs }) {
         </MarketingLayout>
     );
 }
-
