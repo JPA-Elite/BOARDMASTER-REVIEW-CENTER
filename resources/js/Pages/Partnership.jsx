@@ -237,10 +237,12 @@ export default function Partnership() {
                         </Link>
                         <a
                             href="mailto:boardmastersreviewcenter@gmail.com"
-                            className="inline-flex items-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white"
+                            className="inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white sm:w-auto"
                         >
-                            <GraduationCap className="h-4 w-4" />
-                            boardmastersreviewcenter@gmail.com
+                            <GraduationCap className="h-4 w-4 flex-shrink-0" />
+                            <span className="min-w-0 truncate">
+                                boardmastersreviewcenter@gmail.com
+                            </span>
                         </a>
                     </div>
                 </div>

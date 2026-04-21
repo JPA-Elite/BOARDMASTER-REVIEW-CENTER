@@ -310,7 +310,7 @@ export default function MarketingLayout({
                                         key={item.href}
                                         href={item.href}
                                         onClick={() => setMobileOpen(false)}
-                                        className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
+                                        className={`block rounded-lg px-3 py-2 text-center text-sm font-semibold ${
                                             isActive(item.href)
                                                 ? 'bg-slate-100 text-slate-900'
                                                 : 'text-slate-600'
@@ -360,8 +360,8 @@ export default function MarketingLayout({
                 </div>
 
                 <footer className="border-t border-slate-200 bg-white">
-                    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 text-sm text-slate-600 sm:px-6 md:flex-row md:items-center md:justify-between">
-                        <div>
+                    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 text-center text-sm text-slate-600 sm:px-6 md:flex-row md:items-center md:justify-between md:text-left">
+                        <div className="md:text-left">
                             <p className="text-sm font-semibold text-slate-900" style={headingFont}>
                                 BoardMasters Review Center
                             </p>
@@ -370,7 +370,7 @@ export default function MarketingLayout({
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center justify-center gap-4 md:justify-start">
                             <Link href="/vision-mission" className="hover:text-slate-900">
                                 Vision & Mission
                             </Link>
