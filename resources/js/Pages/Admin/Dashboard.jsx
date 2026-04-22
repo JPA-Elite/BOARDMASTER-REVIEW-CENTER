@@ -1,4 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/Components/Admin/Pagination';
 import { Head, router } from '@inertiajs/react';
 import { Users } from 'lucide-react';
 import { useState } from 'react';
@@ -45,12 +46,8 @@ function SignupTooltip({ active, payload, label }) {
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-            <p className="text-xs font-semibold text-slate-900">
-                Month: {label}
-            </p>
-            <p className="mt-1 text-sm font-semibold text-indigo-600">
-                Signups: {countValue}
-            </p>
+            <p className="text-xs font-semibold text-slate-900">Month: {label}</p>
+            <p className="mt-1 text-sm font-semibold text-indigo-600">Signups: {countValue}</p>
         </div>
     );
 }
@@ -299,28 +296,45 @@ export default function Dashboard({
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
                         Recent Activity
                     </h3>
-                    <div className="mt-3 space-y-2">
-                        {(recentActivities?.length ?? 0) === 0 && (
-                            <p className="text-sm text-slate-500">No recent activity.</p>
-                        )}
+                    <div className="mt-3 overflow-x-auto">
+                        <table className="min-w-full text-left text-sm">
+                            <thead className="text-slate-500">
+                                <tr>
+                                    <th className="px-3 py-2">Activity</th>
+                                    <th className="px-3 py-2">Date/Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {((recentActivities?.data) ?? []).length === 0 && (
+                                    <tr>
+                                        <td colSpan={2} className="px-3 py-4 text-center text-slate-500">
+                                            No recent activity.
+                                        </td>
+                                    </tr>
+                                )}
 
-                        {(recentActivities ?? []).map((item) => (
-                            <div
-                                key={item.id}
-                                className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 transition-colors duration-150 ease-in-out hover:bg-slate-50 cursor-pointer"
-                            >
-                                <p className="text-sm text-slate-700">
-                                    {item.type === 'attempt'
-                                        ? `${item.user} took ${item.subject}`
-                                        : `${item.user} ${item.action === 'login' ? 'signed in' : 'signed out'}${item.platform ? ` (${item.platform})` : ''}`}
-                                </p>
-                                <p className="text-sm font-medium text-slate-900">
-                                    {item.type === 'attempt'
-                                        ? `${item.score}/${item.total_questions}`
-                                        : new Date(item.created_at.replace(' ', 'T')).toLocaleString()}
-                                </p>
-                            </div>
-                        ))}
+                                {((recentActivities?.data) ?? []).map((item) => (
+                                    <tr key={item.id} className="border-t border-slate-200 hover:bg-slate-50">
+                                        <td className="px-3 py-2">
+                                            <div className="text-sm font-medium text-slate-900">
+                                                {item.user}
+                                            </div>
+                                            <div className="text-sm text-slate-700">
+                                                {item.type === 'attempt'
+                                                    ? `took ${item.subject}`
+                                                    : `${item.action === 'login' ? 'signed in' : 'signed out'}${item.platform ? ` (${item.platform})` : ''}`}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2 text-sm font-medium text-slate-900">
+                                            {new Date(item.created_at.replace(' ', 'T')).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div className="mt-3 flex justify-end">
+                            <Pagination links={recentActivities?.links || []} />
+                        </div>
                     </div>
                 </div>
             </div>

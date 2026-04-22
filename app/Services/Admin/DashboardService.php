@@ -12,6 +12,8 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
 use App\Models\UserActivity;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class DashboardService
 {
@@ -27,7 +29,7 @@ class DashboardService
     ) {
     }
 
-    public function getDashboardData(?int $signupYear = null): array
+    public function getDashboardData(?int $signupYear = null, int $activityPage = 1, int $perPage = 10): array
     {
         $now = now();
         $resolvedYear = $signupYear ?? (int) $now->year;
@@ -106,7 +108,7 @@ class DashboardService
             })
             ->values();
 
-        $recentAttempts = $this->attempts->getRecent(6)
+        $recentAttempts = $this->attempts->getRecent(100)
             ->map(fn ($attempt) => [
                 'id' => 'attempt-'.$attempt->id,
                 'type' => 'attempt',
@@ -120,7 +122,7 @@ class DashboardService
         $recentAuth = UserActivity::query()
             ->with('user')
             ->orderByDesc('created_at')
-            ->take(6)
+            ->take(100)
             ->get()
             ->map(fn ($act) => [
                 'id' => 'activity-'.$act->id,
@@ -128,13 +130,30 @@ class DashboardService
                 'user' => $act->user?->name ?? 'Deleted User',
                 'action' => $act->type,
                 'platform' => $act->platform,
+                'ip' => $act->ip,
+                'user_agent' => $act->user_agent,
                 'created_at' => $act->created_at?->toDateTimeString(),
             ]);
 
-        $recentActivities = $recentAttempts->concat($recentAuth)
+        // merge and sort all recent activities, then paginate using collections
+        /** @var Collection $merged */
+        $merged = $recentAttempts->concat($recentAuth)
             ->sortByDesc(fn ($row) => $row['created_at'])
-            ->values()
-            ->take(6);
+            ->values();
+
+        $total = $merged->count();
+        $items = $merged->forPage($activityPage, $perPage)->values()->all();
+
+        $recentActivities = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $activityPage,
+            [
+                'path' => url()->current(),
+                'query' => request()->query(),
+            ],
+        );
 
         return [
             'dateLabel' => $now->format('l, F j, Y'),

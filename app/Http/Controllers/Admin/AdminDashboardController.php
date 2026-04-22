@@ -18,10 +18,11 @@ class AdminDashboardController extends Controller
     {
         $year = $request->query('year');
         $selectedYear = is_numeric($year) ? (int) $year : null;
+        $activityPage = max(1, (int) $request->query('page', 1));
 
         return Inertia::render(
             'Admin/Dashboard',
-            $this->dashboard->getDashboardData($selectedYear),
+            $this->dashboard->getDashboardData($selectedYear, $activityPage, 10),
         );
     }
 }
