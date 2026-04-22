@@ -62,6 +62,7 @@ export default function Dashboard({
     signupYears,
     signupYear,
     recentAttempts,
+    recentActivities,
 }) {
     const [signupChartType, setSignupChartType] = useState('line');
 
@@ -299,22 +300,24 @@ export default function Dashboard({
                         Recent Activity
                     </h3>
                     <div className="mt-3 space-y-2">
-                        {recentAttempts.length === 0 && (
-                            <p className="text-sm text-slate-500">
-                                No recent quiz attempts.
-                            </p>
+                        {(recentActivities?.length ?? 0) === 0 && (
+                            <p className="text-sm text-slate-500">No recent activity.</p>
                         )}
 
-                        {recentAttempts.map((attempt) => (
+                        {(recentActivities ?? []).map((item) => (
                             <div
-                                    key={attempt.id}
-                                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 transition-colors duration-150 ease-in-out hover:bg-slate-50 cursor-pointer"
-                                >
+                                key={item.id}
+                                className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 transition-colors duration-150 ease-in-out hover:bg-slate-50 cursor-pointer"
+                            >
                                 <p className="text-sm text-slate-700">
-                                    {attempt.user} took {attempt.subject}
+                                    {item.type === 'attempt'
+                                        ? `${item.user} took ${item.subject}`
+                                        : `${item.user} ${item.action === 'login' ? 'signed in' : 'signed out'}${item.platform ? ` (${item.platform})` : ''}`}
                                 </p>
                                 <p className="text-sm font-medium text-slate-900">
-                                    {attempt.score}/{attempt.total_questions}
+                                    {item.type === 'attempt'
+                                        ? `${item.score}/${item.total_questions}`
+                                        : new Date(item.created_at.replace(' ', 'T')).toLocaleString()}
                                 </p>
                             </div>
                         ))}

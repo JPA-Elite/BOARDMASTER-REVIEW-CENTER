@@ -10,6 +10,7 @@ use App\Repositories\Contracts\ReferralRepositoryInterface;
 use App\Repositories\Contracts\SubjectRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
+use App\Models\UserActivity;
 use Carbon\Carbon;
 
 class DashboardService
@@ -107,13 +108,33 @@ class DashboardService
 
         $recentAttempts = $this->attempts->getRecent(6)
             ->map(fn ($attempt) => [
-                'id' => $attempt->id,
+                'id' => 'attempt-'.$attempt->id,
+                'type' => 'attempt',
                 'user' => $attempt->user?->name ?? 'Deleted User',
                 'subject' => $attempt->subject?->name ?? 'Deleted Subject',
                 'score' => $attempt->score,
                 'total_questions' => $attempt->total_questions,
                 'created_at' => $attempt->created_at?->toDateTimeString(),
             ]);
+
+        $recentAuth = UserActivity::query()
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->take(6)
+            ->get()
+            ->map(fn ($act) => [
+                'id' => 'activity-'.$act->id,
+                'type' => 'auth',
+                'user' => $act->user?->name ?? 'Deleted User',
+                'action' => $act->type,
+                'platform' => $act->platform,
+                'created_at' => $act->created_at?->toDateTimeString(),
+            ]);
+
+        $recentActivities = $recentAttempts->concat($recentAuth)
+            ->sortByDesc(fn ($row) => $row['created_at'])
+            ->values()
+            ->take(6);
 
         return [
             'dateLabel' => $now->format('l, F j, Y'),
@@ -122,6 +143,7 @@ class DashboardService
             'signupYears' => $availableYears,
             'signupYear' => $resolvedYear,
             'recentAttempts' => $recentAttempts,
+            'recentActivities' => $recentActivities,
         ];
     }
 

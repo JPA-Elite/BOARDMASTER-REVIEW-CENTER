@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use App\Models\UserActivity;
 
 class MobileAuthService
 {
@@ -119,6 +120,19 @@ class MobileAuthService
 
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
+
+        // record mobile login activity (non-blocking)
+        try {
+            UserActivity::create([
+                'user_id' => $user->id,
+                'type' => 'login',
+                'platform' => 'mobile',
+                'ip' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+            ]);
+        } catch (\Throwable $e) {
+            // ignore logging failures
+        }
 
         return response()->json([
             'message' => 'Login successful.',
@@ -260,6 +274,18 @@ class MobileAuthService
 
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
+
+        try {
+            UserActivity::create([
+                'user_id' => $user->id,
+                'type' => 'login',
+                'platform' => 'mobile',
+                'ip' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'meta' => ['provider' => 'google'],
+            ]);
+        } catch (\Throwable $e) {
+        }
 
         return response()->json([
             'message' => 'Google login successful.',
@@ -406,6 +432,18 @@ class MobileAuthService
 
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
+
+        try {
+            UserActivity::create([
+                'user_id' => $user->id,
+                'type' => 'login',
+                'platform' => 'mobile',
+                'ip' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'meta' => ['provider' => 'apple'],
+            ]);
+        } catch (\Throwable $e) {
+        }
 
         return response()->json([
             'message' => 'Apple login successful.',
@@ -626,6 +664,39 @@ class MobileAuthService
 
         return response()->json([
             'user' => $this->mobileUserPayload($user, $plan, $subscription),
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+        if ($user) {
+            // delete current access token if available
+            try {
+                $current = $request->user()?->currentAccessToken();
+                if ($current) {
+                    $current->delete();
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
+
+            // record mobile logout activity
+            try {
+                UserActivity::create([
+                    'user_id' => $user->id,
+                    'type' => 'logout',
+                    'platform' => 'mobile',
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent'),
+                ]);
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return response()->json([
+            'message' => 'Logged out successfully.',
         ]);
     }
 

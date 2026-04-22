@@ -47,6 +47,7 @@ Route::prefix('mobile')->group(function () {
 
     Route::middleware(['auth:sanctum', 'throttle:mobile-api'])->group(function () {
         Route::get('/me', [MobileAuthController::class, 'me']);
+        Route::post('/logout', [MobileAuthController::class, 'logout']);
         Route::post('/demo/seen', [MobileAuthController::class, 'markDemoSeen']);
         Route::post('/profile', [MobileAuthController::class, 'updateProfile']);
         Route::delete('/account', [MobileAuthController::class, 'destroy']);

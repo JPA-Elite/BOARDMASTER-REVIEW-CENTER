@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\UserActivity;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -33,6 +34,22 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // record web login activity
+        try {
+            $user = $request->user();
+            if ($user) {
+                $platform = $this->detectPlatform($request);
+                UserActivity::create([
+                    'user_id' => $user->id,
+                    'type' => 'login',
+                    'platform' => $platform,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -41,6 +58,22 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // record logout activity before logging out
+        try {
+            $user = $request->user();
+            if ($user) {
+                $platform = $this->detectPlatform($request);
+                UserActivity::create([
+                    'user_id' => $user->id,
+                    'type' => 'logout',
+                    'platform' => $platform,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
@@ -48,5 +81,26 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function detectPlatform(Request $request): string
+    {
+        // prefer explicit header or input field
+        $explicit = $request->header('X-Platform') ?? $request->input('platform');
+        if (is_string($explicit) && trim($explicit) !== '') {
+            return strtolower(trim($explicit));
+        }
+
+        // API routes or JSON requests are considered mobile by default
+        if ($request->is('api/*') || $request->wantsJson()) {
+            return 'mobile';
+        }
+
+        $ua = strtolower((string) $request->userAgent());
+        if (preg_match('/mobile|android|iphone|ipad|ipod|windows phone|opera mini|blackberry/', $ua)) {
+            return 'mobile';
+        }
+
+        return 'web';
     }
 }

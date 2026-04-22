@@ -15,6 +15,7 @@ DEV_API_BASE ?= http://localhost:8080
 .PHONY: dev-seed prod-seed
 .PHONY: dev-down prod-down
 .PHONY: dev-login-token
+.PHONY: dev-exec-app prod-exec-app
 
 dev-build:
 	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) build
@@ -33,6 +34,9 @@ dev-seed:
 
 dev-deploy: dev-build dev-up dev-migrate
 
+dev-exec-app:
+	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) exec $(APP_SERVICE) bash
+
 prod-build:
 	docker compose --env-file $(PROD_ENV) -f $(PROD_COMPOSE) build
 
@@ -49,6 +53,9 @@ prod-seed:
 	docker compose --env-file $(PROD_ENV) -f $(PROD_COMPOSE) run --rm $(APP_SERVICE) php artisan db:seed --force
 
 prod-deploy: prod-build prod-up prod-migrate
+
+prod-exec-app:
+	docker compose --env-file $(PROD_ENV) -f $(PROD_COMPOSE) exec $(APP_SERVICE) bash
 
 dev-login-token:
 	@EMAIL_INPUT="$(EMAIL)"; \
