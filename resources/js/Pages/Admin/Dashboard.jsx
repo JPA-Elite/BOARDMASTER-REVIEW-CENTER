@@ -93,7 +93,7 @@ export default function Dashboard({
                     {kpis.map((item) => (
                         <div
                             key={item.title}
-                            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5"
+                            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5 transform transition-transform duration-150 ease-in-out hover:scale-[1.03] hover:shadow-md hover:z-10"
                         >
                             <p className="text-base font-semibold text-slate-900 sm:text-lg">
                                 {item.title}
