@@ -307,9 +307,9 @@ export default function Dashboard({
 
                         {recentAttempts.map((attempt) => (
                             <div
-                                key={attempt.id}
-                                className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
-                            >
+                                    key={attempt.id}
+                                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 transition-colors duration-150 ease-in-out hover:bg-slate-50 cursor-pointer"
+                                >
                                 <p className="text-sm text-slate-700">
                                     {attempt.user} took {attempt.subject}
                                 </p>
