@@ -332,7 +332,7 @@ export default function Dashboard({
                                 ))}
                             </tbody>
                         </table>
-                        <div className="mt-3 flex justify-end">
+                        <div className="mt-3">
                             <Pagination links={recentActivities?.links || []} />
                         </div>
                     </div>

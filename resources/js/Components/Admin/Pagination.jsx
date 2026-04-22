@@ -1,12 +1,22 @@
 import { Link } from '@inertiajs/react';
 
-export default function Pagination({ links = [] }) {
+export default function Pagination({ links = [], align = 'right' }) {
     if (!links.length) {
         return null;
     }
 
+    // alignment classes: default to right on sm+ and center on mobile
+    let alignClass = 'justify-center';
+    if (align === 'right') {
+        alignClass = 'justify-center sm:justify-end';
+    } else if (align === 'left') {
+        alignClass = 'justify-center sm:justify-start';
+    } else if (align === 'center') {
+        alignClass = 'justify-center';
+    }
+
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={`flex flex-wrap items-center gap-2 ${alignClass}`}>
             {links.map((link, index) => (
                 <Link
                     key={`${link.label}-${index}`}
