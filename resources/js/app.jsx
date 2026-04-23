@@ -7,7 +7,8 @@ import { createRoot } from 'react-dom/client';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const lastFlash = { success: null, error: null };
+const lastFlash = { success: null, error: null, time: 0 };
+const MIN_FLASH_REPEAT_MS = 1500;
 let routerBound = false;
 const inertiaImportReloadKey = 'inertia.import_reload_at';
 const inertiaImportReloadWindowMs = 12_000;
@@ -22,14 +23,23 @@ const showFlash = (page) => {
         return;
     }
 
-    if (flash.success && flash.success !== lastFlash.success) {
+    const now = Date.now();
+    if (
+        flash.success &&
+        (flash.success !== lastFlash.success || now - lastFlash.time > MIN_FLASH_REPEAT_MS)
+    ) {
         toast.success(flash.success);
         lastFlash.success = flash.success;
+        lastFlash.time = now;
     }
 
-    if (flash.error && flash.error !== lastFlash.error) {
+    if (
+        flash.error &&
+        (flash.error !== lastFlash.error || now - lastFlash.time > MIN_FLASH_REPEAT_MS)
+    ) {
         toast.error(flash.error);
         lastFlash.error = flash.error;
+        lastFlash.time = now;
     }
 };
 
