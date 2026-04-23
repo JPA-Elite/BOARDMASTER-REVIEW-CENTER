@@ -446,26 +446,49 @@ export default function AdminLayout({ title, children }) {
                             </Link>
 
                             {!effectiveSidebarCollapsed && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSidebarCollapsed(true)}
-                                    className="hidden lg:inline-flex absolute right-4 top-1/2 size-9 -translate-y-1/2 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                                    aria-pressed={effectiveSidebarCollapsed}
-                                    title="Collapse sidebar"
-                                >
-                                    <span className="sr-only">Collapse sidebar</span>
-                                    <svg
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="size-5"
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="inline-flex lg:hidden absolute right-4 top-3 size-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                                        title="Close sidebar"
                                     >
-                                        <path d="M15 18l-6-6 6-6" />
-                                    </svg>
-                                </button>
+                                        <span className="sr-only">Close sidebar</span>
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className="size-5"
+                                        >
+                                            <path d="M6 18L18 6" />
+                                            <path d="M6 6L18 18" />
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setSidebarCollapsed(true)}
+                                        className="hidden lg:inline-flex absolute right-4 top-1/2 size-9 -translate-y-1/2 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                                        aria-pressed={effectiveSidebarCollapsed}
+                                        title="Collapse sidebar"
+                                    >
+                                        <span className="sr-only">Collapse sidebar</span>
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className="size-5"
+                                        >
+                                            <path d="M15 18l-6-6 6-6" />
+                                        </svg>
+                                    </button>
+                                </>
                             )}
                         </div>
 
