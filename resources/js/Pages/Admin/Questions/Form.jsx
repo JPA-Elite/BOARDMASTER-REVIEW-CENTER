@@ -3,6 +3,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
 const defaultChoices = [
     { choice_label: 'A', choice_text: '', is_correct: true, explanation: '' },
@@ -24,6 +25,8 @@ export default function Form({ mode, question, subjects, admins }) {
         choices: initialChoices.map((choice) => ({ ...choice })),
     });
 
+    const [clientErrors, setClientErrors] = useState({});
+
     const updateChoice = (index, field, value) => {
         const nextChoices = [...data.choices];
 
@@ -39,6 +42,18 @@ export default function Form({ mode, question, subjects, admins }) {
                 ...nextChoices[index],
                 [field]: value,
             };
+        }
+
+        // Clear any client-side error for the choice text when user edits it
+        if (field === 'choice_text') {
+            const key = `choices.${index}.choice_text`;
+            if (clientErrors[key]) {
+                setClientErrors((prev) => {
+                    const copy = { ...prev };
+                    delete copy[key];
+                    return copy;
+                });
+            }
         }
 
         setData('choices', nextChoices);
@@ -60,6 +75,7 @@ export default function Form({ mode, question, subjects, admins }) {
                 explanation: '',
             },
         ]);
+        setClientErrors({});
     };
 
     const removeChoice = (index) => {
@@ -82,10 +98,26 @@ export default function Form({ mode, question, subjects, admins }) {
                 choice_label: String.fromCharCode(65 + choiceIndex),
             })),
         );
+        setClientErrors({});
     };
 
     const submit = (event) => {
         event.preventDefault();
+
+        // Client-side validation: ensure each choice has non-empty text
+        const newClientErrors = {};
+        data.choices.forEach((choice, idx) => {
+            if (!choice.choice_text || String(choice.choice_text).trim() === '') {
+                newClientErrors[`choices.${idx}.choice_text`] = 'Choice text is required.';
+            }
+        });
+
+        if (Object.keys(newClientErrors).length > 0) {
+            setClientErrors(newClientErrors);
+            return;
+        }
+
+        setClientErrors({});
 
         if (mode === 'edit') {
             put(route('admin.questions.update', question.id));
@@ -198,6 +230,13 @@ export default function Form({ mode, question, subjects, admins }) {
                                             )
                                         }
                                         className="mt-1 block w-full"
+                                    />
+                                    <InputError
+                                        message={
+                                            errors[`choices.${index}.choice_text`] ||
+                                            clientErrors[`choices.${index}.choice_text`]
+                                        }
+                                        className="mt-2"
                                     />
                                 </div>
                                 <div className="flex items-end gap-2">
