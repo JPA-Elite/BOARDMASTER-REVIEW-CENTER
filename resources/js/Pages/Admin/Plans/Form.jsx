@@ -78,6 +78,11 @@ export default function Form({
         sub_plans: initialSubPlans,
     });
 
+    const lockGroupFields =
+        mode === 'create' &&
+        ((initialPlanGroup && initialPlanGroup.trim() !== '') ||
+            (initialGroupLabel && initialGroupLabel.trim() !== ''));
+
     const updateFeature = (index, value) => {
         const nextFeatures = [...data.features];
         nextFeatures[index] = value;
@@ -320,7 +325,7 @@ export default function Form({
                             )
                         }
                         className="mt-1 block w-full"
-                        disabled={isDefaultPlan}
+                        disabled={isDefaultPlan || lockGroupFields}
                         list="plan-group-options"
                         placeholder="e.g. plan_a, plan_b, plan_c"
                     />
@@ -344,7 +349,7 @@ export default function Form({
                         value={data.group_label}
                         onChange={(event) => setData('group_label', event.target.value)}
                         className="mt-1 block w-full"
-                        disabled={isDefaultPlan}
+                        disabled={isDefaultPlan || lockGroupFields}
                     />
                     <InputError message={errors.group_label} className="mt-2" />
                 </div>

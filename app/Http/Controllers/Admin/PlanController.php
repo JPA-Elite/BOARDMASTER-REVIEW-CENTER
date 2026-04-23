@@ -52,8 +52,57 @@ class PlanController extends Controller
     {
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:255', 'required_without:sub_plans', 'unique:plans,name'],
-            'plan_group' => ['required', 'string', 'max:50'],
-            'group_label' => ['nullable', 'string', 'max:255'],
+            'plan_group' => [
+                'required',
+                'string',
+                'max:50',
+                function ($attribute, $value, $fail) use ($request) {
+                    $planGroupRaw = trim((string) $value);
+                    $normalized = strtolower($planGroupRaw);
+                    $normalized = preg_replace('/[^a-z0-9_]+/', '_', $normalized) ?? '';
+                    $normalized = trim($normalized, '_');
+                    if ($normalized === '') {
+                        $normalized = 'plan_a';
+                    }
+
+                    $exists = \App\Models\Plan::query()
+                        ->where('plan_group', $normalized)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The plan group already exists. Use edit to add sub-plans to an existing group.');
+                    }
+                },
+            ],
+            'group_label' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($request) {
+                    $planGroupRaw = trim((string) $request->get('plan_group', ''));
+                    $normalized = strtolower($planGroupRaw);
+                    $normalized = preg_replace('/[^a-z0-9_]+/', '_', $normalized) ?? '';
+                    $normalized = trim($normalized, '_');
+                    if ($normalized === '') {
+                        $normalized = 'plan_a';
+                    }
+
+                    $targetLabel = trim((string) $value);
+                    if ($targetLabel === '') {
+                        $targetLabel = $this->groupLabelFromKey($normalized);
+                    }
+
+                    // Check whether another group (different plan_group) already uses this label.
+                    $exists = Plan::query()
+                        ->whereRaw('LOWER(group_label) = ?', [strtolower($targetLabel)])
+                        ->where('plan_group', '!=', $normalized)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The group display label has already been taken.');
+                    }
+                },
+            ],
             'sub_plan_label' => ['nullable', 'string', 'max:255', 'required_without:sub_plans'],
             'price' => ['nullable', 'numeric', 'min:0', 'required_without:sub_plans'],
             'billing_cycle' => ['nullable', 'string', Rule::in(Plan::billingCycles()), 'required_without:sub_plans'],
@@ -138,8 +187,69 @@ class PlanController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('plans', 'name')->ignore($plan->id)],
-            'plan_group' => ['required', 'string', 'max:50'],
-            'group_label' => ['nullable', 'string', 'max:255'],
+            'plan_group' => [
+                'required',
+                'string',
+                'max:50',
+                function ($attribute, $value, $fail) use ($plan) {
+                    $planGroupRaw = trim((string) $value);
+                    $normalized = strtolower($planGroupRaw);
+                    $normalized = preg_replace('/[^a-z0-9_]+/', '_', $normalized) ?? '';
+                    $normalized = trim($normalized, '_');
+                    if ($normalized === '') {
+                        $normalized = 'plan_a';
+                    }
+
+                    $current = trim((string) $plan->plan_group);
+                    $currentNormalized = strtolower($current);
+                    $currentNormalized = preg_replace('/[^a-z0-9_]+/', '_', $currentNormalized) ?? '';
+                    $currentNormalized = trim($currentNormalized, '_');
+                    if ($currentNormalized === '') {
+                        $currentNormalized = 'plan_a';
+                    }
+
+                    if ($normalized === $currentNormalized) {
+                        return;
+                    }
+
+                    $exists = \App\Models\Plan::query()
+                        ->where('plan_group', $normalized)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The plan group already exists. Use edit to add sub-plans to an existing group.');
+                    }
+                },
+            ],
+            'group_label' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($request, $plan) {
+                    $planGroupRaw = trim((string) $request->get('plan_group', $plan->plan_group ?? ''));
+                    $normalized = strtolower($planGroupRaw);
+                    $normalized = preg_replace('/[^a-z0-9_]+/', '_', $normalized) ?? '';
+                    $normalized = trim($normalized, '_');
+                    if ($normalized === '') {
+                        $normalized = 'plan_a';
+                    }
+
+                    $targetLabel = trim((string) $value);
+                    if ($targetLabel === '') {
+                        $targetLabel = $this->groupLabelFromKey($normalized);
+                    }
+
+                    // Check whether another group (different plan_group) already uses this label.
+                    $exists = Plan::query()
+                        ->whereRaw('LOWER(group_label) = ?', [strtolower($targetLabel)])
+                        ->where('plan_group', '!=', $normalized)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('The group display label has already been taken.');
+                    }
+                },
+            ],
             'sub_plan_label' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'billing_cycle' => ['required', 'string', Rule::in(Plan::billingCycles())],
