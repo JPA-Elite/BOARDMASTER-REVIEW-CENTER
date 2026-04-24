@@ -154,14 +154,14 @@ class PaymongoWebhookService
 
         if ($eventType === 'checkout_session.payment.paid') {
             $checkoutSessionId = is_string($resource['id'] ?? null) ? $resource['id'] : null;
-            $paymentId = data_get($resource, 'relationships.payments.data.0.id');
+            $paymentId = $this->extractCheckoutSessionPaymentId($resource);
         }
 
         if ($eventType === 'payment.paid') {
-            $paymentId = is_string($resource['id'] ?? null) ? $resource['id'] : null;
+            $paymentId = $this->extractPaymentPaidId($resource);
         }
 
-        $paymentId = is_string($paymentId) ? $paymentId : null;
+        $paymentId = is_string($paymentId) && trim($paymentId) !== '' ? trim($paymentId) : null;
         $reference = $this->extractString($metadata, ['reference', 'order_id', 'invoice_id']);
 
         return [
@@ -174,6 +174,87 @@ class PaymongoWebhookService
             'plan_id' => $this->extractInt($metadata, ['plan_id']),
             'billing_cycle' => $this->extractString($metadata, ['billing_cycle']),
         ];
+    }
+
+    /**
+     * PayMongo checkout_session webhook payloads may expose payment ids under:
+     * - relationships.payments.data[*].id
+     * - attributes.payments[*].id
+     *
+     * @param  array<string, mixed>  $resource
+     */
+    private function extractCheckoutSessionPaymentId(array $resource): ?string
+    {
+        $directCandidates = [
+            data_get($resource, 'relationships.payments.data.0.id'),
+            data_get($resource, 'attributes.payments.0.id'),
+            data_get($resource, 'attributes.payments.0.payment_id'),
+            data_get($resource, 'attributes.payment.id'),
+            data_get($resource, 'attributes.payment_id'),
+        ];
+
+        foreach ($directCandidates as $candidate) {
+            if (! is_string($candidate)) {
+                continue;
+            }
+
+            $trimmed = trim($candidate);
+            if ($trimmed !== '') {
+                return $trimmed;
+            }
+        }
+
+        return $this->findFirstIdByPrefix($resource, 'pay_');
+    }
+
+    /**
+     * @param  array<string, mixed>  $resource
+     */
+    private function extractPaymentPaidId(array $resource): ?string
+    {
+        $directCandidates = [
+            $resource['id'] ?? null,
+            data_get($resource, 'attributes.id'),
+            data_get($resource, 'attributes.payment_id'),
+        ];
+
+        foreach ($directCandidates as $candidate) {
+            if (! is_string($candidate)) {
+                continue;
+            }
+
+            $trimmed = trim($candidate);
+            if ($trimmed !== '') {
+                return $trimmed;
+            }
+        }
+
+        return $this->findFirstIdByPrefix($resource, 'pay_');
+    }
+
+    /**
+     * Recursively scan nested payload values and return the first string that
+     * matches a known PayMongo id prefix (for example: pay_...).
+     *
+     * @param  mixed  $value
+     */
+    private function findFirstIdByPrefix($value, string $prefix): ?string
+    {
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            return str_starts_with($trimmed, $prefix) ? $trimmed : null;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $found = $this->findFirstIdByPrefix($item, $prefix);
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
