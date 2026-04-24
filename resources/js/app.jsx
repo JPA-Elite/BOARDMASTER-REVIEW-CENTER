@@ -4,8 +4,10 @@ import './bootstrap';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import TimeDriftGate from '@/Components/TimeDriftGate';
 
 const lastFlash = { success: null, error: null, time: 0 };
 const MIN_FLASH_REPEAT_MS = 1500;
@@ -134,21 +136,42 @@ createInertiaApp({
 
         const root = createRoot(el);
 
+        function Root() {
+            const [page, setPage] = useState(props?.initialPage);
+
+            useEffect(() => {
+                const onSuccess = (event) => {
+                    setPage(event.detail.page);
+                };
+
+                router.on('success', onSuccess);
+                return () => {
+                    router.off('success', onSuccess);
+                };
+            }, []);
+
+            return (
+                <>
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={3000}
+                        hideProgressBar={false}
+                        newestOnTop
+                        closeOnClick
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="light"
+                    />
+                    <TimeDriftGate page={page}>
+                        <App {...props} />
+                    </TimeDriftGate>
+                </>
+            );
+        }
+
         root.render(
-            <>
-                <ToastContainer
-                    position="top-right"
-                    autoClose={3000}
-                    hideProgressBar={false}
-                    newestOnTop
-                    closeOnClick
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                />
-                <App {...props} />
-            </>,
+            <Root />,
         );
 
         showFlash(props?.initialPage);

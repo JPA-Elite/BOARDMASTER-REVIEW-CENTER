@@ -32,6 +32,9 @@ class HandleInertiaRequests extends Middleware
     {
         $admin = null;
         $user = $request->user();
+        $adminUrl = (string) config('app.admin_url');
+        $adminHost = parse_url($adminUrl, PHP_URL_HOST);
+        $adminHost = is_string($adminHost) ? strtolower($adminHost) : '';
 
         if ($user && $user->role === 'admin') {
             $notifications = AdminNotification::query()
@@ -62,6 +65,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user,
+            ],
+            'clientTimeGuard' => [
+                'serverUtcNow' => now()->utc()->toIso8601String(),
+                'allowedDriftSeconds' => 600,
+                'adminHost' => $adminHost,
             ],
             'admin' => $admin,
             'flash' => [
