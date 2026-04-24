@@ -6,6 +6,7 @@ import { ChevronDown, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Index({ reviews, filters = {} }) {
+    const [reviewsList, setReviewsList] = useState(reviews.data);
     const [confirmingId, setConfirmingId] = useState(null);
     const [search, setSearch] = useState(filters.search || '');
     const [perPage, setPerPage] = useState(
@@ -22,12 +23,32 @@ export default function Index({ reviews, filters = {} }) {
 
         router.delete(route('admin.reviews.destroy', confirmingId), {
             onFinish: closeConfirm,
+            onSuccess: () => {
+                setReviewsList((prev) =>
+                    prev.filter((r) => r.id !== confirmingId),
+                );
+            },
         });
     };
 
-    const toggleReview = (review) => {
-        router.patch(route('admin.reviews.toggle', review.id), {
-            is_active: !review.is_active,
+    const toggleReview = (reviewId) => {
+        const review = reviewsList.find((r) => r.id === reviewId);
+        if (!review) return;
+
+        const newActiveState = !review.is_active;
+
+        // Update locally immediately
+        setReviewsList((prev) =>
+            prev.map((r) =>
+                r.id === reviewId ? { ...r, is_active: newActiveState } : r,
+            ),
+        );
+
+        // Make request in background
+        router.patch(route('admin.reviews.toggle', reviewId), {
+            is_active: newActiveState,
+            preserveState: true,
+            replace: true,
         });
     };
 
@@ -111,7 +132,7 @@ export default function Index({ reviews, filters = {} }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {reviews.data.map((review) => (
+                            {reviewsList.map((review) => (
                                 <tr key={review.id} className="border-t border-slate-200">
                                     <td className="px-3 py-2 align-top">
                                         <p className="font-medium text-slate-900">
@@ -164,7 +185,7 @@ export default function Index({ reviews, filters = {} }) {
                                                 <input
                                                     type="checkbox"
                                                     checked={review.is_active}
-                                                    onChange={() => toggleReview(review)}
+                                                    onChange={() => toggleReview(review.id)}
                                                     className="peer sr-only"
                                                 />
                                                 <span className="relative inline-flex h-6 w-12 flex-shrink-0 rounded-full bg-slate-200 transition-colors duration-200 peer-checked:bg-emerald-500 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 after:content-[''] peer-checked:after:translate-x-6" />
@@ -182,7 +203,7 @@ export default function Index({ reviews, filters = {} }) {
                                     </td>
                                 </tr>
                             ))}
-                            {reviews.data.length === 0 && (
+                            {reviewsList.length === 0 && (
                                 <tr>
                                     <td
                                         colSpan={6}
