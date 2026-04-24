@@ -4,7 +4,6 @@ namespace App\Services\Admin;
 
 use App\Repositories\Contracts\PlanRepositoryInterface;
 use App\Repositories\Contracts\QuestionRepositoryInterface;
-use App\Repositories\Contracts\QuizAttemptRepositoryInterface;
 use App\Repositories\Contracts\ReferralOfferRepositoryInterface;
 use App\Repositories\Contracts\ReferralRepositoryInterface;
 use App\Repositories\Contracts\SubjectRepositoryInterface;
@@ -23,7 +22,6 @@ class DashboardService
         private readonly SubjectRepositoryInterface $subjects,
         private readonly PlanRepositoryInterface $plans,
         private readonly UserSubscriptionRepositoryInterface $subscriptions,
-        private readonly QuizAttemptRepositoryInterface $attempts,
         private readonly ReferralRepositoryInterface $referrals,
         private readonly ReferralOfferRepositoryInterface $referralOffers,
     ) {
@@ -108,17 +106,6 @@ class DashboardService
             })
             ->values();
 
-        $recentAttempts = $this->attempts->getRecent(100)
-            ->map(fn ($attempt) => [
-                'id' => 'attempt-'.$attempt->id,
-                'type' => 'attempt',
-                'user' => $attempt->user?->name ?? 'Deleted User',
-                'subject' => $attempt->subject?->name ?? 'Deleted Subject',
-                'score' => $attempt->score,
-                'total_questions' => $attempt->total_questions,
-                'created_at' => $attempt->created_at?->toDateTimeString(),
-            ]);
-
         $recentAuth = UserActivity::query()
             ->with('user')
             ->orderByDesc('created_at')
@@ -137,7 +124,7 @@ class DashboardService
 
         // merge and sort all recent activities, then paginate using collections
         /** @var Collection $merged */
-        $merged = $recentAttempts->concat($recentAuth)
+        $merged = $recentAuth
             ->sortByDesc(fn ($row) => $row['created_at'])
             ->values();
 
@@ -161,7 +148,6 @@ class DashboardService
             'userSignups' => $userSignups,
             'signupYears' => $availableYears,
             'signupYear' => $resolvedYear,
-            'recentAttempts' => $recentAttempts,
             'recentActivities' => $recentActivities,
         ];
     }
