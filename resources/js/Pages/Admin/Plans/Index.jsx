@@ -427,7 +427,7 @@ export default function Index({ plans, filters = {} }) {
                                                                         plan.id,
                                                                 },
                                                             )}
-                                                            className="rounded-md border border-emerald-300 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                                                            className="whitespace-nowrap rounded-md border border-emerald-300 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
                                                             title="Choose plan for subscription"
                                                         >
                                                             Choose Plan
