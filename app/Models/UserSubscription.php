@@ -53,12 +53,19 @@ class UserSubscription extends Model
                 return;
             }
 
+            $planLabel = (string) $plan->name;
+            $price = (float) $plan->price;
+            $formattedPrice = fmod($price, 1.0) === 0.0
+                ? number_format($price, 0)
+                : number_format($price, 2);
+            $planLabel .= ' (PHP '.$formattedPrice.')';
+
             $userName = $subscription->user?->name ?? 'User';
             AdminNotification::query()->create([
                 'user_id' => $subscription->user_id,
                 'type' => 'subscription',
                 'title' => 'New Subscription',
-                'message' => $userName.' subscribed to '.$plan->name.'.',
+                'message' => $userName.' subscribed to '.$planLabel.'.',
                 'read_at' => null,
                 'created_at' => Carbon::now(),
             ]);
@@ -79,6 +86,13 @@ class UserSubscription extends Model
                 return;
             }
 
+            $planLabel = (string) $plan->name;
+            $price = (float) $plan->price;
+            $formattedPrice = fmod($price, 1.0) === 0.0
+                ? number_format($price, 0)
+                : number_format($price, 2);
+            $planLabel .= ' (PHP '.$formattedPrice.')';
+
             $userName = $subscription->user?->name ?? 'User';
             $previousStatus = (string) $subscription->getOriginal('status');
             $currentStatus = (string) $subscription->status;
@@ -92,7 +106,7 @@ class UserSubscription extends Model
                     'user_id' => $subscription->user_id,
                     'type' => 'subscription_cancelled',
                     'title' => 'Subscription Cancelled',
-                    'message' => $userName.' cancelled '.$plan->name.'.',
+                    'message' => $userName.' cancelled '.$planLabel.'.',
                     'read_at' => null,
                     'created_at' => Carbon::now(),
                 ]);
@@ -114,7 +128,7 @@ class UserSubscription extends Model
                         'user_id' => $subscription->user_id,
                         'type' => 'subscription_expired',
                         'title' => 'Subscription Expired',
-                        'message' => $userName.' subscription expired for '.$plan->name.'.',
+                        'message' => $userName.' subscription expired for '.$planLabel.'.',
                         'read_at' => null,
                         'created_at' => Carbon::now(),
                     ]);
