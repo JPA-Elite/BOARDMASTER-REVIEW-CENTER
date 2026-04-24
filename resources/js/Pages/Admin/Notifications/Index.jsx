@@ -109,17 +109,57 @@ export default function Index({ notifications, filters = {} }) {
                                             <p className="mt-1 text-sm text-slate-600">
                                                 {notification.message}
                                             </p>
+                                            {notification.type?.startsWith(
+                                                'subscription',
+                                            ) &&
+                                                (notification.payment
+                                                    ?.payment_id ||
+                                                    notification.payment
+                                                        ?.method) && (
+                                                    <p className="mt-2 text-xs text-slate-500">
+                                                        {notification.payment
+                                                            ?.method && (
+                                                            <span>
+                                                                Method:{' '}
+                                                                <span className="font-mono">
+                                                                    {
+                                                                        notification
+                                                                            .payment
+                                                                            .method
+                                                                    }
+                                                                </span>
+                                                            </span>
+                                                        )}
+                                                        {notification.payment
+                                                            ?.method &&
+                                                            notification
+                                                                .payment
+                                                                ?.payment_id && (
+                                                                <span className="mx-2 text-slate-300">
+                                                                    |
+                                                                </span>
+                                                            )}
+                                                        {notification.payment
+                                                            ?.payment_id && (
+                                                            <span>
+                                                                Payment ID:{' '}
+                                                                <span className="font-mono">
+                                                                    {
+                                                                        notification
+                                                                            .payment
+                                                                            .payment_id
+                                                                    }
+                                                                </span>
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                )}
                                             <p className="mt-2 text-xs text-slate-400">
                                                 {notification.time}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                {!notification.read_at && (
-                                    <span className="mt-1 inline-flex rounded-full bg-sky-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-700">
-                                        New
-                                    </span>
-                                )}
                             </div>
                         </div>
                     ))}

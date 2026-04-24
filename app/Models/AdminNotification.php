@@ -12,6 +12,7 @@ class AdminNotification extends Model
 
     protected $fillable = [
         'user_id',
+        'plan_id',
         'type',
         'title',
         'message',
@@ -28,5 +29,10 @@ class AdminNotification extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
     }
 }
