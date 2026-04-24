@@ -1,9 +1,11 @@
 import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import Modal from '@/Components/Modal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ChevronDown, Pencil, Plus, Trash2, Eye, X } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 export default function Index({ plans, filters = {} }) {
     const [confirmingId, setConfirmingId] = useState(null);
@@ -11,6 +13,10 @@ export default function Index({ plans, filters = {} }) {
     const [perPage, setPerPage] = useState(
         filters.per_page ? String(filters.per_page) : '10',
     );
+    const [editingGroup, setEditingGroup] = useState(null);
+    const [editingLabel, setEditingLabel] = useState('');
+    const [editingLabels, setEditingLabels] = useState({});
+    const [showMobileModal, setShowMobileModal] = useState(false);
 
     const groupedPlans = useMemo(() => {
         const source = Array.isArray(plans?.data) ? plans.data : [];
@@ -54,6 +60,102 @@ export default function Index({ plans, filters = {} }) {
             ...prev,
             [key]: !(prev?.[key] ?? false),
         }));
+    };
+
+    const startEditingGroup = (key, label) => {
+        setEditingGroup(key);
+        setShowMobileModal(true);
+        // Use a preserved label for this group if present, otherwise use provided label
+        setEditingLabel((prev) => {
+            const preserved = editingLabels[key];
+            return preserved !== undefined && String(preserved).trim() !== ''
+                ? preserved
+                : label || '';
+        });
+    };
+
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const mq = window.matchMedia('(max-width: 767px)');
+        const update = (e) => setIsMobile(Boolean(e.matches));
+        update(mq);
+        if (mq.addEventListener) {
+            mq.addEventListener('change', update);
+        } else {
+            mq.addListener(update);
+        }
+
+        return () => {
+            if (mq.removeEventListener) {
+                mq.removeEventListener('change', update);
+            } else {
+                mq.removeListener(update);
+            }
+        };
+    }, []);
+
+    const cancelEditingGroup = () => {
+        // Hide modal immediately (animation will run). Preserve editingGroup
+        // until animation completes so modal content (sub-plan count) doesn't
+        // show as 0 during the leave transition.
+        setShowMobileModal(false);
+        // Clear editingGroup after the modal leave animation completes (200ms).
+        setTimeout(() => {
+            setEditingGroup(null);
+        }, 250);
+    };
+
+    const saveGroupLabel = (groupKey) => {
+        const target = String(editingLabel || '').trim();
+        if (target === '') {
+            // simple client-side guard
+            // eslint-disable-next-line no-alert
+            toast.error('Group display label cannot be empty.');
+            return;
+        }
+
+        // Start modal hide animation before sending request so UI doesn't
+        // briefly show 0 during the leave transition.
+        setShowMobileModal(false);
+
+        router.patch(
+            route('admin.plans.rename-group'),
+            { plan_group: groupKey, group_label: target },
+            {
+                preserveState: true,
+                onFinish: () => {
+                    // Wait for modal leave animation then clear editing state.
+                    setTimeout(() => {
+                        setEditingGroup(null);
+                        setEditingLabel('');
+                        setEditingLabels((prev) => {
+                            const copy = { ...prev };
+                            delete copy[groupKey];
+                            return copy;
+                        });
+                    }, 250);
+                },
+                onError: (errs) => {
+                    try {
+                        const msgs = Object.values(errs)
+                            .flat()
+                            .filter(Boolean);
+                        if (msgs.length > 0) {
+                            // eslint-disable-next-line no-alert
+                            toast.error(msgs.join('\n'));
+                        }
+                    } catch (e) {
+                        // eslint-disable-next-line no-alert
+                        toast.error('Failed to rename group');
+                    }
+                },
+            },
+        );
     };
 
     const confirmDelete = () => {
@@ -114,10 +216,81 @@ export default function Index({ plans, filters = {} }) {
                         >
                             <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
                                 <div className="flex items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-base font-semibold text-slate-900">
-                                            {group.label}
-                                        </h2>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            {editingGroup === group.key ? (
+                                                isMobile ? (
+                                                    // On mobile we keep the header compact and show a modal instead
+                                                    <>
+                                                            <h2
+                                                            className="!text-[12px] md:!text-base font-semibold text-slate-900"
+                                                            style={isMobile ? { fontSize: '12px' } : undefined}
+                                                            >
+                                                        {group.label}
+                                                            </h2>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <input
+                                                            autoFocus
+                                                            value={editingLabel}
+                                                            onChange={(e) => {
+                                                                const v = e.target.value;
+                                                                setEditingLabel(v);
+                                                                setEditingLabels((prev) => ({
+                                                                    ...prev,
+                                                                    [group.key]: v,
+                                                                }));
+                                                            }}
+                                                            className="w-full md:w-96 max-w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => saveGroupLabel(group.key)}
+                                                            className="rounded-md bg-sky-700 px-3 py-1 text-xs text-white hover:bg-sky-800"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={cancelEditingGroup}
+                                                            className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </>
+                                                )
+                                            ) : (
+                                                <>
+                                                    <h2
+                                                        className="!text-[12px] md:!text-base font-semibold text-slate-900"
+                                                        style={isMobile ? { fontSize: '12px' } : undefined}
+                                                    >
+                                                            {group.label}
+                                                        </h2>
+                                                    {group.key === 'free_trial' ? (
+                                                        <button
+                                                            type="button"
+                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-300"
+                                                            title="Default Free Trial cannot be renamed"
+                                                            disabled
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEditingGroup(group.key, group.label)}
+                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                                                            title="Rename group"
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+
+                                        </div>
                                         <p className="text-xs text-slate-500">
                                             {group.items.length} sub plan
                                             {group.items.length === 1 ? '' : 's'}
@@ -129,18 +302,18 @@ export default function Index({ plans, filters = {} }) {
                                                 plan_group: group.key,
                                                 group_label: group.label,
                                             })}
-                                            className="rounded-md border border-sky-300 px-3 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-50"
+                                            className="inline-flex items-center gap-2 rounded-md border border-sky-300 px-3 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-50"
                                         >
-                                            Add Sub Plan
+                                            <Plus className="size-4 md:hidden" />
+                                            <span className="hidden md:inline">Add Sub Plan</span>
                                         </Link>
                                         <button
                                             type="button"
                                             onClick={() => toggleGroup(group.key)}
-                                            className="rounded-md border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                            className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                                         >
-                                            {(expandedGroups[group.key] ?? false)
-                                                ? 'Hide'
-                                                : 'Show'}
+                                            <span className="hidden md:inline">{(expandedGroups[group.key] ?? false) ? 'Hide' : 'Show'}</span>
+                                            <Eye className="size-4 md:hidden" />
                                         </button>
                                     </div>
                                 </div>
@@ -314,6 +487,57 @@ export default function Index({ plans, filters = {} }) {
                     <Pagination links={plans.links} />
                 </div>
             </div>
+
+            {/* Mobile rename modal */}
+            <Modal show={showMobileModal && isMobile} onClose={cancelEditingGroup} maxWidth="md">
+                <div className="p-6 relative">
+                    <button
+                        type="button"
+                        onClick={cancelEditingGroup}
+                        aria-label="Close"
+                        className="absolute right-3 top-3 inline-flex items-center justify-center rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    >
+                        <X className="size-4" />
+                    </button>
+                    <h2 className="text-lg font-semibold text-slate-900">Rename Group</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                        {groupedPlans.find((g) => g.key === editingGroup)?.items.length ?? 0} sub plan(s)
+                    </p>
+
+                    <div className="mt-4">
+                        <input
+                            autoFocus
+                            value={editingLabel}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setEditingLabel(v);
+                                setEditingLabels((prev) => ({
+                                    ...prev,
+                                    [editingGroup]: v,
+                                }));
+                            }}
+                            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base"
+                        />
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={cancelEditingGroup}
+                            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => saveGroupLabel(editingGroup)}
+                            className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white hover:bg-sky-800"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             <ConfirmationModal
                 show={confirmingId !== null}

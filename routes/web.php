@@ -72,6 +72,8 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::patch('/referral-offers/settings', [ReferralOfferController::class, 'updateSettings'])
             ->name('referral-offers.settings');
         Route::resource('referral-offers', ReferralOfferController::class)->except('show');
+        Route::patch('/plans/rename-group', [PlanController::class, 'renameGroup'])
+            ->name('plans.rename-group');
         Route::resource('plans', PlanController::class)->except('show');
         Route::resource('subscriptions', UserSubscriptionController::class)->except('show');
         Route::resource('subjects', SubjectController::class)->except('show');

@@ -307,6 +307,54 @@ class PlanController extends Controller
             ->with('success', 'Plan deleted successfully.');
     }
 
+    public function renameGroup(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'plan_group' => ['required', 'string', 'max:50'],
+            'group_label' => ['required', 'string', 'max:255'],
+        ]);
+
+        $planGroupRaw = trim((string) $request->get('plan_group', ''));
+        $normalized = strtolower($planGroupRaw);
+        $normalized = preg_replace('/[^a-z0-9_]+/', '_', $normalized) ?? '';
+        $normalized = trim($normalized, '_');
+        if ($normalized === '') {
+            $normalized = 'plan_a';
+        }
+
+        $targetLabel = trim((string) $request->get('group_label', ''));
+        if ($targetLabel === '') {
+            $targetLabel = $this->groupLabelFromKey($normalized);
+        }
+
+        // Prevent renaming the default free trial group because it is enforced
+        // by the application bootstrap and will be reverted on the next request.
+        if ($normalized === 'free_trial') {
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('error', 'Default Free Trial group cannot be renamed.');
+        }
+
+        $exists = Plan::query()
+            ->whereRaw('LOWER(group_label) = ?', [strtolower($targetLabel)])
+            ->where('plan_group', '!=', $normalized)
+            ->exists();
+
+        if ($exists) {
+            return redirect()
+                ->route('admin.plans.index')
+                ->withErrors(['group_label' => 'The group display label has already been taken.']);
+        }
+
+        Plan::query()->where('plan_group', $normalized)->update([
+            'group_label' => $targetLabel,
+        ]);
+
+        return redirect()
+            ->route('admin.plans.index')
+            ->with('success', 'Group display label updated successfully.');
+    }
+
     private function subjectsForForm(): array
     {
         return Subject::query()
