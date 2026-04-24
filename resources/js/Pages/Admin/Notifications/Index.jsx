@@ -5,6 +5,7 @@ import { Head, router } from '@inertiajs/react';
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+import NotificationAvatar from '@/Components/Admin/NotificationAvatar';
 
 export default function Index({ notifications, filters = {} }) {
     const [confirmClear, setConfirmClear] = useState(false);
@@ -60,42 +61,59 @@ export default function Index({ notifications, filters = {} }) {
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0 flex-1">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <p className="text-sm font-semibold text-slate-900">
-                                            {notification.title}
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                router.delete(
-                                                    route(
-                                                        'admin.notifications.destroy',
-                                                        notification.id,
-                                                    ),
-                                                    {
-                                                        preserveScroll: true,
-                                                        preserveState: true,
-                                                        onSuccess: () => {
-                                                            toast.success(
-                                                                'Notification deleted.',
-                                                            );
-                                                        },
-                                                    },
-                                                )
+                                    <div className="flex items-start gap-3">
+                                        <NotificationAvatar
+                                            label={
+                                                notification.user?.name ||
+                                                notification.title ||
+                                                notification.message
                                             }
-                                            className="inline-flex size-9 items-center justify-center rounded-md text-red-600 hover:bg-red-50 hover:text-red-700"
-                                            title="Delete"
-                                            aria-label="Delete notification"
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </button>
+                                            size={48}
+                                            imageUrl={
+                                                notification.user?.avatar_url ||
+                                                notification.user?.avatarUrl
+                                            }
+                                        />
+
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <p className="text-sm font-semibold text-slate-900 truncate">
+                                                    {notification.title}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        router.delete(
+                                                            route(
+                                                                'admin.notifications.destroy',
+                                                                notification.id,
+                                                            ),
+                                                            {
+                                                                preserveScroll: true,
+                                                                preserveState: true,
+                                                                onSuccess: () => {
+                                                                    toast.success(
+                                                                        'Notification deleted.',
+                                                                    );
+                                                                },
+                                                            },
+                                                        )
+                                                    }
+                                                    className="inline-flex size-9 items-center justify-center rounded-md text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                    title="Delete"
+                                                    aria-label="Delete notification"
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </button>
+                                            </div>
+                                            <p className="mt-1 text-sm text-slate-600">
+                                                {notification.message}
+                                            </p>
+                                            <p className="mt-2 text-xs text-slate-400">
+                                                {notification.time}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="mt-1 text-sm text-slate-600">
-                                        {notification.message}
-                                    </p>
-                                    <p className="mt-2 text-xs text-slate-400">
-                                        {notification.time}
-                                    </p>
                                 </div>
                                 {!notification.read_at && (
                                     <span className="mt-1 inline-flex rounded-full bg-sky-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-700">

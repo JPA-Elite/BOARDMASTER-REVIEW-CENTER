@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
         if ($user && $user->role === 'admin') {
             $notifications = AdminNotification::query()
                 ->latest()
+                ->with(['user:id,name,avatar_path'])
                 ->limit(50)
                 ->get()
                 ->map(fn (AdminNotification $notification) => [
@@ -44,6 +45,11 @@ class HandleInertiaRequests extends Middleware
                     'message' => $notification->message,
                     'time' => $notification->created_at?->format('M d, Y h:i A'),
                     'read_at' => $notification->read_at?->toDateTimeString(),
+                    'user' => $notification->user ? [
+                        'id' => $notification->user->id,
+                        'name' => $notification->user->name,
+                        'avatar_url' => $notification->user->avatar_url,
+                    ] : null,
                 ]);
 
             $admin = [

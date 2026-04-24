@@ -39,6 +39,7 @@ class Referral extends Model
             $invitedName = $referral->invitedUser?->name ?? 'a new user';
 
             AdminNotification::query()->create([
+                'user_id' => $referral->inviter_id,
                 'type' => 'referral',
                 'title' => 'New Referral',
                 'message' => $inviterName.' referred '.$invitedName.'.',

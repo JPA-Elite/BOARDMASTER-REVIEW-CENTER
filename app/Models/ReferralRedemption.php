@@ -59,6 +59,7 @@ class ReferralRedemption extends Model
             $pointsSpent = (int) ($redemption->points_spent ?? 0);
 
             AdminNotification::query()->create([
+                'user_id' => $redemption->user_id,
                 'type' => 'referral_redemption',
                 'title' => 'Referral Reward Redeemed',
                 'message' => $userName.' redeemed '.$offerTitle.

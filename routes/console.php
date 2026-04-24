@@ -29,6 +29,7 @@ Artisan::command('referrals:notify-expired-redemptions', function () {
                     : null;
 
                 AdminNotification::query()->create([
+                    'user_id' => $redemption->user_id,
                     'type' => 'referral_redemption_expired',
                     'title' => 'Referral Reward Expired',
                     'message' => $expiresAt

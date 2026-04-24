@@ -55,6 +55,7 @@ class UserSubscription extends Model
 
             $userName = $subscription->user?->name ?? 'User';
             AdminNotification::query()->create([
+                'user_id' => $subscription->user_id,
                 'type' => 'subscription',
                 'title' => 'New Subscription',
                 'message' => $userName.' subscribed to '.$plan->name.'.',
@@ -88,6 +89,7 @@ class UserSubscription extends Model
 
             if ($previousStatus === 'active' && $currentStatus === 'inactive') {
                 AdminNotification::query()->create([
+                    'user_id' => $subscription->user_id,
                     'type' => 'subscription_cancelled',
                     'title' => 'Subscription Cancelled',
                     'message' => $userName.' cancelled '.$plan->name.'.',
@@ -109,6 +111,7 @@ class UserSubscription extends Model
 
                 if ($expiredDate instanceof Carbon && $expiredDate->lessThan(Carbon::today())) {
                     AdminNotification::query()->create([
+                        'user_id' => $subscription->user_id,
                         'type' => 'subscription_expired',
                         'title' => 'Subscription Expired',
                         'message' => $userName.' subscription expired for '.$plan->name.'.',
