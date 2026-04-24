@@ -1,8 +1,9 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Admin/Pagination';
+import SkeletonBox from '@/Components/Admin/SkeletonBox';
 import { Head, router } from '@inertiajs/react';
 import { Users } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Area,
     Bar,
@@ -76,6 +77,24 @@ export default function Dashboard({
     recentActivities,
 }) {
     const [signupChartType, setSignupChartType] = useState('line');
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.Inertia) {
+            return;
+        }
+
+        const handleStart = () => setIsNavigating(true);
+        const handleFinish = () => setIsNavigating(false);
+
+        window.Inertia.on('start', handleStart);
+        window.Inertia.on('finish', handleFinish);
+
+        return () => {
+            window.Inertia.off('start', handleStart);
+            window.Inertia.off('finish', handleFinish);
+        };
+    }, []);
 
     const totalSignups = userSignups.reduce(
         (total, item) => total + (Number(item?.count) || 0),
@@ -102,7 +121,18 @@ export default function Dashboard({
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {kpis.map((item) => (
+                    {isNavigating
+                        ? Array.from({ length: 8 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="rounded-2xl border border-slate-200 bg-blue-50 px-4 py-4 sm:px-6 sm:py-5"
+                            >
+                                <SkeletonBox width="w-24" height="h-4" className="mb-3" />
+                                <SkeletonBox width="w-16" height="h-8" className="mb-3" />
+                                <SkeletonBox width="w-20" height="h-3" />
+                            </div>
+                        ))
+                        : kpis.map((item) => (
                         <div
                             key={item.title}
                             className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5 transform transition-transform duration-150 ease-in-out hover:scale-[1.03] hover:shadow-md hover:z-10"
@@ -319,29 +349,41 @@ export default function Dashboard({
                                 </tr>
                             </thead>
                             <tbody>
-                                {((recentActivities?.data) ?? []).length === 0 && (
-                                    <tr>
-                                        <td colSpan={2} className="px-3 py-4 text-center text-slate-500">
-                                            No recent activity.
-                                        </td>
-                                    </tr>
+                                {isNavigating
+                                    ? Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="border-t border-slate-200">
+                                            <td className="px-3 py-2">
+                                                <SkeletonBox width="w-32" height="h-4" className="mb-2" />
+                                                <SkeletonBox width="w-24" height="h-3" />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <SkeletonBox width="w-20" height="h-4" />
+                                            </td>
+                                        </tr>
+                                    ))
+                                    : ((recentActivities?.data) ?? []).length === 0 ? (
+                                        <tr>
+                                            <td colSpan={2} className="px-3 py-4 text-center text-slate-500">
+                                                No recent activity.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        ((recentActivities?.data) ?? []).map((item) => (
+                                            <tr key={item.id} className="border-t border-slate-200 hover:bg-slate-50">
+                                                <td className="px-3 py-2">
+                                                    <div className="text-sm font-medium text-slate-900">
+                                                        {item.user}
+                                                    </div>
+                                                    <div className="text-sm text-slate-700">
+                                                        {`${item.action === 'logout' ? 'signed out' : 'signed in'}${item.platform ? ` (${item.platform})` : ''}`}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2 text-sm font-medium text-slate-900">
+                                                    {formatActivityDate(item.created_at)}
+                                                </td>
+                                            </tr>
+                                        ))
                                 )}
-
-                                {((recentActivities?.data) ?? []).map((item) => (
-                                    <tr key={item.id} className="border-t border-slate-200 hover:bg-slate-50">
-                                        <td className="px-3 py-2">
-                                            <div className="text-sm font-medium text-slate-900">
-                                                {item.user}
-                                            </div>
-                                            <div className="text-sm text-slate-700">
-                                                {`${item.action === 'logout' ? 'signed out' : 'signed in'}${item.platform ? ` (${item.platform})` : ''}`}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-2 text-sm font-medium text-slate-900">
-                                            {formatActivityDate(item.created_at)}
-                                        </td>
-                                    </tr>
-                                ))}
                             </tbody>
                         </table>
                         <div className="mt-3">

@@ -2,6 +2,7 @@ import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Modal from '@/Components/Modal';
 import AdminLayout from '@/Layouts/AdminLayout';
+import SkeletonBox from '@/Components/Admin/SkeletonBox';
 import { Head, Link, router } from '@inertiajs/react';
 import { ChevronDown, Pencil, Plus, Trash2, Eye, X } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
@@ -17,6 +18,24 @@ export default function Index({ plans, filters = {} }) {
     const [editingLabel, setEditingLabel] = useState('');
     const [editingLabels, setEditingLabels] = useState({});
     const [showMobileModal, setShowMobileModal] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.Inertia) {
+            return;
+        }
+
+        const handleStart = () => setIsNavigating(true);
+        const handleFinish = () => setIsNavigating(false);
+
+        window.Inertia.on('start', handleStart);
+        window.Inertia.on('finish', handleFinish);
+
+        return () => {
+            window.Inertia.off('start', handleStart);
+            window.Inertia.off('finish', handleFinish);
+        };
+    }, []);
 
     const groupedPlans = useMemo(() => {
         const source = Array.isArray(plans?.data) ? plans.data : [];
@@ -209,7 +228,76 @@ export default function Index({ plans, filters = {} }) {
                 </div>
 
                 <div className="space-y-6">
-                    {groupedPlans.map((group) => (
+                    {isNavigating
+                        ? Array.from({ length: 3 }).map((_, i) => (
+                            <section
+                                key={i}
+                                className="rounded-xl border border-slate-200"
+                            >
+                                <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <SkeletonBox width="w-32" height="h-5" className="mb-2" />
+                                            <SkeletonBox width="w-16" height="h-3" />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <SkeletonBox width="w-20" height="h-6" rounded="rounded-md" />
+                                            <SkeletonBox width="w-14" height="h-6" rounded="rounded-md" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full text-left text-sm">
+                                        <thead className="text-slate-500">
+                                            <tr>
+                                                <th className="px-3 py-2">Sub Plan</th>
+                                                <th className="px-3 py-2">Price</th>
+                                                <th className="px-3 py-2">Billing</th>
+                                                <th className="px-3 py-2">Duration</th>
+                                                <th className="px-3 py-2">Features</th>
+                                                <th className="px-3 py-2">Subject Access</th>
+                                                <th className="px-3 py-2">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {Array.from({ length: 3 }).map((_, j) => (
+                                                <tr key={j} className="border-t border-slate-200">
+                                                    <td className="px-3 py-2">
+                                                        <SkeletonBox width="w-24" height="h-4" className="mb-1" />
+                                                        <SkeletonBox width="w-32" height="h-3" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <SkeletonBox width="w-16" height="h-4" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <SkeletonBox width="w-16" height="h-5" rounded="rounded-full" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <SkeletonBox width="w-12" height="h-4" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <SkeletonBox width="w-28" height="h-4" className="mb-1" />
+                                                        <SkeletonBox width="w-20" height="h-4" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <SkeletonBox width="w-32" height="h-4" className="mb-1" />
+                                                        <SkeletonBox width="w-24" height="h-4" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <SkeletonBox width="w-16" height="h-6" rounded="rounded-md" />
+                                                            <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                                            <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        ))
+                        : groupedPlans.map((group) => (
                         <section
                             key={group.key}
                             className="rounded-xl border border-slate-200"
@@ -476,7 +564,7 @@ export default function Index({ plans, filters = {} }) {
                         </section>
                     ))}
 
-                    {groupedPlans.length === 0 && (
+                    {!isNavigating && groupedPlans.length === 0 && (
                         <p className="rounded-lg border border-slate-200 p-4 text-center text-slate-500">
                             No plans available.
                         </p>

@@ -4,9 +4,10 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
+import SkeletonBox from '@/Components/Admin/SkeletonBox';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Index({ offers, settings, filters = {} }) {
     const [confirmingId, setConfirmingId] = useState(null);
@@ -14,9 +15,27 @@ export default function Index({ offers, settings, filters = {} }) {
     const [perPage, setPerPage] = useState(
         filters.per_page ? String(filters.per_page) : '12',
     );
+    const [isNavigating, setIsNavigating] = useState(false);
     const { data, setData, patch, processing, errors } = useForm({
         points_per_referral: settings?.points_per_referral ?? 10,
     });
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.Inertia) {
+            return;
+        }
+
+        const handleStart = () => setIsNavigating(true);
+        const handleFinish = () => setIsNavigating(false);
+
+        window.Inertia.on('start', handleStart);
+        window.Inertia.on('finish', handleFinish);
+
+        return () => {
+            window.Inertia.off('start', handleStart);
+            window.Inertia.off('finish', handleFinish);
+        };
+    }, []);
 
     const openConfirm = (id) => setConfirmingId(id);
     const closeConfirm = () => setConfirmingId(null);
@@ -155,7 +174,42 @@ export default function Index({ offers, settings, filters = {} }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {offers.data.map((offer) => (
+                            {isNavigating
+                                ? Array.from({ length: Number(perPage) || 12 }).map((_, i) => (
+                                    <tr key={i} className="border-t border-slate-200">
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-32" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-12" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-20" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-16" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-16" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-16" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-16" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-14" height="h-5" rounded="rounded-full" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <div className="flex gap-2">
+                                                <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                                <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                                : offers.data.map((offer) => (
                                 <tr
                                     key={offer.id}
                                     className="border-t border-slate-200"
@@ -224,7 +278,7 @@ export default function Index({ offers, settings, filters = {} }) {
                                     </td>
                                 </tr>
                             ))}
-                            {offers.data.length === 0 && (
+                            {!isNavigating && offers.data.length === 0 && (
                                 <tr>
                                     <td
                                         colSpan={9}

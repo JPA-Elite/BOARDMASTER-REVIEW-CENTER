@@ -1,12 +1,31 @@
 import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
+import SkeletonBox from '@/Components/Admin/SkeletonBox';
 import { Head, Link, router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Index({ attempts }) {
     const [confirmingId, setConfirmingId] = useState(null);
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.Inertia) {
+            return;
+        }
+
+        const handleStart = () => setIsNavigating(true);
+        const handleFinish = () => setIsNavigating(false);
+
+        window.Inertia.on('start', handleStart);
+        window.Inertia.on('finish', handleFinish);
+
+        return () => {
+            window.Inertia.off('start', handleStart);
+            window.Inertia.off('finish', handleFinish);
+        };
+    }, []);
 
     const openConfirm = (id) => setConfirmingId(id);
     const closeConfirm = () => setConfirmingId(null);
@@ -39,7 +58,31 @@ export default function Index({ attempts }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {attempts.data.map((attempt) => (
+                            {isNavigating
+                                ? Array.from({ length: 10 }).map((_, i) => (
+                                    <tr key={i} className="border-t border-slate-200">
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-24" height="h-4" className="mb-1" />
+                                            <SkeletonBox width="w-32" height="h-3" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-20" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-12" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-8" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-24" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                        </td>
+                                    </tr>
+                                ))
+                                : attempts.data.map((attempt) => (
                                 <tr
                                     key={attempt.id}
                                     className="border-t border-slate-200"
@@ -88,7 +131,7 @@ export default function Index({ attempts }) {
                                     </td>
                                 </tr>
                             ))}
-                            {attempts.data.length === 0 && (
+                            {!isNavigating && attempts.data.length === 0 && (
                                 <tr>
                                     <td
                                         colSpan={6}

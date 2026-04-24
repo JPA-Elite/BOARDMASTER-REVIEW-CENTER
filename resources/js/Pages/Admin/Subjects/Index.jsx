@@ -1,9 +1,10 @@
 import Pagination from '@/Components/Admin/Pagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import AdminLayout from '@/Layouts/AdminLayout';
+import SkeletonBox from '@/Components/Admin/SkeletonBox';
 import { Head, Link, router } from '@inertiajs/react';
 import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Index({ subjects, filters = {} }) {
     const [confirmingId, setConfirmingId] = useState(null);
@@ -11,6 +12,24 @@ export default function Index({ subjects, filters = {} }) {
     const [perPage, setPerPage] = useState(
         filters.per_page ? String(filters.per_page) : '15',
     );
+    const [isNavigating, setIsNavigating] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.Inertia) {
+            return;
+        }
+
+        const handleStart = () => setIsNavigating(true);
+        const handleFinish = () => setIsNavigating(false);
+
+        window.Inertia.on('start', handleStart);
+        window.Inertia.on('finish', handleFinish);
+
+        return () => {
+            window.Inertia.off('start', handleStart);
+            window.Inertia.off('finish', handleFinish);
+        };
+    }, []);
 
     const submitSearch = (event) => {
         event.preventDefault();
@@ -103,7 +122,27 @@ export default function Index({ subjects, filters = {} }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {subjects.data.map((subject) => (
+                            {isNavigating
+                                ? Array.from({ length: Number(perPage) || 15 }).map((_, i) => (
+                                    <tr key={i} className="border-t border-slate-200">
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-32" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-12" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <SkeletonBox width="w-12" height="h-4" />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <div className="flex gap-2">
+                                                <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                                <SkeletonBox width="w-8" height="w-8" rounded="rounded-md" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                                : subjects.data.map((subject) => (
                                 <tr
                                     key={subject.id}
                                     className="border-t border-slate-200"
@@ -143,7 +182,7 @@ export default function Index({ subjects, filters = {} }) {
                                     </td>
                                 </tr>
                             ))}
-                            {subjects.data.length === 0 && (
+                            {!isNavigating && subjects.data.length === 0 && (
                                 <tr>
                                     <td
                                         colSpan={4}
