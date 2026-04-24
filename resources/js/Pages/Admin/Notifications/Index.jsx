@@ -183,9 +183,6 @@ export default function Index({ notifications, filters = {} }) {
                 onCancel={() => setConfirmClear(false)}
                 onConfirm={() =>
                     router.delete(route('admin.notifications.clear'), {
-                        onSuccess: () => {
-                            toast.success('All notifications cleared.');
-                        },
                         onFinish: () => setConfirmClear(false),
                     })
                 }

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Throwable;
 
 class AdminNotificationController extends Controller
 {
@@ -45,9 +46,50 @@ class AdminNotificationController extends Controller
 
     public function clear(): RedirectResponse
     {
-        AdminNotification::query()->delete();
+        @set_time_limit(0);
 
-        return redirect()->route('admin.notifications.index');
+        try {
+            AdminNotification::query()->truncate();
+
+            return redirect()
+                ->route('admin.notifications.index')
+                ->with('success', 'All notifications cleared.');
+        } catch (Throwable) {
+            // Fall back to batched deletes when truncate is blocked by constraints/permissions.
+        }
+
+        $batchSize = 100000;
+        $totalDeleted = 0;
+
+        while (true) {
+            $ids = AdminNotification::query()
+                ->orderBy('id')
+                ->limit($batchSize)
+                ->pluck('id');
+
+            if ($ids->isEmpty()) {
+                break;
+            }
+
+            $lastId = $ids->last();
+            if (! is_numeric($lastId)) {
+                break;
+            }
+
+            $deleted = AdminNotification::query()
+                ->where('id', '<=', (int) $lastId)
+                ->delete();
+
+            $totalDeleted += (int) $deleted;
+
+            if ($deleted < 1) {
+                break;
+            }
+        }
+
+        return redirect()
+            ->route('admin.notifications.index')
+            ->with('success', "Deleted {$totalDeleted} notification(s).");
     }
 
     public function markRead(): Response
