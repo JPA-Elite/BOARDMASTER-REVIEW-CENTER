@@ -33,7 +33,6 @@ class AdminPaymentGatewayController extends Controller
             'users' => User::query()
                 ->select('id', 'name', 'email')
                 ->orderBy('name')
-                ->limit(200)
                 ->get()
                 ->map(fn (User $user) => [
                     'id' => $user->id,

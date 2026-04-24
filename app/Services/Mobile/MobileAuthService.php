@@ -1279,7 +1279,7 @@ class MobileAuthService
             'name' => $user->name,
             'email' => $user->email,
             'email_verified' => $user->hasVerifiedEmail(),
-            'email_verified_at' => $user->email_verified_at?->toDateTimeString(),
+            'email_verified_at' => $user->email_verified_at?->toIso8601String(),
             'school' => $user->school,
             'birthdate' => $user->birthdate?->toDateString(),
             'gender' => $user->gender,
@@ -1289,7 +1289,7 @@ class MobileAuthService
             'referral_code' => $user->referral_code,
             'referred_by' => $user->referred_by,
             'mobile_demo_seen' => $user->mobile_demo_seen_at !== null,
-            'mobile_demo_seen_at' => $user->mobile_demo_seen_at?->toDateTimeString(),
+            'mobile_demo_seen_at' => $user->mobile_demo_seen_at?->toIso8601String(),
             'trial_consumed' => $this->hasConsumedFreeTrial($user),
             'plan_tier' => $this->resolveTier($plan),
             'subscription' => $subscription ? [

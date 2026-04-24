@@ -34,17 +34,15 @@ class MobileSubscriptionService
             ->paginate(10);
 
         $paymentMeta = $this->resolvePaymentMetaMap($user->id, $subscriptions->getCollection());
-        $methodMap = $paymentMeta['methods'];
-        $paymentIdMap = $paymentMeta['provider_payment_ids'];
+        $paymentMetaBuckets = $paymentMeta['entries_by_key'] ?? [];
 
         return response()->json([
-            'data' => $subscriptions->getCollection()->map(
-                fn (UserSubscription $subscription) => $this->toHistoryRow(
+            'data' => $subscriptions->getCollection()->map(function (UserSubscription $subscription) use (&$paymentMetaBuckets) {
+                return $this->toHistoryRow(
                     $subscription,
-                    $methodMap,
-                    $paymentIdMap,
-                ),
-            )->values(),
+                    $paymentMetaBuckets,
+                );
+            })->values(),
             'pagination' => [
                 'current_page' => $subscriptions->currentPage(),
                 'last_page' => $subscriptions->lastPage(),
@@ -55,7 +53,7 @@ class MobileSubscriptionService
     }
 
     /**
-     * @param  array<string, string|null>  $methodMap
+     * @param  array<string, array<int, array{payment_method: string|null, provider_payment_id: string|null}>>  $paymentMetaBuckets
      * @return array{
      *   id: int,
      *   plan_id: int|null,
@@ -72,10 +70,11 @@ class MobileSubscriptionService
      *   provider_payment_id: string|null
      * }
      */
-    private function toHistoryRow(UserSubscription $subscription, array $methodMap, array $paymentIdMap): array
+    private function toHistoryRow(UserSubscription $subscription, array &$paymentMetaBuckets): array
     {
         $startDate = $subscription->start_date?->toDateString();
         $key = $subscription->plan_id.'|'.$startDate;
+        $paymentMeta = $this->takeNextPaymentMeta($paymentMetaBuckets, $key);
 
         return [
             'id' => $subscription->id,
@@ -89,14 +88,16 @@ class MobileSubscriptionService
             'start_date' => $startDate,
             'end_date' => $subscription->end_date?->toDateString(),
             'status' => $subscription->status,
-            'payment_method' => $methodMap[$key] ?? null,
-            'provider_payment_id' => $paymentIdMap[$key] ?? null,
+            'payment_method' => $paymentMeta['payment_method'] ?? null,
+            'provider_payment_id' => $paymentMeta['provider_payment_id'] ?? null,
         ];
     }
 
     /**
      * @param  \Illuminate\Support\Collection<int, UserSubscription>  $collection
-     * @return array{methods: array<string, string|null>, provider_payment_ids: array<string, string|null>}
+     * @return array{
+     *   entries_by_key: array<string, array<int, array{payment_method: string|null, provider_payment_id: string|null}>>
+     * }
      */
     private function resolvePaymentMetaMap(int $userId, $collection): array
     {
@@ -109,8 +110,7 @@ class MobileSubscriptionService
 
         if ($planIds === []) {
             return [
-                'methods' => [],
-                'provider_payment_ids' => [],
+                'entries_by_key' => [],
             ];
         }
 
@@ -130,7 +130,9 @@ class MobileSubscriptionService
         }
 
         if ($minStart === null || $maxStart === null) {
-            return [];
+            return [
+                'entries_by_key' => [],
+            ];
         }
 
         $transactions = PaymentTransaction::query()
@@ -146,8 +148,7 @@ class MobileSubscriptionService
             ->orderByDesc('processed_at')
             ->get(['provider', 'plan_id', 'processed_at', 'raw_payload', 'provider_payment_id']);
 
-        $methodMap = [];
-        $paymentIdMap = [];
+        $entriesByKey = [];
         foreach ($transactions as $transaction) {
             $dateKey = $transaction->processed_at?->toDateString();
             if (! $dateKey) {
@@ -160,23 +161,51 @@ class MobileSubscriptionService
             }
 
             $method = $this->extractMethodLabel($transaction->provider, $transaction->raw_payload);
-            if ($method === null) {
+            $key = $planId.'|'.$dateKey;
+            $providerPaymentId = is_string($transaction->provider_payment_id) && $transaction->provider_payment_id !== ''
+                ? $transaction->provider_payment_id
+                : null;
+
+            if ($method === null && $providerPaymentId === null) {
                 continue;
             }
 
-            $key = $planId.'|'.$dateKey;
-
-            $providerPaymentId = $transaction->provider_payment_id;
-            if (is_string($providerPaymentId) && $providerPaymentId !== '') {
-                $paymentIdMap[$key] ??= $providerPaymentId;
-            }
-
-            $methodMap[$key] ??= $method;
+            $entriesByKey[$key] ??= [];
+            $entriesByKey[$key][] = [
+                'payment_method' => $method,
+                'provider_payment_id' => $providerPaymentId,
+            ];
         }
 
         return [
-            'methods' => $methodMap,
-            'provider_payment_ids' => $paymentIdMap,
+            'entries_by_key' => $entriesByKey,
+        ];
+    }
+
+    /**
+     * @param  array<string, array<int, array{payment_method: string|null, provider_payment_id: string|null}>>  $paymentMetaBuckets
+     * @return array{payment_method: string|null, provider_payment_id: string|null}
+     */
+    private function takeNextPaymentMeta(array &$paymentMetaBuckets, string $key): array
+    {
+        if (! isset($paymentMetaBuckets[$key]) || ! is_array($paymentMetaBuckets[$key])) {
+            return [
+                'payment_method' => null,
+                'provider_payment_id' => null,
+            ];
+        }
+
+        $entry = array_shift($paymentMetaBuckets[$key]);
+        if (! is_array($entry)) {
+            return [
+                'payment_method' => null,
+                'provider_payment_id' => null,
+            ];
+        }
+
+        return [
+            'payment_method' => $entry['payment_method'] ?? null,
+            'provider_payment_id' => $entry['provider_payment_id'] ?? null,
         ];
     }
 

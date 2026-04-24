@@ -351,6 +351,7 @@ class MobilePracticeService
             ->where('user_id', $user->id)
             ->with('subject:id,name')
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(5);
 
         return response()->json([
@@ -363,7 +364,7 @@ class MobilePracticeService
                     : 'SUBJ',
                 'score' => $attempt->score,
                 'total_questions' => $attempt->total_questions,
-                'created_at' => $attempt->created_at?->toDateTimeString(),
+                'created_at' => $attempt->created_at?->toIso8601String(),
             ])->values(),
             'pagination' => [
                 'current_page' => $attempts->currentPage(),
@@ -447,7 +448,7 @@ class MobilePracticeService
                 ],
                 'score' => $quizAttempt->score,
                 'total_questions' => $quizAttempt->total_questions,
-                'created_at' => $quizAttempt->created_at?->toDateTimeString(),
+                'created_at' => $quizAttempt->created_at?->toIso8601String(),
                 'display_seed' => $displaySeed,
                 'questions' => $questions,
                 'answers' => $answers,

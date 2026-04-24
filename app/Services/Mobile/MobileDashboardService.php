@@ -30,6 +30,7 @@ class MobileDashboardService
         $lastAttempt = $this->quizAttempts->query()
             ->with('subject:id,name')
             ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->first();
 
@@ -40,7 +41,7 @@ class MobileDashboardService
                     'score' => $lastAttempt->score,
                     'total_questions' => $lastAttempt->total_questions,
                     'subject' => $lastAttempt->subject?->name,
-                    'completed_at' => $lastAttempt->created_at?->toDateTimeString(),
+                    'completed_at' => $lastAttempt->created_at?->toIso8601String(),
                 ] : null,
             ],
         ]);

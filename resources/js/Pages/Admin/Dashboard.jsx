@@ -52,13 +52,27 @@ function SignupTooltip({ active, payload, label }) {
     );
 }
 
+function formatActivityDate(value) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        return 'N/A';
+    }
+
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const parsed = new Date(normalized);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return value;
+    }
+
+    return parsed.toLocaleString();
+}
+
 export default function Dashboard({
     dateLabel,
     kpis,
     userSignups,
     signupYears,
     signupYear,
-    recentAttempts,
     recentActivities,
 }) {
     const [signupChartType, setSignupChartType] = useState('line');
@@ -320,13 +334,11 @@ export default function Dashboard({
                                                 {item.user}
                                             </div>
                                             <div className="text-sm text-slate-700">
-                                                {item.type === 'attempt'
-                                                    ? `took ${item.subject}`
-                                                    : `${item.action === 'login' ? 'signed in' : 'signed out'}${item.platform ? ` (${item.platform})` : ''}`}
+                                                {`${item.action === 'logout' ? 'signed out' : 'signed in'}${item.platform ? ` (${item.platform})` : ''}`}
                                             </div>
                                         </td>
                                         <td className="px-3 py-2 text-sm font-medium text-slate-900">
-                                            {new Date(item.created_at.replace(' ', 'T')).toLocaleString()}
+                                            {formatActivityDate(item.created_at)}
                                         </td>
                                     </tr>
                                 ))}

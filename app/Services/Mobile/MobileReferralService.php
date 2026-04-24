@@ -43,7 +43,8 @@ class MobileReferralService
         $referrals = $this->referrals->query()
             ->with('invitedUser:id,name,email')
             ->where('inviter_id', $user->id)
-            ->latest()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate($perPage);
 
         $earnedPoints = $this->rewards->earnedPoints($user);
@@ -97,7 +98,7 @@ class MobileReferralService
                     'offer_id' => $reward->referral_offer_id,
                     'subject_id' => $reward->subject_id,
                     'question_limit' => $reward->question_limit,
-                    'expires_at' => $reward->expires_at?->toDateTimeString(),
+                    'expires_at' => $reward->expires_at?->toIso8601String(),
                 ])->values(),
                 'referrals' => collect($referrals->items())->map(fn (Referral $referral) => [
                     'id' => $referral->id,
@@ -108,7 +109,7 @@ class MobileReferralService
                             'email' => $referral->invitedUser->email,
                         ]
                         : null,
-                    'created_at' => $referral->created_at?->toDateTimeString(),
+                    'created_at' => $referral->created_at?->toIso8601String(),
                 ])->values(),
             ],
             'pagination' => [
@@ -207,7 +208,7 @@ class MobileReferralService
                 'offer_id' => $redemption->referral_offer_id,
                 'subject_id' => $redemption->subject_id,
                 'question_limit' => $redemption->question_limit,
-                'expires_at' => $redemption->expires_at?->toDateTimeString(),
+                'expires_at' => $redemption->expires_at?->toIso8601String(),
             ],
             'points' => [
                 'earned' => $this->rewards->earnedPoints($user),

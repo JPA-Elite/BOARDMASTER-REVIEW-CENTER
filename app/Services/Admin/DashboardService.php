@@ -11,8 +11,6 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserSubscriptionRepositoryInterface;
 use App\Models\UserActivity;
 use Carbon\Carbon;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 class DashboardService
 {
@@ -106,12 +104,13 @@ class DashboardService
             })
             ->values();
 
-        $recentAuth = UserActivity::query()
+        $recentActivities = UserActivity::query()
             ->with('user')
             ->orderByDesc('created_at')
-            ->take(100)
-            ->get()
-            ->map(fn ($act) => [
+            ->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'activity_page', max(1, $activityPage))
+            ->withQueryString()
+            ->through(fn (UserActivity $act) => [
                 'id' => 'activity-'.$act->id,
                 'type' => 'auth',
                 'user' => $act->user?->name ?? 'Deleted User',
@@ -121,26 +120,6 @@ class DashboardService
                 'user_agent' => $act->user_agent,
                 'created_at' => $act->created_at?->toDateTimeString(),
             ]);
-
-        // merge and sort all recent activities, then paginate using collections
-        /** @var Collection $merged */
-        $merged = $recentAuth
-            ->sortByDesc(fn ($row) => $row['created_at'])
-            ->values();
-
-        $total = $merged->count();
-        $items = $merged->forPage($activityPage, $perPage)->values()->all();
-
-        $recentActivities = new LengthAwarePaginator(
-            $items,
-            $total,
-            $perPage,
-            $activityPage,
-            [
-                'path' => url()->current(),
-                'query' => request()->query(),
-            ],
-        );
 
         return [
             'dateLabel' => $now->format('l, F j, Y'),
