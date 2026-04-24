@@ -116,7 +116,7 @@ services:
       <<: *laravel-environment
       RUN_MIGRATIONS: "false"
       RUN_CONFIG_CACHE: "false"
-    command: ["sh", "-lc", "while true; do php artisan schedule:run --verbose --no-interaction; sleep 86400; done"]
+    command: ["php", "artisan", "schedule:work", "--verbose", "--no-interaction"]
     volumes:
       - ./:/var/www/html
       - app_vendor:/var/www/html/vendor

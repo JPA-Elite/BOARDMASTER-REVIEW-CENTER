@@ -5,6 +5,8 @@ PROD_ENV ?= .env.docker.prod
 PROD_COMPOSE ?= docker-compose.prod.yml
 
 APP_SERVICE ?= app
+SCHEDULER_SERVICE ?= scheduler
+TAIL ?= 200
 
 -include $(DEV_ENV)
 
@@ -16,6 +18,7 @@ DEV_API_BASE ?= http://localhost:8080
 .PHONY: dev-down prod-down
 .PHONY: dev-login-token
 .PHONY: dev-exec-app prod-exec-app
+.PHONY: dev-logs-scheduler prod-logs-scheduler
 
 dev-build:
 	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) build
@@ -56,6 +59,12 @@ prod-deploy: prod-build prod-up prod-migrate
 
 prod-exec-app:
 	docker compose --env-file $(PROD_ENV) -f $(PROD_COMPOSE) exec $(APP_SERVICE) bash
+
+dev-logs-scheduler:
+	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) logs -f --tail=$(TAIL) $(SCHEDULER_SERVICE)
+
+prod-logs-scheduler:
+	docker compose --env-file $(PROD_ENV) -f $(PROD_COMPOSE) logs -f --tail=$(TAIL) $(SCHEDULER_SERVICE)
 
 dev-login-token:
 	@EMAIL_INPUT="$(EMAIL)"; \

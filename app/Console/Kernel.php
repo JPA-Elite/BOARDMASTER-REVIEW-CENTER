@@ -13,8 +13,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Schedule the cleanup command to run once per day at midnight.
-        $schedule->command('useractivities:cleanup')->dailyAt('00:00')->withoutOverlapping();
+        // Schedule the cleanup command to run every minute.
+        $schedule->command('useractivities:cleanup')->everyMinute()->withoutOverlapping();
     }
 
     /**
