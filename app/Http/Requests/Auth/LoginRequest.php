@@ -43,14 +43,18 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            // Hit both email-based and IP-based rate limiters on failed attempt
+            RateLimiter::hit($this->throttleKey(), 60); // 1 minute decay
+            RateLimiter::hit($this->ipThrottleKey(), 60); // 1 minute decay
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
 
+        // Clear rate limits on successful login
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->ipThrottleKey());
     }
 
     /**
@@ -60,13 +64,24 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $email = strtolower($this->string('email'));
+        $loginKey = 'login|'.$email;
+        $ipKey = 'login-ip|'.$this->ip();
+
+        // Check both email-based and IP-based rate limits (5 attempts max)
+        $tooManyEmailAttempts = RateLimiter::tooManyAttempts($loginKey, 5);
+        $tooManyIpAttempts = RateLimiter::tooManyAttempts($ipKey, 5);
+
+        if (!$tooManyEmailAttempts && !$tooManyIpAttempts) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        // Calculate remaining seconds until unlock (minimum of both limits)
+        $emailSeconds = $tooManyEmailAttempts ? RateLimiter::availableIn($loginKey) : 0;
+        $ipSeconds = $tooManyIpAttempts ? RateLimiter::availableIn($ipKey) : 0;
+        $seconds = max($emailSeconds, $ipSeconds);
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -77,10 +92,18 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the rate limiting throttle key for the request.
+     * Get the rate limiting throttle key for the request (per email).
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return 'login|'.Str::transliterate(Str::lower($this->string('email')));
+    }
+
+    /**
+     * Get the IP-based rate limiting throttle key for the request.
+     */
+    public function ipThrottleKey(): string
+    {
+        return 'login-ip|'.$this->ip();
     }
 }
