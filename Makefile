@@ -19,6 +19,7 @@ DEV_API_BASE ?= http://localhost:8080
 .PHONY: dev-login-token
 .PHONY: dev-exec-app prod-exec-app
 .PHONY: dev-logs-scheduler prod-logs-scheduler
+.PHONY: dev-down-exclude
 
 dev-build:
 	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) build
@@ -28,6 +29,44 @@ dev-up:
 
 dev-down:
 	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) down
+
+# Down all containers except specified services
+# Usage: make dev-down-exclude EXCLUDE=db
+#        make dev-down-exclude EXCLUDE="db,phpmyadmin"
+dev-down-exclude:
+	@if [ -z "$(EXCLUDE)" ]; then \
+		echo "Usage: make dev-down-exclude EXCLUDE=<service1,service2,...>"; \
+		echo "Example: make dev-down-exclude EXCLUDE=db"; \
+		exit 1; \
+	fi; \
+	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) config --services | \
+	while read -r service; do \
+		if echo ",$(EXCLUDE)," | grep -q ",$$service,"; then \
+			echo "Keeping $$service running"; \
+		else \
+			echo "Stopping $$service"; \
+			docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) stop $$service 2>/dev/null || true; \
+		fi \
+	done
+
+# Remove all containers except specified services (use this to keep DB running)
+# Usage: make dev-rm-exclude EXCLUDE=db
+#        make dev-rm-exclude EXCLUDE="db,phpmyadmin"
+dev-rm-exclude:
+	@if [ -z "$(EXCLUDE)" ]; then \
+		echo "Usage: make dev-rm-exclude EXCLUDE=<service1,service2,...>"; \
+		echo "Example: make dev-rm-exclude EXCLUDE=db"; \
+		exit 1; \
+	fi; \
+	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) config --services | \
+	while read -r service; do \
+		if echo ",$(EXCLUDE)," | grep -q ",$$service,"; then \
+			echo "Keeping $$service"; \
+		else \
+			echo "Removing $$service"; \
+			docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) rm -f $$service 2>/dev/null || true; \
+		fi \
+	done
 
 dev-migrate:
 	docker compose --env-file $(DEV_ENV) -f $(DEV_COMPOSE) run --rm $(APP_SERVICE) php artisan migrate
