@@ -27,6 +27,22 @@ export default function Login({ status, canResetPassword }) {
     const [throttleError, setThrottleError] = useState(
         getInitialCooldown() > 0 ? 'Too many login attempts. Please try again.' : ''
     );
+    const [emailError, setEmailError] = useState('');
+
+    // Email validation helper
+    const validateEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            setEmailError('Email is required');
+            return false;
+        }
+        if (!emailRegex.test(email)) {
+            setEmailError('Please enter a valid email address');
+            return false;
+        }
+        setEmailError('');
+        return true;
+    };
 
     // Check for stored cooldown in localStorage
     useEffect(() => {
@@ -80,6 +96,11 @@ export default function Login({ status, canResetPassword }) {
         event.preventDefault();
 
         if (cooldownSeconds > 0) {
+            return;
+        }
+
+        // Validate email before submitting
+        if (!validateEmail(data.email)) {
             return;
         }
 
@@ -183,7 +204,7 @@ export default function Login({ status, canResetPassword }) {
                         </div>
                     )}
 
-                    <form method="POST" onSubmit={submit} className="space-y-4">
+                    <form method="POST" onSubmit={submit} className="space-y-4" noValidate>
                         <div className="space-y-1.5">
                             <label
                                 htmlFor="email"
@@ -193,14 +214,24 @@ export default function Login({ status, canResetPassword }) {
                             </label>
                             <input
                                 id="email"
-                                type="email"
+                                type="text"
                                 name="email"
                                 value={data.email}
                                 autoComplete="username"
                                 autoFocus
-                                onChange={(event) =>
-                                    setData('email', event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setData('email', event.target.value);
+                                    // Clear email error when user starts typing
+                                    if (emailError) {
+                                        setEmailError('');
+                                    }
+                                }}
+                                onBlur={() => {
+                                    // Validate on blur
+                                    if (data.email) {
+                                        validateEmail(data.email);
+                                    }
+                                }}
                                 disabled={cooldownSeconds > 0}
                                 className="block h-10 w-full rounded-md border border-slate-300 px-3 text-sm text-slate-900 outline-none ring-slate-200 transition focus:border-slate-500 focus:ring-2 disabled:bg-slate-100 disabled:text-slate-500"
                                 placeholder="Enter your email"
@@ -209,7 +240,7 @@ export default function Login({ status, canResetPassword }) {
                                 message={
                                     throttleError && cooldownSeconds > 0
                                         ? undefined
-                                        : errors.email
+                                        : errors.email || emailError
                                 }
                                 className="mt-2"
                             />
